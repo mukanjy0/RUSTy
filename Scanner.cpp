@@ -30,6 +30,9 @@ void Scanner::advance() {
         case '(': current.type = Token::OPEN_PARENTHESIS; break;
         case ')': current.type = Token::CLOSE_PARENTHESIS; break;
         case '\'': 
+            if (pos + 1 < size && source[pos + 1] == '\'') {
+                throw runtime_error("empty character literal");
+            }
             // standard characters like 'a'
             if (pos + 2 < size && source[pos + 2] == '\'') {
                 current.content = string(1, source[pos + 1]);
