@@ -21,7 +21,21 @@ void Scanner::advance() {
         case ':': current.type = Token::COLON; break;
         case ';': current.type = Token::SEMICOLON; break;
         case ',': current.type = Token::COMMA; break;
-        case '.': current.type = Token::DOT; break;
+        case '.': 
+            if (pos + 1 < size && source[pos + 1] == '.') {
+                ++pos;
+                if (pos + 1 < size && source[pos + 1] == '=') {
+                    ++pos;
+                    current.type = Token::RANGE_IN; 
+                }
+                else {
+                    current.type = Token::RANGE_EX; 
+                }
+            }
+            else {
+                current.type = Token::DOT; 
+            }
+            break;
         case '\\': current.type = Token::BACKWARD_SLASH; break;
         case '{': current.type = Token::OPEN_CURLY; break;
         case '}': current.type = Token::CLOSE_CURLY; break;
@@ -142,6 +156,9 @@ void Scanner::advance() {
                 }
                 else if (current.content == "return") {
                     current.type = Token::RETURN;
+                }
+                else if (current.content == "break") {
+                    current.type = Token::BREAK;
                 }
                 else if (current.content == "let") {
                     current.type = Token::LET;

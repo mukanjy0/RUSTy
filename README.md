@@ -1,13 +1,18 @@
 # Grammar
 
 ```
-Program -> FunDecList
+Program -> FunList
 
 FunList -> Fun FunList'
 FunList' -> Fun FunList'
 FunList' -> Ɛ
 
 Fun -> fn id ( ParamList ) Block
+
+FunCall -> id ( ArgList )
+
+ArgList = Ɛ
+ArgList = Exp [, ArgList]
 
 ParamList = Ɛ
 ParamList = Param [, ParamList]
@@ -19,24 +24,48 @@ StmtList -> Stmt StmtList
 StmtList -> Stmt'
 StmtList = Ɛ
 
-Stmt -> Stmt' ;
-Stmt' -> let [mut] id [: type] [= Stmt']
-Stmt' -> id = AExp
-Stmt' -> if AExp Block [(else if Block)*] [else Block]
-Stmt' -> println! ( Str [, (id)*] )
-Stmt' -> return [AExp] [;]
-Stmt' -> AExp
+Stmt -> let [mut] id [: type] [= Exp ] ;
+Stmt -> id = Exp ;
+Stmt -> for id in Exp .. Exp Block
+Stmt -> for id in Exp ..= Exp Block
+Stmt -> while Exp Block
+Stmt -> println! ( Str [(, Exp)*] ) ;
+Stmt -> break [Exp] ;
+Stmt -> return [Exp] [;]
+Stmt -> Exp [;]
 
-AExp -> BExp
-AExp -> BExp || AExp
-AExp -> BExp && AExp
+Exp -> IfExp
+Exp -> LoopExp
+Exp -> LogicalExp
 
-BExp -> [!] CExp
+IfExp -> if Exp Block [(else if Block)*] [else Block]
+LoopExp -> loop Block
 
-CExp -> Exp > Exp
-CExp -> Exp < Exp
-CExp -> Exp >= Exp
-CExp -> Exp <= Exp
-CExp -> Exp == Exp
-CExp -> Exp != Exp
+LogicalExp -> LogicalExp
+LogicalExp -> LogicalExp || NotExp
+LogicalExp -> LogicalExp && NotExp
+
+NotExp -> ! NotExp
+NotExp -> RelationalExp
+
+RelationalExp -> ArithmeticExp > ArithmeticExp
+RelationalExp -> ArithmeticExp < ArithmeticExp
+RelationalExp -> ArithmeticExp >= ArithmeticExp
+RelationalExp -> ArithmeticExp <= ArithmeticExp
+RelationalExp -> ArithmeticExp == ArithmeticExp
+RelationalExp -> ArithmeticExp != ArithmeticExp
+
+ArithmeticExp -> TermExp
+ArithmeticExp -> TermExp + ArithmeticExp
+ArithmeticExp -> TermExp - ArithmeticExp
+
+TermExp -> FactorExp
+TermExp -> FactorExp * TermExp
+TermExp -> FactorExp / TermExp
+
+FactorExp -> ( Exp )
+FactorExp -> number
+FactorExp -> id
+FactorExp -> FunCall ( Exp )
+
 ```
