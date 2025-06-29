@@ -4,11 +4,11 @@
 class Scanner;
 
 class Token {
-    friend Scanner;
+    friend class Scanner;
 private:
     enum Type {
-        BEG, END, ID, // special tokens
-        FN, RETURN, LET, MUT, FOR, IN, WHILE, LOOP, IF, ELSE, // reserved keywords
+        BEG, END, ID, RANGE_IN, RANGE_EX, // special tokens
+        FN, RETURN, BREAK, LET, MUT, FOR, IN, WHILE, LOOP, IF, ELSE, // reserved keywords
         SEMICOLON, COLON, COMMA, DOT, BACKWARD_SLASH,
         OPEN_CURLY, CLOSE_CURLY, OPEN_BRACKET, CLOSE_BRACKET, OPEN_PARENTHESIS, CLOSE_PARENTHESIS,
         SINGULAR_QUOTE, ASSIGN, // symbols
@@ -34,8 +34,11 @@ public:
             case BEG: out << "BEG"; break;
             case END: out << "END"; break;
             case ID: out << "ID"; break;
+            case RANGE_IN: out << "RANGE_IN"; break;
+            case RANGE_EX: out << "RANGE_EX"; break;
             case FN: out << "FN"; break;
             case RETURN: out << "RETURN"; break;
+            case BREAK: out << "BREAK"; break;
             case LET: out << "LET"; break;
             case MUT: out << "MUT"; break;
             case FOR: out << "FOR"; break;
