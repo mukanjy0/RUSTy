@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Play, Code2 } from "lucide-react"
+import { postCode } from "./api/api"
 
 export default function CompilerPage() {
   const [code, setCode] = useState("")
@@ -14,17 +15,17 @@ export default function CompilerPage() {
   const [showAssembly, setShowAssembly] = useState(false)
   const [hasCompiledCode, setHasCompiledCode] = useState(false)
 
-  const highlightSyntax = (code: string) => {
-    return code
-      .replace(
-        /\b(fn|let|const|var|if|else|for|while|return|function|class|struct|enum|impl|pub|use|mod)\b/g,
-        '<span class="text-orange-400 font-semibold">$1</span>',
-      )
-      .replace(/([{}[\]()])/g, '<span class="text-orange-300">$1</span>')
-      .replace(/(".*?"|'.*?')/g, '<span class="text-green-400">$1</span>')
-      .replace(/(\d+)/g, '<span class="text-blue-300">$1</span>')
-      .replace(/(\/\/.*$)/gm, '<span class="text-gray-400 italic">$1</span>')
-  }
+  // const highlightSyntax = (code: string) => {
+  //   return code
+  //     .replace(
+  //       /\b(fn|let|const|var|if|else|for|while|return|function|class|struct|enum|impl|pub|use|mod)\b/g,
+  //       '<span class="text-orange-400 font-semibold">$1</span>',
+  //     )
+  //     .replace(/([{}[\]()])/g, '<span class="text-orange-300">$1</span>')
+  //     .replace(/(".*?"|'.*?')/g, '<span class="text-green-400">$1</span>')
+  //     .replace(/(\d+)/g, '<span class="text-blue-300">$1</span>')
+  //     .replace(/(\/\/.*$)/gm, '<span class="text-gray-400 italic">$1</span>')
+  // }
 
 
   const handleCompile = async () => {
@@ -35,22 +36,15 @@ export default function CompilerPage() {
     setShowAssembly(false)
 
     try {
-      // Simulate API call to backend
-      const response = await fetch("/api/compile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ code }),
-      })
 
-      if (!response.ok) {
+      const response = await postCode({code});
+
+      if (!response.success) {
         throw new Error("Compilation failed")
       }
 
-      const result = await response.json()
-      setOutput(result.output || "Program executed successfully")
-      setAssemblyCode(result.assembly || "Assembly code not available")
+      setOutput(response.output || "Program executed successfully")
+      setAssemblyCode(response.assembly || "Assembly code not available")
       setHasCompiledCode(true)
     } catch (error) {
       setOutput(`Error: ${error instanceof Error ? error.message : "Unknown error occurred"}`)
@@ -108,10 +102,10 @@ export default function CompilerPage() {
                   }
                 }}
                 />
-                <div
-                  className="absolute top-0 left-0 right-0 bottom-0 p-3 font-mono text-sm pointer-events-none overflow-hidden whitespace-pre-wrap break-words"
-                  dangerouslySetInnerHTML={{ __html: highlightSyntax(code) }}
-                />
+                {/*<div*/}
+                {/*  className="absolute top-0 left-0 right-0 bottom-0 p-3 font-mono text-sm pointer-events-none overflow-hidden whitespace-pre-wrap break-words"*/}
+                {/*  dangerouslySetInnerHTML={{ __html: highlightSyntax(code) }}*/}
+                {/*/>*/}
               </div>
               
               <Button
