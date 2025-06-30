@@ -2,57 +2,68 @@ import subprocess
 import os
 from pathlib import Path
 
-# Carpeta de entrada
-input_dir = "inputs"
+# cpp directory
+cpp_dir = Path("src")
+source_files = [str(file) for file in cpp_dir.glob("*.cpp")]
+source_files.append("main.cpp")
 
-# Archivos fuente
-source_files = [
-    "main.cpp", "parser.cpp", "scanner.cpp", "token.cpp",
-    "visitor.cpp", "exp.cpp"
-]
+# Compile
+print("[1] Compiling...")
+compile_cmd = ["g++"] + source_files + ["-o", "out/main"]
+comp_rusty = subprocess.run(compile_cmd)
 
-# Compilar
-print("Compilando...")
-#compile_cmd = ["g++"] + source_files
-#result = subprocess.run(compile_cmd)
-
-#if result.returncode != 0:
-#    print("Error de compilación.")
-#    exit(1)
+# Check for compilation errors
+if comp_rusty.returncode != 0:
+    print("\033[91mCompiling Error\033[0m") # Red text
+    exit(1)
 
 
-carpeta = Path('input')
+print("[2] Compiling Rust files...")
+rust_dir = Path('input')
+rust_output = []
 
-for archivo in carpeta.glob("*.rs"):
-    print(f"Compilando {archivo}...")
-    path =  str(archivo)
-    output_path = "out/" + str(archivo.name)[:-3]
-    compile_cmd = ["rustc", path, "-o",output_path] 
-    result = subprocess.run(compile_cmd, capture_output=True, text=True)
+for i, file in enumerate(rust_dir.glob("*.rs")):
+    # Rust file compilation
+    path = str(file)
+    output_path = "out/" + str(file.name)[:-3]
+    compile_cmd = ["rustc", path, "-o",output_path]
 
-    # Exito
-    if result.returncode == 0:
-        print(f"Compilación exitosa de {archivo.name}. Ejecutando...")
+    print(f"\t[{i}] Compiling on Rust: {file}") 
+    comp_rust = subprocess.run(compile_cmd, capture_output=True, text=True)
+
+    # Successful compilation
+    if comp_rust.returncode == 0:
+        print(f"\033[92m\t[{i}] Rust compiling complete\033[0m")
+
         ejec_cmd = ["./" + output_path]
+        result_rust = subprocess.run(ejec_cmd, capture_output=True, text=True)
 
-        ejec_result = subprocess.run(ejec_cmd, capture_output=True, text=True)
-        if ejec_result.returncode == 0:
-            print(f"Salida de {archivo.name}:\n{ejec_result.stdout}")
+        if result_rust.returncode == 0:
+            print(f"\033[92m\t[{i}] Rust excecution complete\033[0m")
+            rust_output.append(result_rust.stdout)
         else:  
-            print(f"Error al ejecutar {archivo.name}:")
+            print(f"\033[91mExecuting error on {file}\033[0m")
+            exit(1)
     else:
-        print(f"Error de compilación en {archivo.name}:")
-        print(result.stderr)
+        print(f"\033[91mCompiling Error on {file}\033[0m")
         exit(1)
+    
+
+    print(f"\t[{i}] Compiling on RUSTy") 
+    result_rusty = subprocess.run(["./out/main", str(file)], capture_output=True, text=True)
+    if result_rusty.returncode == 0:
+        print(f"\033[92m\t[{i}] RUSTy execution complete\033[0m")
+
+        if rust_output[i] == result_rusty.stdout:
+            print(f"\033[92m\t[{i}] RUSTy output matches Rust output\033[0m")
+        else:
+            print(f"\033[91m\t[{i}] RUSTy output does not match Rust output\033[0m")
+            print(f"\033[33mRUSTy output:\n{result_rusty.stdout}\n---\033[0m")
+            print(f"\033[34mRust output:\n{rust_output[i]}\n===\033[0m")
+            exit(1)
+
+    else:
+        print(f"\033[91mRUSTy execution error on {file}\033[0m")
+
 
 print("Compilación exitosa.\n")
-
-#for i in range(1, 2):
-"""    input_file = os.path.join(input_dir, f"input{i}.txt")
-
-    if not os.path.exists(input_file):
-        print(f"{input_file} no existe. Se omite.")
-        continue
-
-    print(f"\nEjecutando con {input_file}")
-    subprocess.run(["./a.exe", input_file])"""
