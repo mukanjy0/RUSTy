@@ -3,7 +3,6 @@
 #include <list>
 
 class Visitor;
-class Stmt;
 
 struct Var {
     enum Type { BOOL, CHAR, I32, STR, UNDEFINED};
@@ -22,6 +21,16 @@ struct Var {
         stringValue(std::move(stringValue)) {}
     ~Var() {}
     static Type stringToType(std::string type);
+};
+
+class Exp;
+
+class Stmt {
+public:
+    virtual ~Stmt() = 0;
+    virtual void accept(Visitor* visitor) = 0;
+    virtual void print(std::ostream& out) {}
+    friend std::ostream& operator<<(std::ostream& out, Stmt* stmt);
 };
 
 class Block {
@@ -120,26 +129,27 @@ class IfBranch {
 public:
     IfBranch(Exp* cond, Block* block) : cond(cond), block(block) {}
     ~IfBranch();
+    friend std::ostream& operator<<(std::ostream& out, IfBranch ifBranch);
     friend std::ostream& operator<<(std::ostream& out, IfBranch* ifBranch);
 };
 
 class IfExp : public Exp {
-    IfBranch* ifBranch;
-    std::list<IfBranch*> elseIfBranches;
+    IfBranch ifBranch;
+    std::list<IfBranch> elseIfBranches;
     IfBranch* elseBranch {};
 
 public:
-    IfExp(IfBranch* ifBranch)
+    IfExp(IfBranch ifBranch)
         : ifBranch(ifBranch) {}
-    IfExp(IfBranch* ifBranch, std::list<IfBranch*> elseIfBranches)
+    IfExp(IfBranch ifBranch, std::list<IfBranch> elseIfBranches)
         : ifBranch(ifBranch), elseIfBranches(std::move(elseIfBranches)) {}
-    IfExp(IfBranch* ifBranch, std::list<IfBranch*> elseIfBranches,
+    IfExp(IfBranch ifBranch, std::list<IfBranch> elseIfBranches,
           IfBranch* elseBranch)
         : ifBranch(ifBranch), elseIfBranches(std::move(elseIfBranches)),
         elseBranch(elseBranch) {}
     ~IfExp();
 
-    void setIfBranch(IfBranch* branch);
+    void setIfBranch(IfBranch branch);
     void setElseBranch(IfBranch* branch);
 
     virtual void print(std::ostream& out);
