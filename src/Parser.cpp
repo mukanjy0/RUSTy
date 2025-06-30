@@ -8,6 +8,12 @@ Parser::~Parser() {
     delete scanner;
 }
 
+std::string Parser::debugInfo(Token token) {
+    return token.content
+             + "\nat line: " + std::to_string(token.line)
+             + " | column: " + std::to_string(token.col);
+}
+
 BinaryExp::Operation Parser::tokenTypeToBinaryOperation(Token::Type type) {
     switch(type) {
         case Token::LAND: return BinaryExp::LAND;
@@ -23,7 +29,8 @@ BinaryExp::Operation Parser::tokenTypeToBinaryOperation(Token::Type type) {
         case Token::TIMES: return BinaryExp::TIMES;
         case Token::DIV: return BinaryExp::DIV;
         default: 
-            throw std::runtime_error("expected binary operation token");
+            throw std::runtime_error("expected binary operation token\ngot: " 
+                                     + debugInfo(currentToken()));
     }
 }
 
@@ -53,18 +60,20 @@ Program* Parser::parse() {
 
 Block* Parser::parseBlock() {
     if (!match(Token::OPEN_CURLY)) {
-        throw std::runtime_error("expected '{' to start block");
+        throw std::runtime_error("expected '{' to start block\ngot: " 
+                                 + debugInfo(currentToken()));
     }
 
     std::list<Stmt*> stmts;
     Stmt* stmt;
-    if (!check(Token::CLOSE_CURLY)) {
+    while (!check(Token::CLOSE_CURLY)) {
         stmt = parseStatement();
         stmts.push_back(stmt);
     }
 
     if (!match(Token::CLOSE_CURLY)) {
-        throw std::runtime_error("expected '}' to end block");
+        throw std::runtime_error("expected '}' to end block\ngot: " 
+                                 + debugInfo(currentToken()));
     }
 
     return new Block(stmts);
@@ -73,13 +82,15 @@ Block* Parser::parseBlock() {
 Param Parser::parseParameter() {
     Param param;
     if (!check(Token::TYPE)) {
-        throw std::runtime_error("expected type in parameter list");
+        throw std::runtime_error("expected type in parameter list\ngot: " 
+                                 + debugInfo(currentToken()));
     }
     param.type = Var::stringToType(currentToken().content);
     match(Token::TYPE);
 
     if (!check(Token::ID)) {
-        throw std::runtime_error("expected id in parameter list");
+        throw std::runtime_error("expected id in parameter list\ngot: " 
+                                 + debugInfo(currentToken()));
     }
     param.id = currentToken().content;
     match(Token::ID);
@@ -89,16 +100,19 @@ Param Parser::parseParameter() {
 
 std::pair<std::string, Fun*> Parser::parseFunction() {
     if (!match(Token::FN)) {
-        throw std::runtime_error("expected function declaration");
+        throw std::runtime_error("expected function declaration\ngot: " 
+                                 + debugInfo(currentToken()));
     }
     if (!check(Token::ID)) {
-        throw std::runtime_error("expected function name after 'fn'");
+        throw std::runtime_error("expected function name after 'fn'\ngot: " 
+                                 + debugInfo(currentToken()));
     }
     std::string id = currentToken().content;
     match(Token::ID);
 
     if (!match(Token::OPEN_PARENTHESIS)) {
-        throw std::runtime_error("expected parenthesis in function declaration");
+        throw std::runtime_error("expected parenthesis in function declaration\ngot: " 
+                                 + debugInfo(currentToken()));
     }
     std::list<Param> params;
     if (!check(Token::CLOSE_PARENTHESIS)) {
@@ -110,7 +124,8 @@ std::pair<std::string, Fun*> Parser::parseFunction() {
         }
     }
     if (!match(Token::CLOSE_PARENTHESIS)) {
-        throw std::runtime_error("expected closing parenthesis after parameter list in function declaration");
+        throw std::runtime_error("expected closing parenthesis after parameter list in function declaration\ngot: " 
+                                 + debugInfo(currentToken()));
     }
 
     Block* block = parseBlock();
@@ -126,18 +141,29 @@ Stmt* Parser::parseStatement() {
         }
         std::string id = currentToken().content;
         if (!match(Token::ID)) {
-            throw std::runtime_error("expected id in variable declaration");
+            throw std::runtime_error("expected id in variable declaration\ngot: " 
+                                     + debugInfo(currentToken()));
         }
         if (match(Token::COLON)) {
-            var.type = Var::stringToType(currentToken().content);
-            if (!match(Token::TYPE)) {
-                throw std::runtime_error("expected type after ':' in variable declaration");
+            if (!check(Token::TYPE)) {
+                throw std::runtime_error("expected type after ':' in variable declaration\ngot: " 
+                                         + debugInfo(currentToken()));
             }
+            var.type = Var::stringToType(currentToken().content);
+            match(Token::TYPE);
         }
-        if (!match(Token::EQ)) {
+        if (match(Token::SEMICOLON)) {
             return new DecStmt(id, var);
         }
+        if (!match(Token::ASSIGN)) {
+            throw std::runtime_error("expected '=' in variable declaration\ngot: " 
+                                     + debugInfo(currentToken()));
+        }
         Exp* rhs = parseExpression();
+        if (!match(Token::SEMICOLON)) {
+            throw std::runtime_error("expected ';' after declaration statement\ngot: " 
+                                     + debugInfo(currentToken()));
+        }
 
         return new DecStmt(id, var, rhs);
 
@@ -145,10 +171,12 @@ Stmt* Parser::parseStatement() {
     else if (match(Token::FOR)) {
         std::string id = currentToken().content;
         if (!match(Token::ID)) {
-            throw std::runtime_error("expected id after 'for'");
+            throw std::runtime_error("expected id after 'for'\ngot: " 
+                                     + debugInfo(currentToken()));
         }
         if (!match(Token::IN)) {
-            throw std::runtime_error("expected 'in' after for id");
+            throw std::runtime_error("expected 'in' after for id\ngot: " 
+                                     + debugInfo(currentToken()));
         }
         Exp* start = parseExpression();
         bool inclusive {};
@@ -157,7 +185,8 @@ Stmt* Parser::parseStatement() {
             inclusive = true;
         }
         else {
-            throw std::runtime_error("expected '..' or '..=' in for");
+            throw std::runtime_error("expected '..' or '..=' in for\ngot: " 
+                                     + debugInfo(currentToken()));
         }
         Exp* end = parseExpression();
         Block* block = parseBlock();
@@ -172,11 +201,13 @@ Stmt* Parser::parseStatement() {
     }
     else if (match(Token::PRINT)) {
         if (!match(Token::OPEN_PARENTHESIS)) {
-            throw std::runtime_error("expected '(' after 'println!'");
+            throw std::runtime_error("expected '(' after 'println!'\ngot: " 
+                                     + debugInfo(currentToken()));
         }
         std::string literal = currentToken().content;
         if (!match(Token::STRING)) {
-            throw std::runtime_error("expected string literal inside print");
+            throw std::runtime_error("expected string literal inside print\ngot: " 
+                                     + debugInfo(currentToken()));
         }
 
         std::list<Exp*> args;
@@ -186,7 +217,13 @@ Stmt* Parser::parseStatement() {
         }
 
         if (!match(Token::CLOSE_PARENTHESIS)) {
-            throw std::runtime_error("expected ')' to close 'println!'");
+            throw std::runtime_error("expected ')' to close 'println!'\ngot: " 
+                                     + debugInfo(currentToken()));
+        }
+
+        if (!match(Token::SEMICOLON)) {
+            throw std::runtime_error("expected ';' after print statement\ngot: " 
+                                     + debugInfo(currentToken()));
         }
 
         return new PrintStmt(literal, args);
@@ -199,7 +236,8 @@ Stmt* Parser::parseStatement() {
         Exp* exp = parseExpression();
         // if break is last statement in block, it can be missing ';'
         if (match(Token::SEMICOLON) || check(Token::CLOSE_CURLY)) {
-            throw std::runtime_error("expected ';' after break expression");
+            throw std::runtime_error("expected ';' after break expression\ngot: " 
+                                     + debugInfo(currentToken()));
         }
 
         return new BreakStmt(exp);
@@ -212,17 +250,22 @@ Stmt* Parser::parseStatement() {
         Exp* exp = parseExpression();
         // if return is last statement in block, it can be missing ';'
         if (match(Token::SEMICOLON) || check(Token::CLOSE_CURLY)) {
-            throw std::runtime_error("expected ';' after break expression");
+            throw std::runtime_error("expected ';' after break expression\ngot: " 
+                                     + debugInfo(currentToken()));
         }
 
         return new ReturnStmt(exp);
     }
     else if (check(Token::ID) && peek() == Token::ASSIGN) {
         std::string id = currentToken().content;
-        if (!match(Token::ASSIGN)) {
-            throw std::runtime_error("expected '=' after id in assign statement");
-        }
+        match(Token::ID);
+        match(Token::ASSIGN);
         Exp* rhs = parseExpression();
+
+        if (!match(Token::SEMICOLON)) {
+            throw std::runtime_error("expected ';' after assignment statement\ngot: " 
+                                     + debugInfo(currentToken()));
+        }
 
         return new AssignStmt(id, rhs);
     }
@@ -234,7 +277,8 @@ Stmt* Parser::parseStatement() {
         if (check(Token::CLOSE_CURLY)) {
             return new ExpStmt(exp, true);
         }
-        throw std::runtime_error("expected valid statement");
+        throw std::runtime_error("expected valid statement\ngot: " 
+                                 + debugInfo(currentToken()));
     }
 }
 
@@ -305,7 +349,8 @@ Exp* Parser::parseFactorExp() {
     if (match(Token::OPEN_PARENTHESIS)) {
         Exp* exp = parseExpression();
         if (!match(Token::CLOSE_PARENTHESIS)) {
-            throw std::runtime_error("expected closing parenthesis after expression");
+            throw std::runtime_error("expected closing parenthesis after expression\ngot: " 
+                                     + debugInfo(currentToken()));
         }
         return exp;
     }
@@ -331,7 +376,8 @@ Exp* Parser::parseFactorExp() {
         }
 
         if (!match(Token::CLOSE_PARENTHESIS)) {
-            throw std::runtime_error("expeccted closing parenthesis in function call");
+            throw std::runtime_error("expected closing parenthesis in function call\ngot: " 
+                                     + debugInfo(currentToken()));
         }
 
         return new FunCall(id, args);
@@ -363,7 +409,8 @@ Exp* Parser::parseFactorExp() {
         return new LoopExp(parseBlock());
     }
     else {
-        throw std::runtime_error("expected valid factor expression");
+        throw std::runtime_error("expected valid factor expression\ngot: "
+                                 + debugInfo(currentToken()));
     }
 }
 

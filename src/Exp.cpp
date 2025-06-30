@@ -74,6 +74,7 @@ void Number::print(std::ostream& out) {
     out << value;
 }
 
+Variable::~Variable() {}
 void Variable::print(std::ostream& out) {
     out << name;
 }

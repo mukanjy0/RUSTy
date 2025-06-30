@@ -1,3 +1,6 @@
+#ifndef STMT_H
+#define STMT_H
+
 #include "Exp.h"
 #include <map>
 #include <list>
@@ -106,3 +109,4 @@ public:
     void accept(Visitor* visitor);
 };
 
+#endif

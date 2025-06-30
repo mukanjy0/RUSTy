@@ -1,5 +1,6 @@
 #include <iostream>
-#include "src/Scanner.h"
+#include "src/Parser.h"
+#include "src/Visitor.h"
 
 using namespace std;
 
@@ -16,6 +17,14 @@ int main(int argc, char* argv[]) {
     while (!scanner.eof()) {
         cout << scanner.getNextToken() << endl;
     }
+
+    Parser parser (filename);
+
+    Program* program = parser.parse();
+
+    Printer printer;
+
+    printer.visit(program);
 
     return 0;
 }

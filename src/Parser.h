@@ -1,3 +1,6 @@
+#ifndef PARSER_H
+#define PARSER_H
+
 #include "Scanner.h"
 #include "Fun.h"
 
@@ -10,6 +13,7 @@ private:
     bool match(Token::Type type);
     Token currentToken();
 
+    std::string debugInfo(Token token);
     BinaryExp::Operation tokenTypeToBinaryOperation(Token::Type type);
 
     Block* parseBlock();
@@ -29,3 +33,5 @@ public:
 
     Program* parse();
 };
+
+#endif

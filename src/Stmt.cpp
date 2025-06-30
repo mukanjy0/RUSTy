@@ -13,6 +13,7 @@ void DecStmt::print(std::ostream& out) {
         case Var::CHAR: out << "char"; break;
         case Var::I32: out << "i32"; break;
         case Var::STR: out << "String"; break;
+        case Var::VOID: out << "void"; break;
         default: out << "undefined"; break;
     }
     if (rhs) {
@@ -68,11 +69,22 @@ void PrintStmt::print(std::ostream& out) {
     out << ");";
 }
 
+BreakStmt::~BreakStmt() {
+    delete exp;
+}
+void BreakStmt::print(std::ostream& out) {
+    out << "break";
+    if (exp) out << ' ' << exp;
+    out << ";";
+}
+
 ReturnStmt::~ReturnStmt() {
     delete exp;
 }
 void ReturnStmt::print(std::ostream& out) {
-    out << "return " << exp << ";";
+    out << "return";
+    if (exp) out << ' ' << exp;
+    out << ";";
 }
 
 ExpStmt::~ExpStmt() {
