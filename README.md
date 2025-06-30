@@ -1,3 +1,49 @@
+# 🛠️ How to Run the Compiler
+
+This project uses **Docker** and **Docker Compose** to simplify setup and execution. You don’t need to install any dependencies manually — everything runs inside containers.
+
+---
+
+## ✅ Prerequisites
+
+* [Docker](https://www.docker.com/products/docker-desktop/) installed on your system.
+* [Docker Compose](https://docs.docker.com/compose/) (usually included with Docker Desktop).
+
+---
+
+## 🚀 Steps to Run the Compiler
+
+1. **Clone the repository** (if you haven’t already):
+
+   ```bash
+   git clone https://github.com/your-username/your-repo.git
+   cd your-repo
+   ```
+
+2. **Start the application using Docker Compose**:
+
+   ```bash
+   docker compose up
+   ```
+
+   > This command will build the backend and frontend images and start both services.
+
+3. **Access the compiler frontend**:
+   Open your browser and navigate to:
+   👉 [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 🧪 Notes
+
+* The backend is available internally at `http://backend:8000` (used by the frontend inside Docker).
+* Any code you compile through the frontend will be handled via this backend.
+* To stop the application, press `Ctrl+C` and run:
+
+  ```bash
+  docker compose down
+  ```
+
 # Grammar
 
 ```
