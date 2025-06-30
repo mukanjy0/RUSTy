@@ -75,6 +75,8 @@ class PrintStmt : public Stmt {
     std::list<Exp*> args;
 
 public:
+    PrintStmt(std::string strLiteral)
+    : strLiteral(std::move(strLiteral)) {}
     PrintStmt(std::string strLiteral, std::list<Exp *> args)
     : strLiteral(std::move(strLiteral)), args(std::move(args)) {}
     ~PrintStmt();

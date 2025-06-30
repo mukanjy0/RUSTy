@@ -30,34 +30,27 @@ Stmt -> for id in Exp .. Exp Block
 Stmt -> for id in Exp ..= Exp Block
 Stmt -> while Exp Block
 Stmt -> println! ( Str [(, Exp)*] ) ;
-Stmt -> break [Exp] ;
+Stmt -> break [Exp] [;]
 Stmt -> return [Exp] [;]
 Stmt -> Exp [;]
 
-Exp -> IfExp
-Exp -> LoopExp
-Exp -> LogicalExp
+Exp -> NotExp
+Exp -> NotExp || Exp
+Exp -> NotExp && Exp
 
-IfExp -> if Exp Block [(else if Block)*] [else Block]
-LoopExp -> loop Block
-
-LogicalExp -> LogicalExp
-LogicalExp -> LogicalExp || NotExp
-LogicalExp -> LogicalExp && NotExp
-
-NotExp -> ! NotExp
+NotExp -> ! Exp
 NotExp -> RelationalExp
 
-RelationalExp -> ArithmeticExp > ArithmeticExp
-RelationalExp -> ArithmeticExp < ArithmeticExp
-RelationalExp -> ArithmeticExp >= ArithmeticExp
-RelationalExp -> ArithmeticExp <= ArithmeticExp
-RelationalExp -> ArithmeticExp == ArithmeticExp
-RelationalExp -> ArithmeticExp != ArithmeticExp
+RelationalExp -> ArithmeticExp > Exp
+RelationalExp -> ArithmeticExp < Exp
+RelationalExp -> ArithmeticExp >= Exp
+RelationalExp -> ArithmeticExp <= Exp
+RelationalExp -> ArithmeticExp == Exp
+RelationalExp -> ArithmeticExp != Exp
 
 ArithmeticExp -> TermExp
-ArithmeticExp -> TermExp + ArithmeticExp
-ArithmeticExp -> TermExp - ArithmeticExp
+ArithmeticExp -> TermExp + Exp
+ArithmeticExp -> TermExp - Exp
 
 TermExp -> FactorExp
 TermExp -> FactorExp * TermExp
@@ -66,6 +59,11 @@ TermExp -> FactorExp / TermExp
 FactorExp -> ( Exp )
 FactorExp -> number
 FactorExp -> id
-FactorExp -> FunCall ( Exp )
+FactorExp -> FunCall ( [Exp (, Exp)*] )
+FactorExp -> IfExp
+FactorExp -> LoopExp
+
+IfExp -> if Exp Block [(else if Block)*] [else Block]
+LoopExp -> loop Block
 
 ```

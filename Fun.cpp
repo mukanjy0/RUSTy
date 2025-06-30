@@ -18,23 +18,15 @@ std::ostream& operator<<(std::ostream& out, Fun* fun) {
     return out;
 }
 
-FunList::~FunList() {
+Program::~Program() {
     for (auto [id, fun] : funs) {
         delete fun;
     }
     funs.clear();
 }
-std::ostream& operator<<(std::ostream& out, FunList* funList) {
-    for (auto [id, fun] : funList->funs) {
+std::ostream& operator<<(std::ostream& out, Program* program) {
+    for (auto [id, fun] : program->funs) {
         out << "fn " << id << fun << "\n";
     }
-    return out;
-}
-
-Program::~Program() {
-    delete funList;
-}
-std::ostream& operator<<(std::ostream& out, Program* program) {
-    out << program->funList;
     return out;
 }
