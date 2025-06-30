@@ -137,6 +137,7 @@ void Scanner::advance() {
             while (pos + 1 < size && source[increasePos()] != '\n') {}
             return advance();
         case '"': 
+            current.content = "";
             while (increasePos() < size && source[pos] != '"') {
                 current.content += string(1, source[pos]);
             }

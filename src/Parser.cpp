@@ -287,9 +287,11 @@ Exp* Parser::parseExpression() {
     if (check(Token::LOR) 
         || check(Token::LAND)
     ) {
-        Exp* rhs = parseExpression();
-        exp = new BinaryExp(tokenTypeToBinaryOperation(currentToken().type), exp, rhs);
+        BinaryExp::Operation op = tokenTypeToBinaryOperation(currentToken().type);
         scanner->next();
+
+        Exp* rhs = parseExpression();
+        exp = new BinaryExp(op, exp, rhs);
     }
     return exp;
 }
@@ -314,9 +316,11 @@ Exp* Parser::parseRelationalExp() {
         || check(Token::EQ)
         || check(Token::NEQ)
     ) {
-        Exp* rhs = parseArithmeticExp();
-        exp = new BinaryExp(tokenTypeToBinaryOperation(currentToken().type), exp, rhs);
+        BinaryExp::Operation op = tokenTypeToBinaryOperation(currentToken().type);
         scanner->next();
+
+        Exp* rhs = parseArithmeticExp();
+        exp = new BinaryExp(op, exp, rhs);
     }
     return exp;
 }
@@ -326,9 +330,11 @@ Exp* Parser::parseArithmeticExp() {
     if (check(Token::PLUS) 
         || check(Token::MINUS)
     ) {
-        Exp* rhs = parseArithmeticExp();
-        exp = new BinaryExp(tokenTypeToBinaryOperation(currentToken().type), exp, rhs);
+        BinaryExp::Operation op = tokenTypeToBinaryOperation(currentToken().type);
         scanner->next();
+
+        Exp* rhs = parseArithmeticExp();
+        exp = new BinaryExp(op, exp, rhs);
     }
     return exp;
 }
@@ -338,9 +344,11 @@ Exp* Parser::parseTermExp() {
     if (check(Token::TIMES)
         || check(Token::DIV)
     ) {
-        Exp* rhs = parseTermExp();
-        exp = new BinaryExp(tokenTypeToBinaryOperation(currentToken().type), exp, rhs);
+        BinaryExp::Operation op = tokenTypeToBinaryOperation(currentToken().type);
         scanner->next();
+
+        Exp* rhs = parseTermExp();
+        exp = new BinaryExp(op, exp, rhs);
     }
     return exp;
 }
