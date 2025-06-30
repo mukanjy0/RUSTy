@@ -1,0 +1,32 @@
+version: "3.8"
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: compiler-backend/Dockerfile
+    ports:
+      - "8000:8000"
+    networks:
+      - appnet
+    volumes:
+      - ./compiler-backend:/app
+      - ./main.cpp:/app/main.cpp
+      - ./src:/app/src
+  frontend:
+    build:
+      context: ./compiler-frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    networks:
+      - appnet
+    volumes:
+      - ./compiler-frontend:/app
+      - /app/node_modules
+      - /app/.next
+
+networks:
+  appnet:
+    driver: bridge
