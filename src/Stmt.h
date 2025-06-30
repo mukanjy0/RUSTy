@@ -3,16 +3,6 @@
 #include <list>
 #include <string>
 
-class Block;
-
-class Stmt {
-public:
-    virtual ~Stmt() = 0;
-    virtual void accept(Visitor* visitor) = 0;
-    virtual void print(std::ostream& out) {}
-    friend std::ostream& operator<<(std::ostream& out, Exp* exp);
-};
-
 class DecStmt : public Stmt {
     std::string id;
     Var var;

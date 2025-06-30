@@ -9,6 +9,12 @@ Var::Type Var::stringToType(std::string type) {
     throw std::runtime_error("invalid type: " + type);
 }
 
+Stmt::~Stmt() {}
+std::ostream& operator<<(std::ostream& out, Stmt* stmt) {
+    stmt->print(out);
+    return out;
+}
+
 Block::~Block() {
     for (auto stmt : stmts) {
         delete stmt;
@@ -24,9 +30,7 @@ std::ostream& operator<<(std::ostream& out, Block* block) {
     return out;
 }
 
-Var Exp::accept(Visitor* visitor) {
-    return Var();
-}
+Exp::~Exp() {}
 std::ostream& operator<<(std::ostream& out, Exp* exp) {
     exp->print(out);
     return out;
@@ -94,6 +98,11 @@ IfBranch::~IfBranch() {
     delete cond;
     delete block;
 }
+std::ostream& operator<<(std::ostream& out, IfBranch ifBranch) {
+    out << ifBranch.cond << "\n";
+    out << ifBranch.block;
+    return out;
+}
 std::ostream& operator<<(std::ostream& out, IfBranch* ifBranch) {
     out << ifBranch->cond << "\n";
     out << ifBranch->block;
@@ -101,14 +110,10 @@ std::ostream& operator<<(std::ostream& out, IfBranch* ifBranch) {
 }
 
 IfExp::~IfExp() {
-    delete ifBranch;
-    for (auto ifBranch : elseIfBranches) {
-        delete ifBranch;
-    }
     elseIfBranches.clear();
     delete elseBranch;
 }
-void IfExp::setIfBranch(IfBranch* branch) { ifBranch = branch; }
+void IfExp::setIfBranch(IfBranch branch) { ifBranch = branch; }
 void IfExp::setElseBranch(IfBranch* branch) {elseBranch = branch; }
 void IfExp::print(std::ostream& out) {
     out << "if " << ifBranch;

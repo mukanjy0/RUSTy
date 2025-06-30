@@ -1,24 +1,19 @@
 #include "Stmt.h"
 #include <iostream>
 
-std::ostream& operator<<(std::ostream& out, Exp* exp) {
-    exp->print(out);
-    return out;
-}
-
 DecStmt::~DecStmt() {
-    delete var;
     delete rhs;
 }
 void DecStmt::print(std::ostream& out) {
     out << "let ";
-    if (var->mut) out << "mut ";
+    if (var.mut) out << "mut ";
     out << id << " :";
-    switch(var->type) {
+    switch(var.type) {
         case Var::BOOL: out << "bool"; break;
         case Var::CHAR: out << "char"; break;
         case Var::I32: out << "i32"; break;
         case Var::STR: out << "String"; break;
+        default: out << "undefined"; break;
     }
     if (rhs) {
         out << " = " << rhs;
