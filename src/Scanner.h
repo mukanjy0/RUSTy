@@ -1,3 +1,6 @@
+#ifndef SCANNER_H
+#define SCANNER_H
+
 #include "Token.h"
 
 class Scanner {
@@ -5,8 +8,11 @@ private:
     char* source;
     int size;
     int pos {};
+    int col {1};
+    int line {1};
     Token current {};
 
+    int increasePos ();
     bool isWhitespace (char ch);
     void advance ();
 public:
@@ -21,3 +27,5 @@ public:
     Token getToken ();
     Token getNextToken ();
 };
+
+#endif

@@ -1,3 +1,6 @@
+#ifndef FUN_H
+#define FUN_H
+
 #include "Stmt.h"
 
 struct Param {
@@ -28,3 +31,5 @@ public:
     void accept(Visitor* visitor);
     friend std::ostream& operator<<(std::ostream& out, Program* program);
 };
+
+#endif

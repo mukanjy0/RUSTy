@@ -1,3 +1,6 @@
+#ifndef EXP_H
+#define EXP_H
+
 #include <iostream>
 #include <string>
 #include <list>
@@ -5,7 +8,7 @@
 class Visitor;
 
 struct Var {
-    enum Type { BOOL, CHAR, I32, STR, UNDEFINED};
+    enum Type { BOOL, CHAR, I32, STR, VOID, UNDEFINED};
     bool mut {};
     Type type {};
     int numericValue;
@@ -29,7 +32,7 @@ class Stmt {
 public:
     virtual ~Stmt() = 0;
     virtual void accept(Visitor* visitor) = 0;
-    virtual void print(std::ostream& out) {}
+    virtual void print(std::ostream& out) = 0;
     friend std::ostream& operator<<(std::ostream& out, Stmt* stmt);
 };
 
@@ -46,8 +49,8 @@ public:
 class Exp {
 public:
     virtual ~Exp() = 0;
-    virtual Var accept(Visitor* visitor);
-    virtual void print(std::ostream& out) {}
+    virtual Var accept(Visitor* visitor) = 0;
+    virtual void print(std::ostream& out) = 0;
     friend std::ostream& operator<<(std::ostream& out, Exp* exp);
 };
 
@@ -167,3 +170,4 @@ public:
     Var accept(Visitor* visitor);
 };
 
+#endif

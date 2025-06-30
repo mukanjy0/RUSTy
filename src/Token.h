@@ -1,3 +1,6 @@
+#ifndef TOKEN_H
+#define TOKEN_H
+
 #include <iostream>
 #include <string>
 
@@ -20,7 +23,7 @@ public:
 
     Token();
     Token(Type type);
-    Token(Type type, std::string content);
+    Token(Type type, std::string content, int col, int line);
     ~Token();
     Type getType() const;
     std::string getContent() const;
@@ -31,5 +34,9 @@ private:
 
     Type type;
     std::string content;
+    int col;
+    int line;
     friend std::ostream& operator<<(std::ostream& out, const Token& token);
 };
+
+#endif
