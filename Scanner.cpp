@@ -252,6 +252,10 @@ bool Scanner::match(const Token& token) {
     return true;
 }
 
+void Scanner::next () { 
+    advance();
+}
+
 Token Scanner::getToken () { return current; }
 
 Token Scanner::getNextToken () { 

@@ -17,6 +17,7 @@ public:
     Token::Type peek();
     bool check (const Token& token);
     bool match (const Token& token);
+    void next ();
     Token getToken ();
     Token getNextToken ();
 };
