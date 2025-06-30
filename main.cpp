@@ -1,9 +1,14 @@
 #include <iostream>
-#include "Scanner.h"
+#include "src/Scanner.h"
 
 using namespace std;
 
 int main(int argc, char* argv[]) {
+    // input errors
+    if (argc != 2) {
+        cerr << "Incorrect number of arguments" << endl << "Usage: " << argv[0] << " <input_file>" << endl;
+        exit(1);
+    }
     char* filename = argv[1];
 
     Scanner scanner (filename);

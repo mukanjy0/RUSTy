@@ -8,7 +8,7 @@ public:
     enum Type {
         BEG, END, ID, RANGE_IN, RANGE_EX, // special tokens
         FN, RETURN, BREAK, LET, MUT, FOR, IN, WHILE, LOOP, IF, ELSE, // reserved keywords
-        SEMICOLON, COLON, COMMA, DOT, BACKWARD_SLASH,
+        SEMICOLON, COLON, COMMA, DOT, BACKWARD_SLASH,Add commentMore actions
         OPEN_CURLY, CLOSE_CURLY, OPEN_BRACKET, CLOSE_BRACKET, OPEN_PARENTHESIS, CLOSE_PARENTHESIS,
         SINGULAR_QUOTE, ASSIGN, // symbols
         LAND, LOR, LNOT, // logical operators
