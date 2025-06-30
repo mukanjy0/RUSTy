@@ -1,3 +1,4 @@
+#include <iostream>
 #include <string>
 #include <list>
 
@@ -5,13 +6,13 @@ class Visitor;
 class Stmt;
 
 struct Var {
-    enum Type { BOOL, CHAR, I32, STR };
+    enum Type { BOOL, CHAR, I32, STR, UNDEFINED};
     bool mut {};
-    Type type;
+    Type type {};
     int numericValue;
     std::string stringValue;
 
-    Var() : type(I32), numericValue(0) {}
+    Var() : type(UNDEFINED) {}
     Var(Type type, std::string stringValue)
         : type(type), stringValue(stringValue) {}
     Var(Type type, int numericValue)
@@ -20,6 +21,7 @@ struct Var {
         : mut(mut), type(type), numericValue(numericValue),
         stringValue(std::move(stringValue)) {}
     ~Var() {}
+    static Type stringToType(std::string type);
 };
 
 class Block {
@@ -40,63 +42,44 @@ public:
     friend std::ostream& operator<<(std::ostream& out, Exp* exp);
 };
 
-class IfBranch {
-    Exp* cond;
-    Block* block;
-    friend class IfExp;
+class BinaryExp : public Exp {
 public:
-    IfBranch(Exp* cond, Block* block) : cond(cond), block(block) {}
-    ~IfBranch();
-    friend std::ostream& operator<<(std::ostream& out, IfBranch* ifBranch);
-};
-
-class IfExp {
-    IfBranch* ifBranch;
-    std::list<IfBranch*> elseIfBranches;
-    IfBranch* elseBranch;
-
-public:
-    IfExp(IfBranch* ifBranch, std::list<IfBranch*> elseIfBranches,
-          IfBranch* elseBranch)
-        : ifBranch(ifBranch), elseIfBranches(std::move(elseIfBranches)),
-        elseBranch(elseBranch) {}
-    ~IfExp();
-
-    virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
-};
-
-class LoopExp {
-    Block* block;
-
-public:
-    LoopExp(Block *block) : block(block) {}
-    ~LoopExp();
-
-    virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
-};
-
-class BinaryExp {
     enum Operation {
-        LAND, LOR, LNOT, // logical
+        LAND, LOR, // logical
         GT, LT, GE, LE, EQ, NEQ, // relational
         PLUS, MINUS, TIMES, DIV, // arithmetical
     };
 
-    Operation op;
-    Exp* lhs;
-    Exp* rhs;
-
-public:
     BinaryExp(Operation op, Exp *lhs, Exp *rhs) : op(op), lhs(lhs), rhs(rhs) {}
     ~BinaryExp();
 
     virtual void print(std::ostream& out);
     Var accept(Visitor* visitor);
+
+private:
+    Operation op;
+    Exp* lhs;
+    Exp* rhs;
 };
 
-class Number {
+class UnaryExp : public Exp {
+public:
+    enum Operation {
+        LNOT, // logical
+    };
+
+    UnaryExp(Operation op, Exp *exp) : op(op), exp(exp) {}
+    ~UnaryExp();
+
+    virtual void print(std::ostream& out);
+    Var accept(Visitor* visitor);
+
+private:
+    Operation op;
+    Exp* exp;
+};
+
+class Number : public Exp {
     int value;
 
 public:
@@ -107,7 +90,7 @@ public:
     Var accept(Visitor* visitor);
 };
 
-class Variable {
+class Variable : public Exp {
     std::string name;
 
 public:
@@ -118,7 +101,7 @@ public:
     Var accept(Visitor* visitor);
 };
 
-class FunCall {
+class FunCall : public Exp {
     std::string id;
     std::list<Exp*> args;
 
@@ -129,3 +112,48 @@ public:
     virtual void print(std::ostream& out);
     Var accept(Visitor* visitor);
 };
+
+class IfBranch {
+    Exp* cond;
+    Block* block;
+    friend class IfExp;
+public:
+    IfBranch(Exp* cond, Block* block) : cond(cond), block(block) {}
+    ~IfBranch();
+    friend std::ostream& operator<<(std::ostream& out, IfBranch* ifBranch);
+};
+
+class IfExp : public Exp {
+    IfBranch* ifBranch;
+    std::list<IfBranch*> elseIfBranches;
+    IfBranch* elseBranch {};
+
+public:
+    IfExp(IfBranch* ifBranch)
+        : ifBranch(ifBranch) {}
+    IfExp(IfBranch* ifBranch, std::list<IfBranch*> elseIfBranches)
+        : ifBranch(ifBranch), elseIfBranches(std::move(elseIfBranches)) {}
+    IfExp(IfBranch* ifBranch, std::list<IfBranch*> elseIfBranches,
+          IfBranch* elseBranch)
+        : ifBranch(ifBranch), elseIfBranches(std::move(elseIfBranches)),
+        elseBranch(elseBranch) {}
+    ~IfExp();
+
+    void setIfBranch(IfBranch* branch);
+    void setElseBranch(IfBranch* branch);
+
+    virtual void print(std::ostream& out);
+    Var accept(Visitor* visitor);
+};
+
+class LoopExp : public Exp {
+    Block* block;
+
+public:
+    LoopExp(Block *block) : block(block) {}
+    ~LoopExp();
+
+    virtual void print(std::ostream& out);
+    Var accept(Visitor* visitor);
+};
+

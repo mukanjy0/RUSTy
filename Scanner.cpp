@@ -110,7 +110,7 @@ void Scanner::advance() {
                 current.type = Token::NEQ;
             }
             else {
-                current.type = Token::NOT;
+                current.type = Token::LNOT;
             }
             break;
         case '+': current.type = Token::PLUS; break;
@@ -228,6 +228,18 @@ Scanner::~Scanner() {
 
 bool Scanner::eof () {
     return current.type == Token::END;
+}
+
+Token::Type Scanner::peek() {
+    int prevPos = pos;
+    Token aux = current;
+
+    advance();
+
+    swap(aux, current);
+    pos = prevPos;
+
+    return aux.type;
 }
 
 bool Scanner::check(const Token& token) {

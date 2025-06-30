@@ -14,6 +14,7 @@ public:
     ~Scanner();
 
     bool eof ();
+    Token::Type peek();
     bool check (const Token& token);
     bool match (const Token& token);
     Token getToken ();
