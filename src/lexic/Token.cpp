@@ -1,14 +1,17 @@
 #include "Token.h"
 #include <iostream>
+#include <utility>
 
-Token::Token() : type(BEG) {}
+Token::Token() : type(BEG) {
+}
 
-Token::Token(Type type) : type(type) {}
+Token::Token(Type type) : type(type) {
+}
 
 Token::Token(Type type, std::string content, int col, int line) 
-    : type(type), content(content), col(col), line(line) {}
+    : type(type), content(std::move(content)), col(col), line(line) {}
 
-Token::~Token() {}
+Token::~Token() = default;
 
 Token::Type Token::getType() const {
     return type;

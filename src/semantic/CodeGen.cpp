@@ -1,13 +1,14 @@
 #include "CodeGen.h"
 
 // Destructor
-CodeGen::~CodeGen() {}
+CodeGen::~CodeGen() = default;
 
 // Visit methods for expressions
 Var CodeGen::visit(Block* block) {
     for(auto stmt : block->stmts) {
         stmt->accept(this);
     }
+    return {};
 }
 
 Var CodeGen::visit(BinaryExp* exp) {
@@ -76,7 +77,7 @@ Var CodeGen::visit(BinaryExp* exp) {
         default:
             throw std::runtime_error("Invalid binary operation");
     }
-    return Var();
+    return {};
 
 }
 
@@ -93,32 +94,32 @@ Var CodeGen::visit(UnaryExp* exp) {
     }
 
     out << " movq %rcx, %rax\n";
-    return Var();
+    return {};
 }
 
 Var CodeGen::visit(Number* exp) {
     out << " movq $" << exp->value << ", %rax\n";
-    return Var();
+    return {};
 }
 
 Var CodeGen::visit(Variable* exp) {
     // Implementation here
-    return Var();
+    return {};
 }
 
 Var CodeGen::visit(FunCall* exp) {
     // Implementation here
-    return Var();
+    return {};
 }
 
 Var CodeGen::visit(IfExp* exp) {
     // Implementation here
-    return Var();
+    return {};
 }
 
 Var CodeGen::visit(LoopExp* exp) {
     // Implementation here
-    return Var();
+    return {};
 }
 
 // Visit methods for statements

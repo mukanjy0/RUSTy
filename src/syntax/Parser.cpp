@@ -38,10 +38,10 @@ Token::Type Parser::peek() {
     return scanner->peek();
 }
 bool Parser::check(Token::Type type) {
-    return scanner->check(type);
+    return scanner->check(Token(type));
 }
 bool Parser::match(Token::Type type) {
-    return scanner->match(type);
+    return scanner->match(Token(type));
 }
 Token Parser::currentToken() {
     return scanner->getToken();

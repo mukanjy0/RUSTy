@@ -1,10 +1,10 @@
 #include <iostream>
-#include "src/Parser.h"
-#include "src/Visitor.h"
+#include "src/syntax/Parser.h"
+#include "src/semantic/Printer.h"
 
 using namespace std;
 
-int main(int argc, char* argv[]) {
+int main(const int argc, char* argv[]) {
     // input errors
     if (argc != 2) {
         cerr << "Incorrect number of arguments" << endl << "Usage: " << argv[0] << " <input_file>" << endl;

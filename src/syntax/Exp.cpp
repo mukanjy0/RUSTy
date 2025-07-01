@@ -9,7 +9,7 @@ Var::Type Var::stringToType(std::string type) {
     throw std::runtime_error("invalid type: " + type);
 }
 
-Stmt::~Stmt() {}
+Stmt::~Stmt() = default;
 std::ostream& operator<<(std::ostream& out, Stmt* stmt) {
     stmt->print(out);
     return out;
@@ -30,7 +30,7 @@ std::ostream& operator<<(std::ostream& out, Block* block) {
     return out;
 }
 
-Exp::~Exp() {}
+Exp::~Exp() = default;
 std::ostream& operator<<(std::ostream& out, Exp* exp) {
     exp->print(out);
     return out;
@@ -69,12 +69,12 @@ void UnaryExp::print(std::ostream& out) {
     out << exp;
 }
 
-Number::~Number() {}
+Number::~Number() = default;
 void Number::print(std::ostream& out) {
     out << value;
 }
 
-Variable::~Variable() {}
+Variable::~Variable() = default;
 void Variable::print(std::ostream& out) {
     out << name;
 }
@@ -104,7 +104,7 @@ std::ostream& operator<<(std::ostream& out, IfBranch ifBranch) {
     out << ifBranch.block;
     return out;
 }
-std::ostream& operator<<(std::ostream& out, IfBranch* ifBranch) {
+std::ostream& operator<<(std::ostream& out, const IfBranch* ifBranch) {
     out << ifBranch->cond << "\n";
     out << ifBranch->block;
     return out;
@@ -118,7 +118,7 @@ void IfExp::setIfBranch(IfBranch branch) { ifBranch = branch; }
 void IfExp::setElseBranch(IfBranch* branch) {elseBranch = branch; }
 void IfExp::print(std::ostream& out) {
     out << "if " << ifBranch;
-    for (auto ifBranch : elseIfBranches) {
+    for (const auto& ifBranch : elseIfBranches) {
         out << "else if " << ifBranch;
     }
     if (elseBranch) out << "else " << elseBranch;

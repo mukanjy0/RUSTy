@@ -1,29 +1,33 @@
 #ifndef EXP_H
 #define EXP_H
 
+#define FRIENDS friend class CodeGen; friend class TypeCheck;
+
 #include <iostream>
 #include <string>
 #include <list>
+#include <utility>
 
 class Visitor;
 class CodeGen;
+class TypeCheck;
 
 struct Var {
     enum Type { BOOL, CHAR, I32, STR, VOID, UNDEFINED};
     bool mut {};
     Type type {};
-    int numericValue;
+    int numericValue{};
     std::string stringValue;
 
     Var() : type(UNDEFINED) {}
     Var(Type type, std::string stringValue)
-        : type(type), stringValue(stringValue) {}
+        : type(type), stringValue(std::move(stringValue)) {}
     Var(Type type, int numericValue)
         : type(type), numericValue(numericValue) {}
     Var(bool mut, Type type, int numericValue, std::string stringValue)
         : mut(mut), type(type), numericValue(numericValue),
         stringValue(std::move(stringValue)) {}
-    ~Var() {}
+    ~Var() = default;
     static Type stringToType(std::string type);
 };
 
@@ -40,11 +44,11 @@ public:
 class Block {
     std::list<Stmt*> stmts;
 public:
-    Block(std::list<Stmt *> stmts) : stmts(std::move(stmts)) {}
+    explicit Block(std::list<Stmt *> stmts) : stmts(std::move(stmts)) {}
     ~Block();
     Var accept(Visitor *visitor);
     friend std::ostream& operator<<(std::ostream& out, Block* block);
-    friend class CodeGen;
+    FRIENDS
 };
 
 class Exp {
@@ -64,15 +68,15 @@ public:
     };
 
     BinaryExp(Operation op, Exp *lhs, Exp *rhs) : op(op), lhs(lhs), rhs(rhs) {}
-    ~BinaryExp();
+    ~BinaryExp() override;
 
-    virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
+    void print(std::ostream& out) override;
+    Var accept(Visitor* visitor) override;
 private:
     Operation op;
     Exp* lhs;
     Exp* rhs;
-    friend class CodeGen;
+    FRIENDS
 };
 
 class UnaryExp : public Exp {
@@ -82,39 +86,39 @@ public:
     };
 
     UnaryExp(Operation op, Exp *exp) : op(op), exp(exp) {}
-    ~UnaryExp();
+    ~UnaryExp() override;
 
-    virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
+    void print(std::ostream& out) override;
+    Var accept(Visitor* visitor) override;
 
 private:
     Operation op;
     Exp* exp;
-    friend class CodeGen;
+    FRIENDS
 };
 
 class Number : public Exp {
     int value;
 
 public:
-    Number(int value) : value(value) {}
-    ~Number();
+    explicit Number(int value) : value(value) {}
+    ~Number() override;
 
-    virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
-    friend class CodeGen;
+    void print(std::ostream& out) override;
+    Var accept(Visitor* visitor) override;
+    FRIENDS
 };
 
 class Variable : public Exp {
     std::string name;
 
 public:
-    Variable(std::string name) : name(std::move(name)) {}
-    ~Variable();
+    explicit Variable(std::string name) : name(std::move(name)) {}
+    ~Variable() override;
 
-    virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
-    friend class CodeGen;
+    void print(std::ostream& out) override;
+    Var accept(Visitor* visitor) override;
+    FRIENDS
 };
 
 class FunCall : public Exp {
@@ -122,12 +126,12 @@ class FunCall : public Exp {
     std::list<Exp*> args;
 
 public:
-    FunCall(std::string id, std::list<Exp*> args) : id(id), args(args) {}
-    ~FunCall();
+    FunCall(std::string id, std::list<Exp*> args) : id(std::move(id)), args(std::move(args)) {}
+    ~FunCall() override;
 
-    virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
-    friend class CodeGen;
+    void print(std::ostream& out) override;
+    Var accept(Visitor* visitor) override;
+    FRIENDS
 };
 
 class IfBranch {
@@ -138,8 +142,8 @@ public:
     IfBranch(Exp* cond, Block* block) : cond(cond), block(block) {}
     ~IfBranch();
     friend std::ostream& operator<<(std::ostream& out, IfBranch ifBranch);
-    friend std::ostream& operator<<(std::ostream& out, IfBranch* ifBranch);
-    friend class CodeGen;
+    friend std::ostream& operator<<(std::ostream& out, const IfBranch* ifBranch);
+    FRIENDS
 };
 
 class IfExp : public Exp {
@@ -148,34 +152,34 @@ class IfExp : public Exp {
     IfBranch* elseBranch {};
 
 public:
-    IfExp(IfBranch ifBranch)
+    explicit IfExp(const IfBranch& ifBranch)
         : ifBranch(ifBranch) {}
-    IfExp(IfBranch ifBranch, std::list<IfBranch> elseIfBranches)
+    IfExp(const IfBranch& ifBranch, std::list<IfBranch> elseIfBranches)
         : ifBranch(ifBranch), elseIfBranches(std::move(elseIfBranches)) {}
-    IfExp(IfBranch ifBranch, std::list<IfBranch> elseIfBranches,
+    IfExp(const IfBranch& ifBranch, std::list<IfBranch> elseIfBranches,
           IfBranch* elseBranch)
         : ifBranch(ifBranch), elseIfBranches(std::move(elseIfBranches)),
         elseBranch(elseBranch) {}
-    ~IfExp();
+    ~IfExp() override;
 
     void setIfBranch(IfBranch branch);
     void setElseBranch(IfBranch* branch);
 
-    virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
-    friend class CodeGen;
+    void print(std::ostream& out) override;
+    Var accept(Visitor* visitor) override;
+    FRIENDS
 };
 
 class LoopExp : public Exp {
     Block* block;
 
 public:
-    LoopExp(Block *block) : block(block) {}
-    ~LoopExp();
+    explicit LoopExp(Block *block) : block(block) {}
+    ~LoopExp() override;
 
-    virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
-    friend class CodeGen;
+    void print(std::ostream& out) override;
+    Var accept(Visitor* visitor) override;
+    FRIENDS
 };
 
 #endif

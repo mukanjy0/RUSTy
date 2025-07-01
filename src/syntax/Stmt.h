@@ -18,10 +18,10 @@ public:
     DecStmt(std::string id, Var var, Exp *rhs)
     : id(std::move(id)), var(var), rhs(rhs) {}
 
-    ~DecStmt();
+    ~DecStmt() override;
 
-    void print(std::ostream& out);
-    void accept(Visitor* visitor);
+    void print(std::ostream& out) override;
+    void accept(Visitor* visitor) override;
 };
 
 class AssignStmt : public Stmt {
@@ -30,9 +30,9 @@ class AssignStmt : public Stmt {
 
 public:
     AssignStmt(std::string lhs, Exp *rhs) : lhs(std::move(lhs)), rhs(rhs) {}
-    ~AssignStmt();
-    void print(std::ostream& out);
-    void accept(Visitor* visitor);
+    ~AssignStmt() override;
+    void print(std::ostream& out) override;
+    void accept(Visitor* visitor) override;
 };
 
 class ForStmt : public Stmt {
@@ -47,9 +47,9 @@ public:
     : id(std::move(id)), start(start), end(end), block(block) {}
     ForStmt(std::string id, Exp *start, Exp *end, Block *block, bool inclusive)
     : id(std::move(id)), start(start), end(end), block(block), inclusive(inclusive) {}
-    ~ForStmt();
-    void print(std::ostream& out);
-    void accept(Visitor* visitor);
+    ~ForStmt() override;
+    void print(std::ostream& out) override;
+    void accept(Visitor* visitor) override;
 };
 
 class WhileStmt : public Stmt {
@@ -58,9 +58,9 @@ class WhileStmt : public Stmt {
 
 public:
     WhileStmt(Exp *cond, Block *block) : cond(cond), block(block) {}
-    ~WhileStmt();
-    void print(std::ostream& out);
-    void accept(Visitor* visitor);
+    ~WhileStmt() override;
+    void print(std::ostream& out) override;
+    void accept(Visitor* visitor) override;
 };
 
 class PrintStmt : public Stmt {
@@ -72,9 +72,9 @@ public:
     : strLiteral(std::move(strLiteral)) {}
     PrintStmt(std::string strLiteral, std::list<Exp *> args)
     : strLiteral(std::move(strLiteral)), args(std::move(args)) {}
-    ~PrintStmt();
-    void print(std::ostream& out);
-    void accept(Visitor* visitor);
+    ~PrintStmt() override;
+    void print(std::ostream& out) override;
+    void accept(Visitor* visitor) override;
 };
 
 class BreakStmt : public Stmt {
@@ -82,9 +82,9 @@ class BreakStmt : public Stmt {
 public:
     BreakStmt() = default;
     BreakStmt(Exp* exp) : exp(exp) {};
-    ~BreakStmt();
-    void print(std::ostream& out);
-    void accept(Visitor* visitor);
+    ~BreakStmt() override;
+    void print(std::ostream& out) override;
+    void accept(Visitor* visitor) override;
 };
 
 class ReturnStmt : public Stmt {
@@ -92,9 +92,9 @@ class ReturnStmt : public Stmt {
 public:
     ReturnStmt() = default;
     ReturnStmt(Exp* exp) : exp(exp) {};
-    ~ReturnStmt();
-    void print(std::ostream& out);
-    void accept(Visitor* visitor);
+    ~ReturnStmt() override;
+    void print(std::ostream& out) override;
+    void accept(Visitor* visitor) override;
 };
 
 class ExpStmt : public Stmt {
@@ -104,9 +104,9 @@ public:
     ExpStmt() = default;
     ExpStmt(Exp* exp) : exp(exp) {};
     ExpStmt(Exp* exp, bool returnValue) : exp(exp), returnValue(returnValue) {};
-    ~ExpStmt();
-    void print(std::ostream& out);
-    void accept(Visitor* visitor);
+    ~ExpStmt() override;
+    void print(std::ostream& out) override;
+    void accept(Visitor* visitor) override;
 };
 
 #endif

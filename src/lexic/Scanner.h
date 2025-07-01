@@ -16,7 +16,7 @@ private:
     bool isWhitespace (char ch);
     void advance ();
 public:
-    Scanner(char* filename);
+    explicit Scanner(char* filename);
     ~Scanner();
 
     bool eof ();
