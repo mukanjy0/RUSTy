@@ -272,6 +272,8 @@ void Scanner::next () {
 
 Token Scanner::getToken () { return current; }
 
+std::string Scanner::getTokenContent() {return current.content; }
+
 Token Scanner::getNextToken () { 
     advance();
     return current; 

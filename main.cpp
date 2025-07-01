@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
     Scanner scanner (filename);
 
     while (!scanner.eof()) {
-        cout << scanner.getNextToken() << endl;
+        cout << scanner.getNextToken() << "- (" << scanner.getTokenContent() << ")"<< endl;
     }
 
     Parser parser (filename);
