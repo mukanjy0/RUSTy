@@ -10,6 +10,7 @@ pkgs.mkShell rec {
     gnumake
     ninja
     git
+    rustc
   ];
 
 }

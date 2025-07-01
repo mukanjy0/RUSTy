@@ -1,12 +1,11 @@
 import subprocess
-import os
 from pathlib import Path
 
 # cpp directory
 cpp_dir = Path("src")
-source_files = [str(file) for file in cpp_dir.glob("*.cpp")]
+source_files = [str(file) for file in cpp_dir.rglob("*.cpp")]
 source_files.append("main.cpp")
-
+print(source_files)
 # Compile
 print("[1] Compiling...")
 compile_cmd = ["g++"] + source_files + ["-o", "out/main"]
