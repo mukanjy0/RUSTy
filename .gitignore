@@ -1,4 +1,4 @@
-/output
+output/*
 !output/.gitkeep
 *.out
 cmake-build-debug/
