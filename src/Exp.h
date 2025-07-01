@@ -6,6 +6,7 @@
 #include <list>
 
 class Visitor;
+class CodeGen;
 
 struct Var {
     enum Type { BOOL, CHAR, I32, STR, VOID, UNDEFINED};
@@ -38,12 +39,12 @@ public:
 
 class Block {
     std::list<Stmt*> stmts;
-
 public:
     Block(std::list<Stmt *> stmts) : stmts(std::move(stmts)) {}
     ~Block();
     Var accept(Visitor *visitor);
     friend std::ostream& operator<<(std::ostream& out, Block* block);
+    friend class CodeGen;
 };
 
 class Exp {
@@ -67,11 +68,11 @@ public:
 
     virtual void print(std::ostream& out);
     Var accept(Visitor* visitor);
-
 private:
     Operation op;
     Exp* lhs;
     Exp* rhs;
+    friend class CodeGen;
 };
 
 class UnaryExp : public Exp {
@@ -89,6 +90,7 @@ public:
 private:
     Operation op;
     Exp* exp;
+    friend class CodeGen;
 };
 
 class Number : public Exp {
@@ -100,6 +102,7 @@ public:
 
     virtual void print(std::ostream& out);
     Var accept(Visitor* visitor);
+    friend class CodeGen;
 };
 
 class Variable : public Exp {
@@ -111,6 +114,7 @@ public:
 
     virtual void print(std::ostream& out);
     Var accept(Visitor* visitor);
+    friend class CodeGen;
 };
 
 class FunCall : public Exp {
@@ -123,6 +127,7 @@ public:
 
     virtual void print(std::ostream& out);
     Var accept(Visitor* visitor);
+    friend class CodeGen;
 };
 
 class IfBranch {
@@ -134,6 +139,7 @@ public:
     ~IfBranch();
     friend std::ostream& operator<<(std::ostream& out, IfBranch ifBranch);
     friend std::ostream& operator<<(std::ostream& out, IfBranch* ifBranch);
+    friend class CodeGen;
 };
 
 class IfExp : public Exp {
@@ -157,6 +163,7 @@ public:
 
     virtual void print(std::ostream& out);
     Var accept(Visitor* visitor);
+    friend class CodeGen;
 };
 
 class LoopExp : public Exp {
@@ -168,6 +175,7 @@ public:
 
     virtual void print(std::ostream& out);
     Var accept(Visitor* visitor);
+    friend class CodeGen;
 };
 
 #endif
