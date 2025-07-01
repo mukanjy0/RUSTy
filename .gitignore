@@ -1,4 +1,5 @@
-/out
+/output
+!output/.gitkeep
 *.out
 cmake-build-debug/
 CMakeLists.txt
