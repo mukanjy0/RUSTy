@@ -23,6 +23,7 @@ void Scanner::advance() {
     while (pos < size && isWhitespace(source[pos])) {
         increasePos();
     }
+    current.content.clear();
     if (pos == size) current.type = Token::END;
     if (current.type == Token::END) return;
 
