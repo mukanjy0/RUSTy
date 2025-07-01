@@ -12,7 +12,7 @@ private:
         SEMICOLON, COLON, COMMA, DOT, BACKWARD_SLASH,
         OPEN_CURLY, CLOSE_CURLY, OPEN_BRACKET, CLOSE_BRACKET, OPEN_PARENTHESIS, CLOSE_PARENTHESIS,
         SINGULAR_QUOTE, ASSIGN, // symbols
-        LAND, LOR, NOT, // logical operators
+        LAND, LOR, LNOT, // logical operators
         EQ, NEQ, LT, GT, LE, GE,  // relational operators
         PLUS, MINUS, TIMES, DIV, // arithmetic operators
         TYPE, BOOLEAN, NUMBER, STRING, CHAR, // groups
