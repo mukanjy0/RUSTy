@@ -63,6 +63,7 @@ for i, file in enumerate(rust_dir.glob("*.rs")):
             exit(1)
 
     else:
+        print(result_rusty.stderr)
         print(f"\033[91mRUSTy execution error on {file}\033[0m")
 
 

@@ -25,6 +25,7 @@ public:
     bool match (const Token& token);
     void next ();
     Token getToken ();
+    std::string getTokenContent ();
     Token getNextToken ();
 };
 
