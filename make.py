@@ -63,8 +63,9 @@ for i, file in enumerate(rust_dir.glob("*.rs")):
             exit(1)
 
     else:
-        print(result_rusty.stderr)
+        print(result_rusty.stdout)
         print(f"\033[91mRUSTy execution error on {file}\033[0m")
+        print(result_rusty.stderr)
 
 
 print("Compilación exitosa.\n")
