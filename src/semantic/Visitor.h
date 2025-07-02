@@ -2,9 +2,13 @@
 #define VISITOR_H
 
 #include "../syntax/Fun.h"
+#include "SymbolTable.h"
 
 class Visitor {
+protected:
+    SymbolTable* table {};
 public:
+    explicit Visitor(SymbolTable* table = nullptr) : table(table) {}
     virtual ~Visitor() = 0;
     virtual Var visit(Block* block) = 0;
     virtual Var visit(BinaryExp* exp) = 0;

@@ -9,6 +9,7 @@
 
 class NameRes final : public Visitor {
 public:
+    explicit NameRes(SymbolTable* table) : Visitor(table) {}
     ~NameRes() override;
     Var visit(Block* block) override;
     Var visit(BinaryExp* exp) override;

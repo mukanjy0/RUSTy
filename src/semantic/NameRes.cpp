@@ -1,139 +1,139 @@
-//
-// Created by jose on 01/07/25.
-//
-
 #include "NameRes.h"
+#include <iostream>
+#include <ranges>
 
-// Destructor
 NameRes::~NameRes() = default;
 
-// Visit methods for expressions
 Var NameRes::visit(Block* block) {
-    for(auto stmt : block->stmts) {
+    table->pushScope();
+    for (auto stmt : block->stmts) {
         stmt->accept(this);
     }
+    table->popScope();
     return {};
 }
 
 Var NameRes::visit(BinaryExp* exp) {
     exp->lhs->accept(this);
     exp->rhs->accept(this);
-
-    switch (exp->op) {
-        case BinaryExp::LAND:
-            break;
-        case BinaryExp::LOR:
-            break;
-        case BinaryExp::GT:
-            break;
-        case BinaryExp::LT:
-
-            break;
-        case BinaryExp::GE:
-            break;
-        case BinaryExp::LE:
-            break;
-        case BinaryExp::EQ:
-
-            break;
-        case BinaryExp::NEQ:
-
-            break;
-        case BinaryExp::PLUS:
-
-            break;
-        case BinaryExp::MINUS:
-
-            break;
-        case BinaryExp::TIMES:
-
-            break;
-        case BinaryExp::DIV:
-
-            break;
-        default:
-            throw std::runtime_error("Invalid binary operation");
-    }
     return {};
-
 }
 
 Var NameRes::visit(UnaryExp* exp) {
     exp->exp->accept(this);
-
-    switch (exp->op) {
-        case UnaryExp::LNOT:
-            break;
-        default:
-            throw std::runtime_error("Invalid unary operation");
-    }
     return {};
 }
 
 Var NameRes::visit(Number* exp) {
-    return {Var::I32, 0};
+    (void)exp; // unused
+    return {};
 }
 
 Var NameRes::visit(Variable* exp) {
-    // Implementation here
+    if (!table->lookup(exp->name)) {
+        std::cerr << "Name resolution error: undefined variable '"
+                  << exp->name << "'\n";
+    }
     return {};
 }
 
 Var NameRes::visit(FunCall* exp) {
-    // Implementation here
+    for (auto arg : exp->args) {
+        arg->accept(this);
+    }
     return {};
 }
 
 Var NameRes::visit(IfExp* exp) {
-    // Implementation here
+    exp->ifBranch.cond->accept(this);
+    exp->ifBranch.block->accept(this);
+    for (auto& br : exp->elseIfBranches) {
+        br.cond->accept(this);
+        br.block->accept(this);
+    }
+    if (exp->elseBranch) {
+        exp->elseBranch->block->accept(this);
+    }
     return {};
 }
 
 Var NameRes::visit(LoopExp* exp) {
-    // Implementation here
+    exp->block->accept(this);
     return {};
 }
 
-// Visit methods for statements
 void NameRes::visit(DecStmt* stmt) {
-    // Implementation here
+    if (!table->declare(stmt->id, stmt->var)) {
+        std::cerr << "Name resolution error: redeclaration of '"
+                  << stmt->id << "'\n";
+    }
+    if (stmt->rhs) {
+        stmt->rhs->accept(this);
+    }
 }
 
 void NameRes::visit(AssignStmt* stmt) {
-    // Implementation here
+    if (!table->lookup(stmt->lhs)) {
+        std::cerr << "Name resolution error: undefined variable '"
+                  << stmt->lhs << "'\n";
+    }
+    stmt->rhs->accept(this);
 }
 
 void NameRes::visit(ForStmt* stmt) {
-    // Implementation here
+    stmt->start->accept(this);
+    stmt->end->accept(this);
+    table->pushScope();
+    table->declare(stmt->id, {false, Var::I32, 0, ""});
+    stmt->block->accept(this);
+    table->popScope();
 }
 
 void NameRes::visit(WhileStmt* stmt) {
-    // Implementation here
+    stmt->cond->accept(this);
+    stmt->block->accept(this);
 }
 
 void NameRes::visit(PrintStmt* stmt) {
-    // Implementation here
+    for (auto exp : stmt->args) {
+        exp->accept(this);
+    }
 }
 
 void NameRes::visit(BreakStmt* stmt) {
-    // Implementation here
+    if (stmt->exp) {
+        stmt->exp->accept(this);
+    }
 }
 
 void NameRes::visit(ReturnStmt* stmt) {
-    // Implementation here
+    if (stmt->exp) {
+        stmt->exp->accept(this);
+    }
 }
 
 void NameRes::visit(ExpStmt* stmt) {
-    // Implementation here
+    if (stmt->exp) {
+        stmt->exp->accept(this);
+    }
 }
 
-// Visit methods for functions and programs
 void NameRes::visit(Fun* fun) {
-    // Implementation here
+    table->pushScope();
+    for (auto& p : fun->params) {
+        table->declare(p.id, {false, p.type, 0, ""});
+    }
+    fun->block->accept(this);
+    table->popScope();
 }
 
 void NameRes::visit(Program* program) {
-    for (const auto& [id, fun] : program->funs) {
-
+    table->pushScope();
+    for (const auto &id: program->funs | std::views::keys) {
+        table->declare(id, {false, Var::VOID, 0, ""});
     }
+    for (const auto &fun: program->funs | std::views::values) {
+        fun->accept(this);
+    }
+    table->popScope();
 }

@@ -7,7 +7,8 @@ class CodeGen : public Visitor {
 private:
     std::ostream& out;
 public:
-    explicit CodeGen(std::ostream& out):out(out){};
+    CodeGen(SymbolTable* table, std::ostream& out): Visitor(table), out(out){}
+    explicit CodeGen(std::ostream& out): Visitor(nullptr), out(out){}
     ~CodeGen() override;
     Var visit(Block* block) override;
     Var visit(BinaryExp* exp) override;

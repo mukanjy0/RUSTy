@@ -6,6 +6,8 @@
 #include <list>
 #include <string>
 
+#define FRIENDS friend class CodeGen; friend class TypeCheck; friend class NameRes;
+
 class DecStmt : public Stmt {
     std::string id;
     Var var;
@@ -22,6 +24,7 @@ public:
 
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
+    FRIENDS
 };
 
 class AssignStmt : public Stmt {
@@ -33,6 +36,7 @@ public:
     ~AssignStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
+    FRIENDS
 };
 
 class ForStmt : public Stmt {
@@ -50,6 +54,7 @@ public:
     ~ForStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
+    FRIENDS
 };
 
 class WhileStmt : public Stmt {
@@ -61,6 +66,7 @@ public:
     ~WhileStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
+    FRIENDS
 };
 
 class PrintStmt : public Stmt {
@@ -75,6 +81,7 @@ public:
     ~PrintStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
+    FRIENDS
 };
 
 class BreakStmt : public Stmt {
@@ -85,6 +92,7 @@ public:
     ~BreakStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
+    FRIENDS
 };
 
 class ReturnStmt : public Stmt {
@@ -95,6 +103,7 @@ public:
     ~ReturnStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
+    FRIENDS
 };
 
 class ExpStmt : public Stmt {
@@ -107,6 +116,7 @@ public:
     ~ExpStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
+    FRIENDS
 };
 
 #endif

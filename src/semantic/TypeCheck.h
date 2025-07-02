@@ -9,6 +9,7 @@
 
 class TypeCheck final : public Visitor {
 public:
+    explicit TypeCheck(SymbolTable* table = nullptr) : Visitor(table) {}
     ~TypeCheck() override;
     Var visit(Block* block) override;
     Var visit(BinaryExp* exp) override;
