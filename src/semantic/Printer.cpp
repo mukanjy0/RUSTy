@@ -22,7 +22,7 @@ Var Printer::visit(UnaryExp* exp) {
     return {};
 }
 
-Var Printer::visit(Number* exp) {
+Var Printer::visit(Literal* exp) {
     std::cout << exp;
     return {};
 }
@@ -47,11 +47,30 @@ Var Printer::visit(LoopExp* exp) {
     return {};
 }
 
+Var Printer::visit(SubscriptExp* exp) {
+    std::cout << exp;
+    return {};
+}
+
+Var Printer::visit(SliceExp* exp) {
+    std::cout << exp;
+    return {};
+}
+
+Var Printer::visit(ReferenceExp* exp) {
+    std::cout << exp;
+    return {};
+}
+
 void Printer::visit(DecStmt* stmt) {
     std::cout << stmt;
 }
 
 void Printer::visit(AssignStmt* stmt) {
+    std::cout << stmt;
+}
+
+void Printer::visit(CompoundAssignStmt* stmt) {
     std::cout << stmt;
 }
 

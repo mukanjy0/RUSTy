@@ -70,7 +70,7 @@ Var TypeCheck::visit(UnaryExp* exp) {
     return {};
 }
 
-Var TypeCheck::visit(Number* exp) {
+Var TypeCheck::visit(Literal* exp) {
     return {Var::I32, 0};
 }
 
@@ -91,6 +91,17 @@ Var TypeCheck::visit(IfExp* exp) {
 
 Var TypeCheck::visit(LoopExp* exp) {
     // Implementation here
+    return {};
+}
+
+Var TypeCheck::visit(SubscriptExp* exp) {
+    return {};
+}
+
+Var TypeCheck::visit(SliceExp* exp) {
+    return {};
+}
+Var TypeCheck::visit(ReferenceExp* exp) {
     return {};
 }
 
@@ -136,4 +147,8 @@ void TypeCheck::visit(Program* program) {
     for (const auto& [id, fun] : program->funs) {
 
     }
+}
+
+void TypeCheck::visit(CompoundAssignStmt* stmt) {
+
 }

@@ -10,7 +10,7 @@ source_files.append("main.cpp")
 
 # Compile
 print("[1] Compiling...")
-compile_cmd = ["g++"] + source_files + ["-o", out_dir/"main"]
+compile_cmd = ["g++", "-std=c++20"] + source_files + ["-o", out_dir/"main"]
 comp_rusty = subprocess.run(compile_cmd)
 
 # Check for compilation errors

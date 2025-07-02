@@ -97,7 +97,7 @@ Var CodeGen::visit(UnaryExp* exp) {
     return {};
 }
 
-Var CodeGen::visit(Number* exp) {
+Var CodeGen::visit(Literal* exp) {
     out << " movq $" << exp->value << ", %rax\n";
     return {};
 }
@@ -122,12 +122,31 @@ Var CodeGen::visit(LoopExp* exp) {
     return {};
 }
 
+Var CodeGen::visit(SubscriptExp* exp) {
+    // Implementation here
+    return {};
+}
+
+Var CodeGen::visit(SliceExp* exp) {
+    // Implementation here
+    return {};
+}
+
+Var CodeGen::visit(ReferenceExp* exp) {
+    // Implementation here
+    return {};
+}
+
 // Visit methods for statements
 void CodeGen::visit(DecStmt* stmt) {
     // Implementation here
 }
 
 void CodeGen::visit(AssignStmt* stmt) {
+    // Implementation here
+}
+
+void CodeGen::visit(CompoundAssignStmt* stmt) {
     // Implementation here
 }
 

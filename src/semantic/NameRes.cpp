@@ -24,7 +24,7 @@ Var NameRes::visit(UnaryExp* exp) {
     return {};
 }
 
-Var NameRes::visit(Number* exp) {
+Var NameRes::visit(Literal* exp) {
     (void)exp; // unused
     return {};
 }
@@ -62,6 +62,21 @@ Var NameRes::visit(LoopExp* exp) {
     return {};
 }
 
+Var NameRes::visit(SubscriptExp* exp) {
+    // Implementation here
+    return {};
+}
+
+Var NameRes::visit(SliceExp* exp) {
+    // Implementation here
+    return {};
+}
+
+Var NameRes::visit(ReferenceExp* exp) {
+    // Implementation here
+    return {};
+}
+
 void NameRes::visit(DecStmt* stmt) {
     if (!table->declare(stmt->id, stmt->var)) {
         std::cerr << "Name resolution error: redeclaration of '"
@@ -73,18 +88,19 @@ void NameRes::visit(DecStmt* stmt) {
 }
 
 void NameRes::visit(AssignStmt* stmt) {
-    if (!table->lookup(stmt->lhs)) {
-        std::cerr << "Name resolution error: undefined variable '"
-                  << stmt->lhs << "'\n";
-    }
+    stmt->lhs->accept(this);
     stmt->rhs->accept(this);
+}
+
+void NameRes::visit(CompoundAssignStmt* stmt) {
+    // Implementation here
 }
 
 void NameRes::visit(ForStmt* stmt) {
     stmt->start->accept(this);
     stmt->end->accept(this);
     table->pushScope();
-    table->declare(stmt->id, {false, Var::I32, 0, ""});
+    table->declare(stmt->id, {});
     stmt->block->accept(this);
     table->popScope();
 }
@@ -121,7 +137,7 @@ void NameRes::visit(ExpStmt* stmt) {
 void NameRes::visit(Fun* fun) {
     table->pushScope();
     for (auto& p : fun->params) {
-        table->declare(p.id, {false, p.type, 0, ""});
+        table->declare(p.id, {});
     }
     fun->block->accept(this);
     table->popScope();
@@ -130,7 +146,7 @@ void NameRes::visit(Fun* fun) {
 void NameRes::visit(Program* program) {
     table->pushScope();
     for (const auto &id: program->funs | std::views::keys) {
-        table->declare(id, {false, Var::VOID, 0, ""});
+        table->declare(id, {});
     }
     for (const auto &fun: program->funs | std::views::values) {
         fun->accept(this);

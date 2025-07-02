@@ -9,26 +9,47 @@
 #include <utility>
 
 class Visitor;
-class CodeGen;
-class TypeCheck;
 
 struct Var {
-    enum Type { BOOL, CHAR, I32, STR, VOID, UNDEFINED};
+    enum Type { BOOL, CHAR, I32, STR, ID, UNIT, UNDEFINED};
+    bool ref {};
     bool mut {};
     Type type {};
-    int numericValue{};
-    std::string stringValue;
+    // by default size = 0, otherwise, it's an array
+    int size {};
+    // for subscript expression
+    int index {};
+    // for slice expression
+    int left{}, right{};
+    // in case of array has multiple values, otherwise only one
+    std::list<int> numericValues;
+    // in case of array has multiple values, otherwise only one
+    std::list<std::string> stringValues;
 
     Var() : type(UNDEFINED) {}
-    Var(Type type, std::string stringValue)
-        : type(type), stringValue(std::move(stringValue)) {}
-    Var(Type type, int numericValue)
-        : type(type), numericValue(numericValue) {}
-    Var(bool mut, Type type, int numericValue, std::string stringValue)
-        : mut(mut), type(type), numericValue(numericValue),
-        stringValue(std::move(stringValue)) {}
+
+    Var(Type type, std::string stringValue, bool ref=false, bool mut=false)
+        : type(type), stringValues({std::move(stringValue)}),
+        ref(ref), mut(mut) {}
+
+    Var(Type type, int numericValue, bool ref=false, bool mut=false)
+        : type(type), numericValues({numericValue}),
+        ref(ref), mut(mut) {}
+
+    Var(Type type, std::list<std::string> stringValues,
+        bool ref=false, bool mut=false)
+        : type(type), stringValues(std::move(stringValues)),
+        ref(ref), mut(mut) {}
+
+    Var(Type type, std::list<int> numericValues,
+        bool ref=false, bool mut=false)
+        : type(type), numericValues(std::move(numericValues)),
+        ref(ref), mut(mut) {}
+
     ~Var() = default;
-    static Type stringToType(std::string type);
+
+    static Type stringToType(const std::string& type);
+    friend std::ostream& operator<<(std::ostream& out, const Var& var);
 };
 
 class Exp;
@@ -42,13 +63,14 @@ public:
 };
 
 class Block {
+    FRIENDS
+
     std::list<Stmt*> stmts;
 public:
     explicit Block(std::list<Stmt *> stmts) : stmts(std::move(stmts)) {}
     ~Block();
     Var accept(Visitor *visitor);
-    friend std::ostream& operator<<(std::ostream& out, Block* block);
-    FRIENDS
+    friend std::ostream& operator<<(std::ostream& out, const Block* block);
 };
 
 class Exp {
@@ -73,10 +95,11 @@ public:
     void print(std::ostream& out) override;
     Var accept(Visitor* visitor) override;
 private:
+    FRIENDS
+
     Operation op;
     Exp* lhs;
     Exp* rhs;
-    FRIENDS
 };
 
 class UnaryExp : public Exp {
@@ -92,24 +115,28 @@ public:
     Var accept(Visitor* visitor) override;
 
 private:
+    FRIENDS
+
     Operation op;
     Exp* exp;
-    FRIENDS
 };
 
-class Number : public Exp {
-    int value;
+class Literal : public Exp {
+    FRIENDS
+
+    Var value;
 
 public:
-    explicit Number(int value) : value(value) {}
-    ~Number() override;
+    explicit Literal(const Var& value) : value(value) {}
+    ~Literal() override;
 
     void print(std::ostream& out) override;
     Var accept(Visitor* visitor) override;
-    FRIENDS
 };
 
 class Variable : public Exp {
+    FRIENDS
+
     std::string name;
 
 public:
@@ -118,10 +145,11 @@ public:
 
     void print(std::ostream& out) override;
     Var accept(Visitor* visitor) override;
-    FRIENDS
 };
 
 class FunCall : public Exp {
+    FRIENDS
+
     std::string id;
     std::list<Exp*> args;
 
@@ -131,22 +159,23 @@ public:
 
     void print(std::ostream& out) override;
     Var accept(Visitor* visitor) override;
-    FRIENDS
 };
 
 class IfBranch {
+    friend class IfExp; FRIENDS
+
     Exp* cond;
     Block* block;
-    friend class IfExp;
 public:
     IfBranch(Exp* cond, Block* block) : cond(cond), block(block) {}
     ~IfBranch();
-    friend std::ostream& operator<<(std::ostream& out, IfBranch ifBranch);
+    friend std::ostream& operator<<(std::ostream& out, const IfBranch& ifBranch);
     friend std::ostream& operator<<(std::ostream& out, const IfBranch* ifBranch);
-    FRIENDS
 };
 
 class IfExp : public Exp {
+    FRIENDS
+
     IfBranch ifBranch;
     std::list<IfBranch> elseIfBranches;
     IfBranch* elseBranch {};
@@ -162,24 +191,70 @@ public:
         elseBranch(elseBranch) {}
     ~IfExp() override;
 
-    void setIfBranch(IfBranch branch);
+    void setIfBranch(const IfBranch& branch);
     void setElseBranch(IfBranch* branch);
 
     void print(std::ostream& out) override;
     Var accept(Visitor* visitor) override;
-    FRIENDS
 };
 
 class LoopExp : public Exp {
-    Block* block;
+    FRIENDS
 
+    Block* block;
 public:
     explicit LoopExp(Block *block) : block(block) {}
     ~LoopExp() override;
 
     void print(std::ostream& out) override;
     Var accept(Visitor* visitor) override;
+};
+
+class SubscriptExp : public Exp {
     FRIENDS
+
+    std::string id;
+    Exp* exp;
+public:
+    SubscriptExp(std::string id, Exp* exp) : id(std::move(id)), exp(exp) {}
+    ~SubscriptExp() override;
+
+    void print(std::ostream& out) override;
+    Var accept(Visitor* visitor) override;
+};
+
+class SliceExp : public Exp {
+    FRIENDS
+
+    std::string id;
+    Exp* start;
+    Exp* end;
+    bool inclusive {};
+public:
+    SliceExp(std::string id, Exp* start, Exp* end)
+        : id(std::move(id)), start(start), end(end) {}
+    SliceExp(std::string id, Exp* start, Exp* end, bool inclusive)
+        : id(std::move(id)), start(start), end(end), inclusive(inclusive) {}
+    ~SliceExp() override;
+
+    void print(std::ostream& out) override;
+    Var accept(Visitor* visitor) override;
+};
+
+class ReferenceExp : public Exp {
+    FRIENDS
+
+    Exp* exp;
+    int count; // number of reference operators
+public:
+    explicit ReferenceExp(Exp* exp)
+        : exp(exp), count(1) {}
+    ReferenceExp(Exp* exp, int count)
+        : exp(exp), count(count) {}
+    ~ReferenceExp() override;
+
+    void print(std::ostream& out) override;
+    Var accept(Visitor* visitor) override;
 };
 
 #endif

@@ -8,12 +8,13 @@ void DecStmt::print(std::ostream& out) {
     out << "let ";
     if (var.mut) out << "mut ";
     out << id << " :";
+    if (var.ref) out << '&';
     switch(var.type) {
         case Var::BOOL: out << "bool"; break;
         case Var::CHAR: out << "char"; break;
         case Var::I32: out << "i32"; break;
-        case Var::STR: out << "String"; break;
-        case Var::VOID: out << "void"; break;
+        case Var::STR: out << "str"; break;
+        case Var::UNIT: out << "()"; break;
         default: out << "undefined"; break;
     }
     if (rhs) {
@@ -26,7 +27,23 @@ AssignStmt::~AssignStmt() {
     delete rhs;
 }
 void AssignStmt::print(std::ostream& out) {
+    if (ref) out << '&';
     out << lhs << " = " << rhs << ";";
+}
+
+CompoundAssignStmt::~CompoundAssignStmt() {
+    delete rhs;
+}
+void CompoundAssignStmt::print(std::ostream& out) {
+    out << lhs;
+    switch(op) {
+        case BinaryExp::PLUS: out << " +"; break;
+        case BinaryExp::MINUS: out << " -"; break;
+        case BinaryExp::TIMES: out << " *"; break;
+        case BinaryExp::DIV: out << " /"; break;
+        default: throw std::runtime_error("invalid compound assign operation");
+    }
+    out << "= " << rhs << ";";
 }
 
 ForStmt::~ForStmt() {

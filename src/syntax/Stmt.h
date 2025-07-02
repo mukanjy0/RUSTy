@@ -1,45 +1,67 @@
 #ifndef STMT_H
 #define STMT_H
 
+#define FRIENDS friend class CodeGen; friend class TypeCheck; friend class NameRes;
+
 #include "Exp.h"
-#include <map>
+#include <map> // used in parser
 #include <list>
 #include <string>
 
-#define FRIENDS friend class CodeGen; friend class TypeCheck; friend class NameRes;
-
 class DecStmt : public Stmt {
+    FRIENDS
     std::string id;
     Var var;
     Exp* rhs {};
 
 public:
-    DecStmt(std::string id, Var var)
+    DecStmt(std::string id, const Var& var)
     : id(std::move(id)), var(var) {}
 
-    DecStmt(std::string id, Var var, Exp *rhs)
+    DecStmt(std::string id, const Var& var, Exp *rhs)
     : id(std::move(id)), var(var), rhs(rhs) {}
 
     ~DecStmt() override;
 
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
-    FRIENDS
 };
 
 class AssignStmt : public Stmt {
-    std::string lhs;
+    FRIENDS
+    Exp *lhs; // will be either Variable or Subscript
     Exp* rhs;
+    bool ref {};
 
 public:
-    AssignStmt(std::string lhs, Exp *rhs) : lhs(std::move(lhs)), rhs(rhs) {}
+    AssignStmt(Exp* lhs, Exp *rhs)
+        : lhs(lhs), rhs(rhs) {}
+
+    AssignStmt(Exp* lhs, Exp *rhs, bool ref)
+        : lhs(lhs), rhs(rhs), ref(ref) {}
+
     ~AssignStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
+};
+
+class CompoundAssignStmt : public Stmt {
     FRIENDS
+    BinaryExp::Operation op;
+    Exp* lhs; // will be either Variable or Subscript
+    Exp* rhs;
+
+public:
+    CompoundAssignStmt(BinaryExp::Operation op, Exp *lhs, Exp *rhs)
+        : op(op), lhs(lhs), rhs(rhs) {}
+
+    ~CompoundAssignStmt() override;
+    void print(std::ostream& out) override;
+    void accept(Visitor* visitor) override;
 };
 
 class ForStmt : public Stmt {
+    FRIENDS
     std::string id;
     Exp* start;
     Exp* end;
@@ -54,10 +76,10 @@ public:
     ~ForStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
-    FRIENDS
 };
 
 class WhileStmt : public Stmt {
+    FRIENDS
     Exp* cond;
     Block* block;
 
@@ -66,57 +88,56 @@ public:
     ~WhileStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
-    FRIENDS
 };
 
 class PrintStmt : public Stmt {
+    FRIENDS
     std::string strLiteral;
     std::list<Exp*> args;
 
 public:
-    PrintStmt(std::string strLiteral)
+    explicit PrintStmt(std::string strLiteral)
     : strLiteral(std::move(strLiteral)) {}
     PrintStmt(std::string strLiteral, std::list<Exp *> args)
     : strLiteral(std::move(strLiteral)), args(std::move(args)) {}
     ~PrintStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
-    FRIENDS
 };
 
 class BreakStmt : public Stmt {
+    FRIENDS
     Exp* exp {};
 public:
     BreakStmt() = default;
-    BreakStmt(Exp* exp) : exp(exp) {};
+    explicit BreakStmt(Exp* exp) : exp(exp) {};
     ~BreakStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
-    FRIENDS
 };
 
 class ReturnStmt : public Stmt {
+    FRIENDS
     Exp* exp {};
 public:
     ReturnStmt() = default;
-    ReturnStmt(Exp* exp) : exp(exp) {};
+    explicit ReturnStmt(Exp* exp) : exp(exp) {};
     ~ReturnStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
-    FRIENDS
 };
 
 class ExpStmt : public Stmt {
+    FRIENDS
     Exp* exp {};
     bool returnValue {};
 public:
     ExpStmt() = default;
-    ExpStmt(Exp* exp) : exp(exp) {};
+    explicit ExpStmt(Exp* exp) : exp(exp) {};
     ExpStmt(Exp* exp, bool returnValue) : exp(exp), returnValue(returnValue) {};
     ~ExpStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
-    FRIENDS
 };
 
 #endif

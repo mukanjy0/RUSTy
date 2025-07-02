@@ -14,11 +14,6 @@ int Scanner::increasePos (const int& rhs) {
     return pos += rhs;
 }
 
-int Scanner::increasePos() {
-    ++col;
-    return ++pos;
-}
-
 bool Scanner::isWhitespace(char ch) {
     if (ch == '\n') {
         ++line;
@@ -92,27 +87,19 @@ void Scanner::advance() {
                 current.type = Token::SINGULAR_QUOTE; 
             }
             break;
-        case '&': 
-<<<<<<<< HEAD:src/lexic/Scanner.cpp
-            if (source[increasePos()] == '&') current.type = Token::LAND;
-========
+        case '&':
             if (source[pos + 1] == '&') {
                 increasePos();
                 current.type = Token::LAND;
             }
->>>>>>>> origin/feat-ext-grammar-print:src/Scanner.cpp
             else {
                 current.type = Token::REFERENCE;
             }
             break;
-        case '|': 
-<<<<<<<< HEAD:src/lexic/Scanner.cpp
-            if (source[increasePos()] == '|') current.type = Token::LOR;
-========
+        case '|':
             if (source[increasePos()] == '|') {
                 current.type = Token::LOR;
             }
->>>>>>>> origin/feat-ext-grammar-print:src/Scanner.cpp
             else {
                 throw std::runtime_error("Invalid operator: |" + std::string(1, source[pos]));
             }
@@ -151,8 +138,6 @@ void Scanner::advance() {
             }
             else {
                 current.type = Token::LNOT;
-<<<<<<<< HEAD:src/lexic/Scanner.cpp
-========
             }
             break;
         case '+': 
@@ -180,7 +165,6 @@ void Scanner::advance() {
             }
             else {
                 current.type = Token::TIMES;
->>>>>>>> origin/feat-ext-grammar-print:src/Scanner.cpp
             }
             break;
         case '/': 
@@ -200,11 +184,7 @@ void Scanner::advance() {
         case '"': 
             current.content = "";
             while (increasePos() < size && source[pos] != '"') {
-<<<<<<<< HEAD:src/lexic/Scanner.cpp
-                current.content += string(1, source[pos]);
-========
                 current.content += std::string(1, source[pos]);
->>>>>>>> origin/feat-ext-grammar-print:src/Scanner.cpp
             }
             if (pos == size) {
                 throw std::runtime_error("Opening double quotations where not matched with closing ones");
@@ -315,11 +295,7 @@ Token::Type Scanner::peek() {
 
     advance();
 
-<<<<<<<< HEAD:src/lexic/Scanner.cpp
-    swap(aux, current);
-========
     std::swap(aux, current);
->>>>>>>> origin/feat-ext-grammar-print:src/Scanner.cpp
     pos = prevPos;
 
     return aux.type;
@@ -349,7 +325,7 @@ Token Scanner::getNextToken () {
 }
 
 Scanner::Snapshot Scanner::getSnapshot () {
-    return Snapshot(pos, line, col, current);
+    return {pos, line, col, current};
 }
 
 void Scanner::restoreSnapshot (const Snapshot& snapshot) {
