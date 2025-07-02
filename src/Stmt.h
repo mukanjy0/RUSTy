@@ -25,12 +25,32 @@ public:
 };
 
 class AssignStmt : public Stmt {
-    std::string lhs;
+    Exp* lhs; // will be either Variable or Subscript
+    Exp* rhs;
+    bool ref {};
+
+public:
+    AssignStmt(Exp* lhs, Exp *rhs) 
+        : lhs(std::move(lhs)), rhs(rhs) {}
+
+    AssignStmt(Exp* lhs, Exp *rhs, bool ref) 
+        : lhs(std::move(lhs)), rhs(rhs), ref(ref) {}
+
+    ~AssignStmt();
+    void print(std::ostream& out);
+    void accept(Visitor* visitor);
+};
+
+class CompoundAssignStmt : public Stmt {
+    BinaryExp::Operation op;
+    Exp* lhs; // will be either Variable or Subscript
     Exp* rhs;
 
 public:
-    AssignStmt(std::string lhs, Exp *rhs) : lhs(std::move(lhs)), rhs(rhs) {}
-    ~AssignStmt();
+    CompoundAssignStmt(BinaryExp::Operation op, Exp *lhs, Exp *rhs) 
+        : op(op), lhs(lhs), rhs(rhs) {}
+
+    ~CompoundAssignStmt();
     void print(std::ostream& out);
     void accept(Visitor* visitor);
 };

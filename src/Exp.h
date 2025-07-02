@@ -9,22 +9,45 @@ class Visitor;
 class CodeGen;
 
 struct Var {
-    enum Type { BOOL, CHAR, I32, STR, VOID, UNDEFINED};
+    enum Type { BOOL, CHAR, I32, STR, ID, UNIT, UNDEFINED};
+    bool ref {};
     bool mut {};
     Type type {};
-    int numericValue;
-    std::string stringValue;
+    // by default size = 0, otherwise, it's an array
+    int size {};
+    // for subscript expression
+    int index {};
+    // for slice expression
+    int left, right;
+    // in case of array has multiple values, otherwise only one
+    std::list<int> numericValues; 
+    // in case of array has multiple values, otherwise only one
+    std::list<std::string> stringValues;
 
     Var() : type(UNDEFINED) {}
-    Var(Type type, std::string stringValue)
-        : type(type), stringValue(stringValue) {}
-    Var(Type type, int numericValue)
-        : type(type), numericValue(numericValue) {}
-    Var(bool mut, Type type, int numericValue, std::string stringValue)
-        : mut(mut), type(type), numericValue(numericValue),
-        stringValue(std::move(stringValue)) {}
+
+    Var(Type type, std::string stringValue, bool ref=false, bool mut=false)
+        : type(type), stringValues({stringValue}),
+        ref(ref), mut(mut) {}
+
+    Var(Type type, int numericValue, bool ref=false, bool mut=false)
+        : type(type), numericValues({numericValue}),
+        ref(ref), mut(mut) {}
+
+    Var(Type type, std::list<std::string> stringValues,
+        bool ref=false, bool mut=false)
+        : type(type), stringValues(std::move(stringValues)),
+        ref(ref), mut(mut) {}
+
+    Var(Type type, std::list<int> numericValues,
+        bool ref=false, bool mut=false)
+        : type(type), numericValues(std::move(numericValues)),
+        ref(ref), mut(mut) {}
+
     ~Var() {}
+
     static Type stringToType(std::string type);
+    friend std::ostream& operator<<(std::ostream& out, const Var& var);
 };
 
 class Exp;
@@ -38,13 +61,14 @@ public:
 };
 
 class Block {
+    friend class CodeGen;
+
     std::list<Stmt*> stmts;
 public:
     Block(std::list<Stmt *> stmts) : stmts(std::move(stmts)) {}
     ~Block();
     Var accept(Visitor *visitor);
     friend std::ostream& operator<<(std::ostream& out, Block* block);
-    friend class CodeGen;
 };
 
 class Exp {
@@ -69,10 +93,11 @@ public:
     virtual void print(std::ostream& out);
     Var accept(Visitor* visitor);
 private:
+    friend class CodeGen;
+
     Operation op;
     Exp* lhs;
     Exp* rhs;
-    friend class CodeGen;
 };
 
 class UnaryExp : public Exp {
@@ -88,24 +113,28 @@ public:
     Var accept(Visitor* visitor);
 
 private:
+    friend class CodeGen;
+
     Operation op;
     Exp* exp;
-    friend class CodeGen;
 };
 
-class Number : public Exp {
-    int value;
+class Literal : public Exp {
+    friend class CodeGen;
+
+    Var value;
 
 public:
-    Number(int value) : value(value) {}
-    ~Number();
+    explicit Literal(Var value) : value(value) {}
+    ~Literal();
 
     virtual void print(std::ostream& out);
     Var accept(Visitor* visitor);
-    friend class CodeGen;
 };
 
 class Variable : public Exp {
+    friend class CodeGen;
+
     std::string name;
 
 public:
@@ -114,10 +143,11 @@ public:
 
     virtual void print(std::ostream& out);
     Var accept(Visitor* visitor);
-    friend class CodeGen;
 };
 
 class FunCall : public Exp {
+    friend class CodeGen;
+
     std::string id;
     std::list<Exp*> args;
 
@@ -127,22 +157,23 @@ public:
 
     virtual void print(std::ostream& out);
     Var accept(Visitor* visitor);
-    friend class CodeGen;
 };
 
 class IfBranch {
+    friend class IfExp;
+
     Exp* cond;
     Block* block;
-    friend class IfExp;
 public:
     IfBranch(Exp* cond, Block* block) : cond(cond), block(block) {}
     ~IfBranch();
     friend std::ostream& operator<<(std::ostream& out, IfBranch ifBranch);
     friend std::ostream& operator<<(std::ostream& out, IfBranch* ifBranch);
-    friend class CodeGen;
 };
 
 class IfExp : public Exp {
+    friend class CodeGen;
+
     IfBranch ifBranch;
     std::list<IfBranch> elseIfBranches;
     IfBranch* elseBranch {};
@@ -163,19 +194,65 @@ public:
 
     virtual void print(std::ostream& out);
     Var accept(Visitor* visitor);
-    friend class CodeGen;
 };
 
 class LoopExp : public Exp {
-    Block* block;
+    friend class CodeGen;
 
+    Block* block;
 public:
     LoopExp(Block *block) : block(block) {}
     ~LoopExp();
 
     virtual void print(std::ostream& out);
     Var accept(Visitor* visitor);
+};
+
+class SubscriptExp : public Exp {
     friend class CodeGen;
+
+    std::string id;
+    Exp* exp;
+public:
+    SubscriptExp(std::string id, Exp* exp) : id(id), exp(exp) {}
+    ~SubscriptExp();
+
+    virtual void print(std::ostream& out);
+    Var accept(Visitor* visitor);
+};
+
+class SliceExp : public Exp {
+    friend class CodeGen;
+
+    std::string id;
+    Exp* start;
+    Exp* end;
+    bool inclusive {};
+public:
+    SliceExp(std::string id, Exp* start, Exp* end) 
+        : id(id), start(start), end(end) {}
+    SliceExp(std::string id, Exp* start, Exp* end, bool inclusive) 
+        : id(id), start(start), end(end), inclusive(inclusive) {}
+    ~SliceExp();
+
+    virtual void print(std::ostream& out);
+    Var accept(Visitor* visitor);
+};
+
+class ReferenceExp : public Exp {
+    friend class CodeGen;
+
+    Exp* exp;
+    int count; // number of reference operators
+public:
+    ReferenceExp(Exp* exp)  
+        : exp(exp), count(1) {}
+    ReferenceExp(Exp* exp, int count)  
+        : exp(exp), count(count) {}
+    ~ReferenceExp();
+
+    virtual void print(std::ostream& out);
+    Var accept(Visitor* visitor);
 };
 
 #endif

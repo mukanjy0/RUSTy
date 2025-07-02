@@ -12,13 +12,17 @@ public:
     Var visit(Block* block);
     Var visit(BinaryExp* exp);
     Var visit(UnaryExp* exp);
-    Var visit(Number* exp);
+    Var visit(Literal* exp);
     Var visit(Variable* exp);
     Var visit(FunCall* exp);
     Var visit(IfExp* exp);
     Var visit(LoopExp* exp);
+    Var visit(SubscriptExp* exp);
+    Var visit(SliceExp* exp);
+    Var visit(ReferenceExp* exp);
     void visit(DecStmt* stmt);
     void visit(AssignStmt* stmt);
+    void visit(CompoundAssignStmt* stmt);
     void visit(ForStmt* stmt);
     void visit(WhileStmt* stmt);
     void visit(PrintStmt* stmt);

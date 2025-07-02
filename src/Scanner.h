@@ -5,14 +5,29 @@
 
 class Scanner {
 private:
+    // snapshot of the configuration of Scanner at one instant
+    class Snapshot {
+    private:
+        friend class Scanner;
+
+        int pos;
+        int line;
+        int col;
+        Token current;
+    public:
+      Snapshot(int pos, int line, int col, Token current)
+          : pos(pos), line(line), col(col), current(std::move(current)) {}
+    };
+
     char* source;
     int size;
     int pos {};
-    int col {1};
     int line {1};
+    int col {1};
     Token current {};
 
     int increasePos ();
+    int increasePos (const int& rhs);
     bool isWhitespace (char ch);
     void advance ();
 public:
@@ -27,6 +42,8 @@ public:
     Token getToken ();
     std::string getTokenContent ();
     Token getNextToken ();
+    Snapshot getSnapshot ();
+    void restoreSnapshot (const Snapshot& snapshot);
 };
 
 #endif

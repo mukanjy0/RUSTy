@@ -11,7 +11,7 @@ Var BinaryExp::accept(Visitor* visitor) {
 Var UnaryExp::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-Var Number::accept(Visitor* visitor) {
+Var Literal::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
 Var Variable::accept(Visitor* visitor) {
@@ -26,10 +26,22 @@ Var IfExp::accept(Visitor* visitor) {
 Var LoopExp::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
+Var SubscriptExp::accept(Visitor* visitor) {
+    return visitor->visit(this);
+}
+Var SliceExp::accept(Visitor* visitor) {
+    return visitor->visit(this);
+}
+Var ReferenceExp::accept(Visitor* visitor) {
+    return visitor->visit(this);
+}
 void DecStmt::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
 void AssignStmt::accept(Visitor* visitor) {
+    return visitor->visit(this);
+}
+void CompoundAssignStmt::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
 void ForStmt::accept(Visitor* visitor) {
@@ -78,7 +90,7 @@ Var Printer::visit(UnaryExp* exp) {
     return Var();
 }
 
-Var Printer::visit(Number* exp) {
+Var Printer::visit(Literal* exp) {
     std::cout << exp;
     return Var();
 }
@@ -103,11 +115,30 @@ Var Printer::visit(LoopExp* exp) {
     return Var();
 }
 
+Var Printer::visit(SubscriptExp* exp) {
+    std::cout << exp;
+    return Var();
+}
+
+Var Printer::visit(SliceExp* exp) {
+    std::cout << exp;
+    return Var();
+}
+
+Var Printer::visit(ReferenceExp* exp) {
+    std::cout << exp;
+    return Var();
+}
+
 void Printer::visit(DecStmt* stmt) {
     std::cout << stmt;
 }
 
 void Printer::visit(AssignStmt* stmt) {
+    std::cout << stmt;
+}
+
+void Printer::visit(CompoundAssignStmt* stmt) {
     std::cout << stmt;
 }
 

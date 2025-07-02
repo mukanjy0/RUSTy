@@ -25,6 +25,7 @@ std::ostream& operator<<(std::ostream& out, const Token& token) {
         case Token::ID: out << "ID"; break;
         case Token::RANGE_IN: out << "RANGE_IN"; break;
         case Token::RANGE_EX: out << "RANGE_EX"; break;
+        case Token::REFERENCE: out << "REFERENCE"; break;
         case Token::FN: out << "FN"; break;
         case Token::RETURN: out << "RETURN"; break;
         case Token::BREAK: out << "BREAK"; break;
@@ -49,6 +50,10 @@ std::ostream& operator<<(std::ostream& out, const Token& token) {
         case Token::CLOSE_PARENTHESIS: out << "CLOSE_PARENTHESIS"; break;
         case Token::SINGULAR_QUOTE: out << "SINGULAR_QUOTE"; break;
         case Token::ASSIGN: out << "ASSIGN"; break;
+        case Token::PLUS_ASSIGN: out << "PLUS_ASSIGN"; break;
+        case Token::MINUS_ASSIGN: out << "MINUS_ASSIGN"; break;
+        case Token::TIMES_ASSIGN: out << "TIMES_ASSIGN"; break;
+        case Token::DIV_ASSIGN: out << "DIV_ASSIGN"; break;
         case Token::LAND: out << "LAND"; break;
         case Token::LOR: out << "LOR"; break;
         case Token::LNOT: out << "LNOT"; break;
@@ -66,6 +71,7 @@ std::ostream& operator<<(std::ostream& out, const Token& token) {
         case Token::BOOLEAN: out << "BOOLEAN"; break;
         case Token::NUMBER: out << "NUMBER"; break;
         case Token::CHAR: out << "CHAR"; break;
+        case Token::UNIT: out << "UNIT"; break;
         case Token::STRING: out << "STRING"; break;
         case Token::PRINT: out << "PRINT"; break;
     }

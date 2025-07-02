@@ -6,6 +6,8 @@ fn main() {
     let mut z: i32 = x+y;
     y = 30;
     z += 5;
-    z += y;
+    z *= 4;
+    z /= 2;
+    z -= y;
     println!("{}",z);
 }

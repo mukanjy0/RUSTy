@@ -8,6 +8,7 @@ Var CodeGen::visit(Block* block) {
     for(auto stmt : block->stmts) {
         stmt->accept(this);
     }
+    return Var();
 }
 
 Var CodeGen::visit(BinaryExp* exp) {
@@ -96,7 +97,7 @@ Var CodeGen::visit(UnaryExp* exp) {
     return Var();
 }
 
-Var CodeGen::visit(Number* exp) {
+Var CodeGen::visit(Literal* exp) {
     out << " movq $" << exp->value << ", %rax\n";
     return Var();
 }
@@ -121,12 +122,31 @@ Var CodeGen::visit(LoopExp* exp) {
     return Var();
 }
 
+Var CodeGen::visit(SubscriptExp* exp) {
+    // Implementation here
+    return Var();
+}
+
+Var CodeGen::visit(SliceExp* exp) {
+    // Implementation here
+    return Var();
+}
+
+Var CodeGen::visit(ReferenceExp* exp) {
+    // Implementation here
+    return Var();
+}
+
 // Visit methods for statements
 void CodeGen::visit(DecStmt* stmt) {
     // Implementation here
 }
 
 void CodeGen::visit(AssignStmt* stmt) {
+    // Implementation here
+}
+
+void CodeGen::visit(CompoundAssignStmt* stmt) {
     // Implementation here
 }
 

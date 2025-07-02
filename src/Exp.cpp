@@ -5,8 +5,43 @@ Var::Type Var::stringToType(std::string type) {
     if (type == "bool") return BOOL;
     else if (type == "char") return CHAR;
     else if (type == "i32") return I32;
-    else if (type == "String") return STR;
+    else if (type == "str") return STR;
+    else if (type == "()") return UNIT;
     throw std::runtime_error("invalid type: " + type);
+}
+std::ostream& operator<<(std::ostream& out, const Var& var) {
+    if (var.size > 0) out << "[ ";
+    int i {};
+    switch(var.type) {
+        case Var::BOOL: 
+            for (auto el : var.numericValues) {
+                out << std::boolalpha << (el > 0);
+                if (++i < var.size) out << ", ";
+            }
+            break;
+        case Var::CHAR:
+            for (auto el : var.stringValues) {
+                out << el[0];
+                if (++i < var.size) out << ", ";
+            }
+            break;
+        case Var::I32:
+            for (auto el : var.numericValues) {
+                out << el;
+                if (++i < var.size) out << ", ";
+            }
+            break;
+        case Var::STR:
+            for (auto el : var.stringValues) {
+                out << el;
+                if (++i < var.size) out << ", ";
+            }
+            break;
+        case Var::UNIT: out << "()"; break;
+        default: throw std::runtime_error("expected well-defined type for printing");
+    }
+    if (var.size > 0) out << "] ";
+    return out;
 }
 
 Stmt::~Stmt() {}
@@ -69,8 +104,8 @@ void UnaryExp::print(std::ostream& out) {
     out << exp;
 }
 
-Number::~Number() {}
-void Number::print(std::ostream& out) {
+Literal::~Literal() {}
+void Literal::print(std::ostream& out) {
     out << value;
 }
 
@@ -130,5 +165,30 @@ LoopExp::~LoopExp() {
 void LoopExp::print(std::ostream& out) {
     out << "loop";
     out << block;
+}
+
+SubscriptExp::~SubscriptExp() {
+    delete exp;
+}
+void SubscriptExp::print(std::ostream& out) {
+    out << id << '[' << exp << ']';
+}
+
+SliceExp::~SliceExp() {
+    delete start;
+    delete end;
+}
+void SliceExp::print(std::ostream& out) {
+    out << id << '[' << start << "..";
+    if (inclusive) out << '=';
+    out << end << ']';
+}
+
+ReferenceExp::~ReferenceExp() {
+    delete exp;
+}
+void ReferenceExp::print(std::ostream& out) {
+    out << std::string(count, '&');
+    out << exp;
 }
 
