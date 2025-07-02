@@ -7,7 +7,7 @@ out_dir = Path("output")
 cpp_dir = Path("src")
 source_files = [str(file) for file in cpp_dir.rglob("*.cpp")]
 source_files.append("main.cpp")
-print(source_files)
+
 # Compile
 print("[1] Compiling...")
 compile_cmd = ["g++"] + source_files + ["-o", out_dir/"main"]
@@ -29,7 +29,7 @@ for i, file in enumerate(rust_dir.glob("*.rs")):
     output_path = out_dir/str(file.name)[:-3]
     compile_cmd = ["rustc", path, "-o",output_path]
 
-    print(f"\t[{i}] Compiling on Rust: {file}") 
+    print(f"\t[{i}] Compiling on Rust: {file}")
     comp_rust = subprocess.run(compile_cmd, capture_output=True, text=True)
 
     # Successful compilation
@@ -48,9 +48,9 @@ for i, file in enumerate(rust_dir.glob("*.rs")):
     else:
         print(f"\033[91mCompiling Error on {file}\033[0m")
         exit(1)
-    
 
-    print(f"\t[{i}] Compiling on RUSTy") 
+
+    print(f"\t[{i}] Compiling on RUSTy")
     result_rusty = subprocess.run([out_dir/"main", str(file)], capture_output=True, text=True)
     if result_rusty.returncode == 0:
         print(f"\033[92m\t[{i}] RUSTy execution complete\033[0m")
