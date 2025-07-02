@@ -1,13 +1,16 @@
 #ifndef FUN_H
 #define FUN_H
 
+#define FRIENDS friend class CodeGen; friend class TypeCheck; friend class NameRes;
+#include <utility>
+
 #include "Stmt.h"
 
 struct Param {
-    Var::Type type;
+    Var::Type type{};
     std::string id;
     Param() = default;
-    Param(Var::Type type, std::string id) : type(type), id(id) {}
+    Param(Var::Type type, std::string id) : type(type), id(std::move(id)) {}
 };
 
 class Fun {
@@ -16,10 +19,11 @@ class Fun {
 
 public:
     explicit Fun(std::list<Param> params, Block *block) 
-            : params(params), block(block) {}
+            : params(std::move(params)), block(block) {}
     ~Fun();
     void accept(Visitor* visitor);
-    friend std::ostream& operator<<(std::ostream& out, Fun* fun);
+    friend std::ostream& operator<<(std::ostream& out, const Fun* fun);
+    FRIENDS
 };
 
 class Program {
@@ -30,6 +34,7 @@ public:
     ~Program();
     void accept(Visitor* visitor);
     friend std::ostream& operator<<(std::ostream& out, Program* program);
+    FRIENDS
 };
 
 #endif

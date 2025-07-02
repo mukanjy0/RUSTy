@@ -1,7 +1,7 @@
 #ifndef EXP_H
 #define EXP_H
 
-#define FRIENDS friend class CodeGen; friend class TypeCheck;
+#define FRIENDS friend class CodeGen; friend class TypeCheck; friend class NameRes;
 
 #include <iostream>
 #include <string>

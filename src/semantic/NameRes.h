@@ -2,14 +2,14 @@
 // Created by jose on 01/07/25.
 //
 
-#ifndef TYPECHECK_H
-#define TYPECHECK_H
+#ifndef NAMERES_H
+#define NAMERES_H
 
 #include "Visitor.h"
 
-class TypeCheck final : public Visitor {
+class NameRes final : public Visitor {
 public:
-    ~TypeCheck() override;
+    ~NameRes() override;
     Var visit(Block* block) override;
     Var visit(BinaryExp* exp) override;
     Var visit(UnaryExp* exp) override;
@@ -30,4 +30,6 @@ public:
     void visit(Program* program) override;
 };
 
-#endif //TYPECHECK_H
+
+
+#endif //NAMERES_H

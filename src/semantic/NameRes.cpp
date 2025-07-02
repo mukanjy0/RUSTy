@@ -2,20 +2,20 @@
 // Created by jose on 01/07/25.
 //
 
-#include "TypeCheck.h"
+#include "NameRes.h"
 
 // Destructor
-TypeCheck::~TypeCheck() = default;
+NameRes::~NameRes() = default;
 
 // Visit methods for expressions
-Var TypeCheck::visit(Block* block) {
+Var NameRes::visit(Block* block) {
     for(auto stmt : block->stmts) {
         stmt->accept(this);
     }
     return {};
 }
 
-Var TypeCheck::visit(BinaryExp* exp) {
+Var NameRes::visit(BinaryExp* exp) {
     exp->lhs->accept(this);
     exp->rhs->accept(this);
 
@@ -58,7 +58,7 @@ Var TypeCheck::visit(BinaryExp* exp) {
 
 }
 
-Var TypeCheck::visit(UnaryExp* exp) {
+Var NameRes::visit(UnaryExp* exp) {
     exp->exp->accept(this);
 
     switch (exp->op) {
@@ -70,69 +70,69 @@ Var TypeCheck::visit(UnaryExp* exp) {
     return {};
 }
 
-Var TypeCheck::visit(Number* exp) {
+Var NameRes::visit(Number* exp) {
     return {Var::I32, 0};
 }
 
-Var TypeCheck::visit(Variable* exp) {
+Var NameRes::visit(Variable* exp) {
     // Implementation here
     return {};
 }
 
-Var TypeCheck::visit(FunCall* exp) {
+Var NameRes::visit(FunCall* exp) {
     // Implementation here
     return {};
 }
 
-Var TypeCheck::visit(IfExp* exp) {
+Var NameRes::visit(IfExp* exp) {
     // Implementation here
     return {};
 }
 
-Var TypeCheck::visit(LoopExp* exp) {
+Var NameRes::visit(LoopExp* exp) {
     // Implementation here
     return {};
 }
 
 // Visit methods for statements
-void TypeCheck::visit(DecStmt* stmt) {
+void NameRes::visit(DecStmt* stmt) {
     // Implementation here
 }
 
-void TypeCheck::visit(AssignStmt* stmt) {
+void NameRes::visit(AssignStmt* stmt) {
     // Implementation here
 }
 
-void TypeCheck::visit(ForStmt* stmt) {
+void NameRes::visit(ForStmt* stmt) {
     // Implementation here
 }
 
-void TypeCheck::visit(WhileStmt* stmt) {
+void NameRes::visit(WhileStmt* stmt) {
     // Implementation here
 }
 
-void TypeCheck::visit(PrintStmt* stmt) {
+void NameRes::visit(PrintStmt* stmt) {
     // Implementation here
 }
 
-void TypeCheck::visit(BreakStmt* stmt) {
+void NameRes::visit(BreakStmt* stmt) {
     // Implementation here
 }
 
-void TypeCheck::visit(ReturnStmt* stmt) {
+void NameRes::visit(ReturnStmt* stmt) {
     // Implementation here
 }
 
-void TypeCheck::visit(ExpStmt* stmt) {
+void NameRes::visit(ExpStmt* stmt) {
     // Implementation here
 }
 
 // Visit methods for functions and programs
-void TypeCheck::visit(Fun* fun) {
+void NameRes::visit(Fun* fun) {
     // Implementation here
 }
 
-void TypeCheck::visit(Program* program) {
+void NameRes::visit(Program* program) {
     for (const auto& [id, fun] : program->funs) {
 
     }
