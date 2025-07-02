@@ -23,8 +23,10 @@ int main(const int argc, char* argv[]) {
     }
 
     Parser parser (filename);
-
     Program* program = parser.parse();
+
+    Printer printer;
+    printer.visit(program);
 
     SymbolTable table;
     NameRes nameRes(&table);
@@ -35,9 +37,6 @@ int main(const int argc, char* argv[]) {
 
     CodeGen codeGen(&table, std::cout);
     codeGen.visit(program);
-
-    Printer printer;
-    printer.visit(program);
 
     return 0;
 }
