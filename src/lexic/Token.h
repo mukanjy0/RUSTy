@@ -9,7 +9,7 @@ class Scanner;
 class Token {
 public:
     enum Type {
-        BEG, END, ID, RANGE_IN, RANGE_EX, REFERENCE, // special tokens
+        BEG, END, ID, RANGE_IN, RANGE_EX, REFERENCE, ARROW, // special tokens
         FN, RETURN, BREAK, LET, MUT, FOR, IN, WHILE, LOOP, IF, ELSE, // reserved keywords
         SEMICOLON, COLON, COMMA, DOT, BACKWARD_SLASH,
         OPEN_CURLY, CLOSE_CURLY, OPEN_BRACKET, CLOSE_BRACKET, OPEN_PARENTHESIS, CLOSE_PARENTHESIS,

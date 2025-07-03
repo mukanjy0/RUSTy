@@ -5,6 +5,7 @@
 #include <error.h>
 
 int Scanner::increasePos() {
+    current.content += source[pos];
     ++col;
     return ++pos;
 }
@@ -25,14 +26,14 @@ bool Scanner::isWhitespace(char ch) {
 void Scanner::advance() {
     // std::cout << line << ':' << col << std::endl;
     while (pos < size && isWhitespace(source[pos])) {
-        increasePos();
+        increasePos(1);
     }
     if (pos == size) current.type = Token::END;
     if (current.type == Token::END) return;
 
     current.line = line;
     current.col = col;
-    current.content = source[pos];
+    current.content.clear();
 
     switch (source[pos]) {
         case ':': current.type = Token::COLON; break;
@@ -155,6 +156,10 @@ void Scanner::advance() {
                 increasePos();
                 current.type = Token::MINUS_ASSIGN;
             }
+            if (source[pos + 1] == '>') {
+                increasePos();
+                current.type = Token::ARROW;
+            }
             else {
                 current.type = Token::MINUS;
             }
@@ -183,21 +188,21 @@ void Scanner::advance() {
             while (pos + 1 < size && source[increasePos()] != '\n') {}
             return advance();
         case '"': 
-            current.content = "";
-            while (increasePos() < size && source[pos] != '"') {
-                current.content += std::string(1, source[pos]);
+            increasePos(1);
+            while (pos < size && source[pos] != '"') {
+                increasePos();
             }
             if (pos == size) {
                 throw std::runtime_error("Opening double quotations where not matched with closing ones");
             }
+            increasePos(1);
             current.type = Token::STRING;
-            break;
+            return;
         default:
-            if (isalpha(source[pos])) {
-                current.content = std::string(1, source[pos]);
-                while (pos + 1 < size && isalnum(source[pos + 1])) {
+            if (isalpha(source[pos]) || source[pos] == '_') {
+                increasePos();
+                while (pos < size && (isalnum(source[pos]) || source[pos] == '_')) {
                     increasePos();
-                    current.content += source[pos];
                 }
                 if (current.content == "i32"
                     || current.content == "bool"
@@ -245,23 +250,23 @@ void Scanner::advance() {
                     current.type = Token::ELSE;
                 }
                 else if (current.content == "println"
-                        && pos < size && source[pos + 1] == '!') 
+                        && pos < size && source[pos] == '!') 
                 {
                     increasePos();
-                    current.content += '!';
                     current.type = Token::PRINT;
                 }
                 else {
                     current.type = Token::ID;
                 }
+                return;
             }
             else if (isdigit(source[pos])) {
-                current.content = std::string(1, source[pos]);
-                while (pos + 1 < size && isdigit(source[pos + 1])) {
+                increasePos();
+                while (pos < size && isdigit(source[pos])) {
                     increasePos();
-                    current.content += source[pos];
                 }
                 current.type = Token::NUMBER;
+                return;
             }
             else {
                 throw std::runtime_error("Invalid token");

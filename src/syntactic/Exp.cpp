@@ -15,6 +15,23 @@ bool Value::isArray() {
 bool Value::isFunction() {
     return fun;
 }
+void Value::addType(Type type) {
+    types.push_back(type);
+}
+std::ostream& operator<<(std::ostream& out, const Value::Type& type) {
+    switch(type) {
+        case Value::BOOL: out << "bool"; break;
+        case Value::CHAR: out << "char"; break;
+        case Value::I32: out << "i32"; break;
+        case Value::STR: out << "str"; break;
+        case Value::UNIT: out << "()"; break;
+        default: throw std::runtime_error(std::string("invalid type")
+                                          + (type==Value::UNDEFINED
+                                            ? "undefined"
+                                            : "id"));
+    }
+    return out;
+}
 std::ostream& operator<<(std::ostream& out, const Value& var) {
     if (var.size > 0) out << "[ ";
     int i {};

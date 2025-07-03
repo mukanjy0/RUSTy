@@ -12,7 +12,9 @@ std::ostream& operator<<(std::ostream& out, const Fun* fun) {
             if (++i < fun->params.size()) out << ", ";
         }
     }
-    out << ")\n";
+    out << ")";
+    if (fun->type != Value::UNDEFINED) out << " -> " << fun->type;
+    out << "\n";
     out << fun->block;
     return out;
 }
