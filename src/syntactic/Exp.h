@@ -60,7 +60,7 @@ struct Value {
     void addType(Type type);
 
     static Type stringToType(std::string type);
-    friend std::ostream& operator<<(std::ostream& out, const Value::Type& var);
+    friend std::ostream& operator<<(std::ostream& out, const Value::Type& type);
     friend std::ostream& operator<<(std::ostream& out, const Value& var);
 };
 
