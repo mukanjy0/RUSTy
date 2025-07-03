@@ -18,7 +18,7 @@ ParamList → Ɛ
 ParamList → Param [, ParamList]
 Param → id : type
 
-Block → { StmtList }
+Block → { StmtList [; return [Exp]] }
 
 StmtList → Stmt StmtList
 StmtList → Stmt'
@@ -39,7 +39,8 @@ Rhs → Exp | ('[' Exp ; Exp ']') | ('[' [Exp (, Exp)*] ']')
 Stmt → for id in Exp [..|..=] Exp Block
 Stmt → while Exp Block
 Stmt → break [Exp] [;]
-Stmt → return [Exp] [;]
+Stmt → return ;
+Stmt → return Exp ;
 // Macro
 Stmt → println! '(' str [(, Exp)*] ')' ;
 // Exp

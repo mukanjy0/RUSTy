@@ -1,7 +1,3 @@
-//
-// Created by jose on 01/07/25.
-//
-
 #include "Printer.h"
 
 // PRINT VISITOR
@@ -58,6 +54,16 @@ Value Printer::visit(SliceExp* exp) {
 }
 
 Value Printer::visit(ReferenceExp* exp) {
+    std::cout << exp;
+    return {};
+}
+
+Value Printer::visit(ArrayExp* exp) {
+    std::cout << exp;
+    return {};
+}
+
+Value Printer::visit(UniformArrayExp* exp) {
     std::cout << exp;
     return {};
 }

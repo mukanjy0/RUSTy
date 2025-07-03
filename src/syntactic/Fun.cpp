@@ -1,6 +1,4 @@
 #include "Fun.h"
-#include <iostream>
-#include <ranges>
 
 Fun::~Fun() {
     delete block;

@@ -1,5 +1,4 @@
 #include "Stmt.h"
-#include <iostream>
 
 DecStmt::~DecStmt() {
     delete rhs;
@@ -7,7 +6,8 @@ DecStmt::~DecStmt() {
 void DecStmt::print(std::ostream& out) {
     out << "let ";
     if (var.mut) out << "mut ";
-    out << id << " :";
+    out << id;
+    if (var.type != Value::UNDEFINED) out << ": ";
     if (var.ref) out << '&';
     switch(var.type) {
         case Value::BOOL: out << "bool"; break;
@@ -15,7 +15,7 @@ void DecStmt::print(std::ostream& out) {
         case Value::I32: out << "i32"; break;
         case Value::STR: out << "str"; break;
         case Value::UNIT: out << "()"; break;
-        default: out << "undefined"; break;
+        default: break;
     }
     if (rhs) {
         out << " = " << rhs;

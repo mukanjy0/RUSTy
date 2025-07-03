@@ -35,6 +35,12 @@ Value SliceExp::accept(Visitor* visitor) {
 Value ReferenceExp::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
+Value ArrayExp::accept(Visitor* visitor) {
+    return visitor->visit(this);
+}
+Value UniformArrayExp::accept(Visitor* visitor) {
+    return visitor->visit(this);
+}
 void DecStmt::accept(Visitor* visitor) {
     return visitor->visit(this);
 }

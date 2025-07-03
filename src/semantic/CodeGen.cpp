@@ -137,6 +137,16 @@ Value CodeGen::visit(ReferenceExp* exp) {
     return {};
 }
 
+Value CodeGen::visit(ArrayExp* exp) {
+    std::cout << exp;
+    return {};
+}
+
+Value CodeGen::visit(UniformArrayExp* exp) {
+    std::cout << exp;
+    return {};
+}
+
 // Visit methods for statements
 void CodeGen::visit(DecStmt* stmt) {
     // Implementation here

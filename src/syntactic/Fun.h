@@ -3,15 +3,13 @@
 
 #define FRIENDS friend class CodeGen; friend class TypeCheck; friend class NameRes;
 
-#include <utility>
-
 #include "Stmt.h"
 
 struct Param {
-    Value::Type type{};
+    Value::Type type;
     std::string id;
     Param() = default;
-    Param(Value::Type type, std::string id) : type(type), id(std::move(id)) {}
+    Param(Value::Type type, std::string id) : type(type), id(id) {}
 };
 
 class Fun {
@@ -29,10 +27,10 @@ public:
 
 class Program {
     FRIENDS
-    std::map<std::string,Fun*> funs;
+    std::list<std::pair<std::string,Fun*>> funs;
 
 public:
-    explicit Program(std::map<std::string,Fun*> funs) : funs(std::move(funs)) {}
+    explicit Program(std::list<std::pair<std::string,Fun*>>  funs) : funs(std::move(funs)) {}
     ~Program();
     void accept(Visitor* visitor);
     friend std::ostream& operator<<(std::ostream& out, Program* program);

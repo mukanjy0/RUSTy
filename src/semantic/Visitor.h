@@ -21,6 +21,8 @@ public:
     virtual Value visit(SubscriptExp* exp) = 0;
     virtual Value visit(SliceExp* exp) = 0;
     virtual Value visit(ReferenceExp* exp) = 0;
+    virtual Value visit(ArrayExp* exp) = 0;
+    virtual Value visit(UniformArrayExp* exp) = 0;
     virtual void visit(DecStmt* stmt) = 0;
     virtual void visit(AssignStmt* stmt) = 0;
     virtual void visit(CompoundAssignStmt* stmt) = 0;

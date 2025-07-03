@@ -1,7 +1,7 @@
-#include <iostream>
 #include "Exp.h"
+#include <iostream>
 
-Value::Type Value::stringToType(const std::string& type) {
+Value::Type Value::stringToType(std::string type) {
     if (type == "bool") return BOOL;
     else if (type == "char") return CHAR;
     else if (type == "i32") return I32;
@@ -21,7 +21,7 @@ std::ostream& operator<<(std::ostream& out, const Value& var) {
             break;
         case Value::CHAR:
             for (auto el : var.stringValues) {
-                out << el[0];
+                out << '\'' << el[0] << '\'';
                 if (++i < var.size) out << ", ";
             }
             break;
@@ -32,8 +32,8 @@ std::ostream& operator<<(std::ostream& out, const Value& var) {
             }
             break;
         case Value::STR:
-            for (const auto& el : var.stringValues) {
-                out << el;
+            for (auto el : var.stringValues) {
+                out << '"' << el << '"';
                 if (++i < var.size) out << ", ";
             }
             break;
@@ -134,13 +134,13 @@ IfBranch::~IfBranch() {
     delete cond;
     delete block;
 }
-std::ostream& operator<<(std::ostream& out, const IfBranch& ifBranch) {
-    out << ifBranch.cond << "\n";
+std::ostream& operator<<(std::ostream& out, IfBranch ifBranch) {
+    if (ifBranch.cond) out << ifBranch.cond << "\n";
     out << ifBranch.block;
     return out;
 }
-std::ostream& operator<<(std::ostream& out, const IfBranch* ifBranch) {
-    out << ifBranch->cond << "\n";
+std::ostream& operator<<(std::ostream& out, IfBranch* ifBranch) {
+    if (ifBranch->cond) out << ifBranch->cond << "\n";
     out << ifBranch->block;
     return out;
 }
@@ -149,14 +149,14 @@ IfExp::~IfExp() {
     elseIfBranches.clear();
     delete elseBranch;
 }
-void IfExp::setIfBranch(const IfBranch& branch) { ifBranch = branch; }
+void IfExp::setIfBranch(const IfBranch& branch) { ifBranch = std::move(branch); }
 void IfExp::setElseBranch(IfBranch* branch) {elseBranch = branch; }
 void IfExp::print(std::ostream& out) {
     out << "if " << ifBranch;
     for (const auto& ifBranch : elseIfBranches) {
         out << "else if " << ifBranch;
     }
-    if (elseBranch) out << "else " << elseBranch;
+    if (elseBranch) out << "else" << elseBranch;
 }
 
 LoopExp::~LoopExp() {
@@ -179,9 +179,12 @@ SliceExp::~SliceExp() {
     delete end;
 }
 void SliceExp::print(std::ostream& out) {
-    out << id << '[' << start << "..";
+    out << id << '[';
+    if (start) out << start;
+    out << "..";
     if (inclusive) out << '=';
-    out << end << ']';
+    if (end) out << end;
+    out << ']';
 }
 
 ReferenceExp::~ReferenceExp() {
@@ -192,3 +195,26 @@ void ReferenceExp::print(std::ostream& out) {
     out << exp;
 }
 
+ArrayExp::~ArrayExp() {
+    for (auto el : elements) {
+        delete el;
+    }
+    elements.clear();
+}
+void ArrayExp::print(std::ostream& out) {
+    out << '[';
+    size_t i {};
+    for (auto el : elements) {
+        out << el;
+        if (++i < elements.size()) out << ", ";
+    }
+    out << ']';
+}
+
+UniformArrayExp::~UniformArrayExp() {
+    delete value;
+    delete size;
+}
+void UniformArrayExp::print(std::ostream& out) {
+    out << '[' << value << "; " << size << ']';
+}

@@ -105,6 +105,16 @@ Value TypeCheck::visit(ReferenceExp* exp) {
     return {};
 }
 
+Value TypeCheck::visit(ArrayExp* exp) {
+    std::cout << exp;
+    return {};
+}
+
+Value TypeCheck::visit(UniformArrayExp* exp) {
+    std::cout << exp;
+    return {};
+}
+
 // Visit methods for statements
 void TypeCheck::visit(DecStmt* stmt) {
     // Implementation here

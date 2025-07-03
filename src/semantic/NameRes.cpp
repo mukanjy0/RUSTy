@@ -76,6 +76,16 @@ Value NameRes::visit(ReferenceExp* exp) {
     return {};
 }
 
+Value NameRes::visit(ArrayExp* exp) {
+    std::cout << exp;
+    return {};
+}
+
+Value NameRes::visit(UniformArrayExp* exp) {
+    std::cout << exp;
+    return {};
+}
+
 void NameRes::visit(DecStmt* stmt) {
     if (!table->declare(stmt->id, stmt->var)) {
         std::cerr << "Name resolution error: redeclaration of '"

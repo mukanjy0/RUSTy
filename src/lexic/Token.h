@@ -18,7 +18,7 @@ public:
         LAND, LOR, LNOT, // logical operators
         EQ, NEQ, LT, GT, LE, GE,  // relational operators
         PLUS, MINUS, TIMES, DIV, // arithmetic operators
-        TYPE, BOOLEAN, NUMBER, STRING, CHAR, UNIT, // groups
+        TYPE, BOOLEAN, NUMBER, STRING, CHAR, // groups
         PRINT // macros
     };
 
@@ -28,6 +28,7 @@ public:
     ~Token();
     Type getType() const;
     std::string getContent() const;
+    operator std::string() const;
 
 private:
     friend class Scanner;

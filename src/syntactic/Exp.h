@@ -6,7 +6,6 @@
 #include <iostream>
 #include <string>
 #include <list>
-#include <utility>
 
 class Visitor;
 
@@ -20,7 +19,7 @@ struct Value {
     // for subscript expression
     int index {};
     // for slice expression
-    int left{}, right{};
+    int left, right;
     // in case of array has multiple values, otherwise only one
     std::list<int> numericValues;
     // in case of array has multiple values, otherwise only one
@@ -29,7 +28,7 @@ struct Value {
     Value() : type(UNDEFINED) {}
 
     Value(Type type, std::string stringValue, bool ref=false, bool mut=false)
-        : type(type), stringValues({std::move(stringValue)}),
+        : type(type), stringValues({stringValue}),
         ref(ref), mut(mut) {}
 
     Value(Type type, int numericValue, bool ref=false, bool mut=false)
@@ -48,7 +47,7 @@ struct Value {
 
     ~Value() = default;
 
-    static Type stringToType(const std::string& type);
+    static Type stringToType(std::string type);
     friend std::ostream& operator<<(std::ostream& out, const Value& var);
 };
 
@@ -67,7 +66,7 @@ class Block {
 
     std::list<Stmt*> stmts;
 public:
-    explicit Block(std::list<Stmt *> stmts) : stmts(std::move(stmts)) {}
+    Block(std::list<Stmt *> stmts) : stmts(std::move(stmts)) {}
     ~Block();
     Value accept(Visitor *visitor);
     friend std::ostream& operator<<(std::ostream& out, const Block* block);
@@ -90,10 +89,10 @@ public:
     };
 
     BinaryExp(Operation op, Exp *lhs, Exp *rhs) : op(op), lhs(lhs), rhs(rhs) {}
-    ~BinaryExp() override;
+    ~BinaryExp();
 
-    void print(std::ostream& out) override;
-    Value accept(Visitor* visitor) override;
+    virtual void print(std::ostream& out);
+    Value accept(Visitor* visitor);
 private:
     FRIENDS
 
@@ -109,10 +108,10 @@ public:
     };
 
     UnaryExp(Operation op, Exp *exp) : op(op), exp(exp) {}
-    ~UnaryExp() override;
+    ~UnaryExp();
 
-    void print(std::ostream& out) override;
-    Value accept(Visitor* visitor) override;
+    virtual void print(std::ostream& out);
+    Value accept(Visitor* visitor);
 
 private:
     FRIENDS
@@ -127,11 +126,11 @@ class Literal : public Exp {
     Value value;
 
 public:
-    explicit Literal(const Value& value) : value(value) {}
-    ~Literal() override;
+    explicit Literal(Value value) : value(value) {}
+    ~Literal();
 
-    void print(std::ostream& out) override;
-    Value accept(Visitor* visitor) override;
+    virtual void print(std::ostream& out);
+    Value accept(Visitor* visitor);
 };
 
 class Variable : public Exp {
@@ -140,25 +139,26 @@ class Variable : public Exp {
     std::string name;
 
 public:
-    explicit Variable(std::string name) : name(std::move(name)) {}
-    ~Variable() override;
+    Variable(std::string name) : name(std::move(name)) {}
+    ~Variable();
 
-    void print(std::ostream& out) override;
-    Value accept(Visitor* visitor) override;
+    virtual void print(std::ostream& out);
+    Value accept(Visitor* visitor);
 };
 
 class FunCall : public Exp {
     FRIENDS
 
-    std::string id;
-    std::list<Exp*> args;
+  std::string id;
+  std::list<Exp *> args;
 
 public:
-    FunCall(std::string id, std::list<Exp*> args) : id(std::move(id)), args(std::move(args)) {}
-    ~FunCall() override;
+    FunCall(std::string id, std::list<Exp *> args)
+          : id(std::move(id)), args(std::move(args)) {}
+    ~FunCall();
 
-    void print(std::ostream& out) override;
-    Value accept(Visitor* visitor) override;
+    virtual void print(std::ostream& out);
+    Value accept(Visitor* visitor);
 };
 
 class IfBranch {
@@ -167,10 +167,16 @@ class IfBranch {
     Exp* cond;
     Block* block;
 public:
-    IfBranch(Exp* cond, Block* block) : cond(cond), block(block) {}
+    IfBranch(Exp *cond, Block *block) : cond(cond), block(block) {}
     ~IfBranch();
-    friend std::ostream& operator<<(std::ostream& out, const IfBranch& ifBranch);
-    friend std::ostream& operator<<(std::ostream& out, const IfBranch* ifBranch);
+
+    IfBranch(const IfBranch &) = default;
+    IfBranch(IfBranch &&) = delete;
+    IfBranch &operator=(const IfBranch &) = default;
+    IfBranch &operator=(IfBranch &&) = delete;
+
+    friend std::ostream &operator<<(std::ostream &out, IfBranch ifBranch);
+    friend std::ostream &operator<<(std::ostream &out, IfBranch *ifBranch);
 };
 
 class IfExp : public Exp {
@@ -181,21 +187,20 @@ class IfExp : public Exp {
     IfBranch* elseBranch {};
 
 public:
-    explicit IfExp(const IfBranch& ifBranch)
-        : ifBranch(ifBranch) {}
-    IfExp(const IfBranch& ifBranch, std::list<IfBranch> elseIfBranches)
+    IfExp(const IfBranch &ifBranch, std::list<IfBranch> elseIfBranches)
         : ifBranch(ifBranch), elseIfBranches(std::move(elseIfBranches)) {}
-    IfExp(const IfBranch& ifBranch, std::list<IfBranch> elseIfBranches,
-          IfBranch* elseBranch)
-        : ifBranch(ifBranch), elseIfBranches(std::move(elseIfBranches)),
-        elseBranch(elseBranch) {}
-    ~IfExp() override;
+    ~IfExp();
+
+    IfExp(const IfExp &) = default;
+    IfExp(IfExp &&) = delete;
+    IfExp &operator=(const IfExp &) = default;
+    IfExp &operator=(IfExp &&) = delete;
 
     void setIfBranch(const IfBranch& branch);
-    void setElseBranch(IfBranch* branch);
+    void setElseBranch(IfBranch *branch);
 
-    void print(std::ostream& out) override;
-    Value accept(Visitor* visitor) override;
+    virtual void print(std::ostream &out);
+    Value accept(Visitor *visitor);
 };
 
 class LoopExp : public Exp {
@@ -203,11 +208,11 @@ class LoopExp : public Exp {
 
     Block* block;
 public:
-    explicit LoopExp(Block *block) : block(block) {}
-    ~LoopExp() override;
+    LoopExp(Block *block) : block(block) {}
+    ~LoopExp();
 
-    void print(std::ostream& out) override;
-    Value accept(Visitor* visitor) override;
+    virtual void print(std::ostream& out);
+    Value accept(Visitor* visitor);
 };
 
 class SubscriptExp : public Exp {
@@ -216,11 +221,11 @@ class SubscriptExp : public Exp {
     std::string id;
     Exp* exp;
 public:
-    SubscriptExp(std::string id, Exp* exp) : id(std::move(id)), exp(exp) {}
-    ~SubscriptExp() override;
+    SubscriptExp(std::string id, Exp* exp) : id(id), exp(exp) {}
+    ~SubscriptExp();
 
-    void print(std::ostream& out) override;
-    Value accept(Visitor* visitor) override;
+    virtual void print(std::ostream& out);
+    Value accept(Visitor* visitor);
 };
 
 class SliceExp : public Exp {
@@ -232,13 +237,13 @@ class SliceExp : public Exp {
     bool inclusive {};
 public:
     SliceExp(std::string id, Exp* start, Exp* end)
-        : id(std::move(id)), start(start), end(end) {}
+        : id(id), start(start), end(end) {}
     SliceExp(std::string id, Exp* start, Exp* end, bool inclusive)
-        : id(std::move(id)), start(start), end(end), inclusive(inclusive) {}
-    ~SliceExp() override;
+        : id(id), start(start), end(end), inclusive(inclusive) {}
+    ~SliceExp();
 
-    void print(std::ostream& out) override;
-    Value accept(Visitor* visitor) override;
+    virtual void print(std::ostream& out);
+    Value accept(Visitor* visitor);
 };
 
 class ReferenceExp : public Exp {
@@ -247,14 +252,40 @@ class ReferenceExp : public Exp {
     Exp* exp;
     int count; // number of reference operators
 public:
-    explicit ReferenceExp(Exp* exp)
+    ReferenceExp(Exp* exp)
         : exp(exp), count(1) {}
     ReferenceExp(Exp* exp, int count)
         : exp(exp), count(count) {}
-    ~ReferenceExp() override;
+    ~ReferenceExp();
 
-    void print(std::ostream& out) override;
-    Value accept(Visitor* visitor) override;
+    virtual void print(std::ostream& out);
+    Value accept(Visitor* visitor);
+};
+
+class ArrayExp : public Exp {
+    friend class CodeGen;
+
+    std::list<Exp*> elements;
+public:
+    explicit ArrayExp(std::list<Exp *> elements)
+            : elements(std::move(elements)) {}
+    ~ArrayExp();
+
+    virtual void print(std::ostream& out);
+    Value accept(Visitor* visitor);
+};
+
+class UniformArrayExp : public Exp {
+    friend class CodeGen;
+
+    Exp *value;
+    Exp *size;
+public:
+    UniformArrayExp(Exp *value, Exp *size) : value(value), size(size) {}
+    ~UniformArrayExp();
+
+    virtual void print(std::ostream& out);
+    Value accept(Visitor* visitor);
 };
 
 #endif

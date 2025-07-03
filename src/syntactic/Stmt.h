@@ -4,7 +4,6 @@
 #define FRIENDS friend class CodeGen; friend class TypeCheck; friend class NameRes;
 
 #include "Exp.h"
-#include <map> // used in parser
 #include <list>
 #include <string>
 
@@ -15,10 +14,10 @@ class DecStmt : public Stmt {
     Exp* rhs {};
 
 public:
-    DecStmt(std::string id, const Value& var)
+    DecStmt(std::string id, Value var)
     : id(std::move(id)), var(var) {}
 
-    DecStmt(std::string id, const Value& var, Exp *rhs)
+    DecStmt(std::string id, Value var, Exp *rhs)
     : id(std::move(id)), var(var), rhs(rhs) {}
 
     ~DecStmt() override;

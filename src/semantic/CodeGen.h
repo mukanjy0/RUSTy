@@ -21,6 +21,8 @@ public:
     Value visit(SubscriptExp* exp) override;
     Value visit(SliceExp* exp) override;
     Value visit(ReferenceExp* exp) override;
+    Value visit(ArrayExp* exp) override;
+    Value visit(UniformArrayExp* exp) override;
     void visit(DecStmt* stmt) override;
     void visit(AssignStmt* stmt) override;
     void visit(CompoundAssignStmt* stmt) override;
