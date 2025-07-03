@@ -176,30 +176,21 @@ public:
 };
 
 class IfExp : public Exp {
+public:
     class IfBranch {
         friend class IfExp;
 
         Exp* cond;
         Block* block;
-    public:
         IfBranch(Exp *cond, Block *block) : cond(cond), block(block) {}
+
+    public:
         ~IfBranch();
-
-        IfBranch(const IfBranch &) = default;
-        IfBranch(IfBranch &&) = delete;
-        IfBranch &operator=(const IfBranch &) = default;
-        IfBranch &operator=(IfBranch &&) = delete;
-
+        Exp* getCondition();
+        Block* getBlock();
         void print(std::ostream &out);
     };
 
-    FRIENDS
-
-    IfBranch* ifBranch;
-    std::list<IfBranch> elseIfBranches;
-    IfBranch* elseBranch {};
-
-public:
     IfExp(Exp* cond, Block* block) {
         ifBranch = new IfBranch(cond, block);
     }
@@ -213,8 +204,20 @@ public:
     void addElseIfBranch(Exp* cond, Block* block);
     void setElseBranch(Exp* cond, Block* block);
 
+    IfBranch* getIfBranch();
+    std::list<IfBranch*> getElseIfBranches();
+    IfBranch* getElseBranch();
+
     void print(std::ostream &out);
     Value accept(Visitor *visitor);
+
+private:
+    FRIENDS
+
+    IfBranch* ifBranch;
+    std::list<IfBranch*> elseIfBranches;
+    IfBranch* elseBranch {};
+
 };
 
 class LoopExp : public Exp {

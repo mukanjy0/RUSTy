@@ -134,6 +134,12 @@ IfExp::IfBranch::~IfBranch() {
     delete cond;
     delete block;
 }
+Exp* IfExp::IfBranch::getCondition() {
+    return cond;
+}
+Block* IfExp::IfBranch::getBlock() {
+    return block;
+}
 void IfExp::IfBranch::print(std::ostream &out) {
     if (cond) out << cond << "\n";
     out << block;
@@ -145,17 +151,27 @@ IfExp::~IfExp() {
     delete elseBranch;
 }
 void IfExp::addElseIfBranch(Exp* cond, Block* block) {
-    elseIfBranches.emplace_back(cond, block);
+    IfBranch* branch = new IfBranch(cond, block);
+    elseIfBranches.push_back(branch);
 }
 void IfExp::setElseBranch(Exp* cond, Block* block) {
     elseBranch = new IfBranch(cond, block);
+}
+IfExp::IfBranch* IfExp::getIfBranch() {
+    return ifBranch;
+}
+std::list<IfExp::IfBranch*> IfExp::getElseIfBranches() {
+    return elseIfBranches;
+}
+IfExp::IfBranch* IfExp::getElseBranch() {
+    return elseBranch;
 }
 void IfExp::print(std::ostream& out) {
     out << "if ";
     ifBranch->print(out);
     for (auto ifBranch : elseIfBranches) {
         out << "else if ";
-        ifBranch.print(out);
+        ifBranch->print(out);
     }
     if (elseBranch) {
         out << "else ";
