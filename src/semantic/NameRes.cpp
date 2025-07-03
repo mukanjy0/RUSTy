@@ -1,6 +1,5 @@
 #include "NameRes.h"
 #include <iostream>
-#include <ranges>
 
 NameRes::~NameRes() = default;
 
@@ -144,12 +143,10 @@ void NameRes::visit(Fun* fun) {
 }
 
 void NameRes::visit(Program* program) {
-    table->pushScope();
-    for (const auto &id: program->funs | std::views::keys) {
+    for (const auto& [id, fun]: program->funs) {
         table->declare(id, {});
     }
-    for (const auto &fun: program->funs | std::views::values) {
+    for (const auto& [id, fun]: program->funs) {
         fun->accept(this);
     }
-    table->popScope();
 }

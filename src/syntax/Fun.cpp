@@ -20,7 +20,7 @@ std::ostream& operator<<(std::ostream& out, const Fun* fun) {
 }
 
 Program::~Program() {
-    for (const auto &fun: funs | std::views::values) {
+    for (const auto& [id, fun]: funs) {
         delete fun;
     }
     funs.clear();

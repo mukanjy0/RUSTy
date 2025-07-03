@@ -4,8 +4,6 @@
 
 #include "SymbolTable.h"
 
-#include <ranges>
-
 void SymbolTable::pushScope() {
     scopes_.emplace_back();
 }
@@ -34,9 +32,9 @@ bool SymbolTable::update(const std::string& name, const Var& value) {
 }
 
 Var* SymbolTable::lookup(const std::string& name) {
-    for (auto &scope : std::ranges::reverse_view(scopes_)) {  // reverse iteration
-        auto found = scope.find(name);
-        if (found != scope.end()) {
+    for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {  // reverse iteration
+        auto found = it->find(name);
+        if (found != it->end()) {
             return &found->second;
         }
     }
