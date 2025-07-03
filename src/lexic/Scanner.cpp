@@ -248,6 +248,7 @@ void Scanner::advance() {
                         && pos < size && source[pos + 1] == '!') 
                 {
                     increasePos();
+                    current.content += '!';
                     current.type = Token::PRINT;
                 }
                 else {

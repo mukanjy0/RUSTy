@@ -56,7 +56,7 @@ Block::~Block() {
     }
     stmts.clear();
 }
-std::ostream& operator<<(std::ostream& out, const Block* block) {
+std::ostream& operator<<(std::ostream& out, Block* block) {
     out << "{" << "\n";
     for (auto stmt : block->stmts) {
         out << stmt << '\n';
@@ -130,33 +130,37 @@ FunCall::~FunCall() {
     args.clear();
 }
 
-IfBranch::~IfBranch() {
+IfExp::IfBranch::~IfBranch() {
     delete cond;
     delete block;
 }
-std::ostream& operator<<(std::ostream& out, IfBranch ifBranch) {
-    if (ifBranch.cond) out << ifBranch.cond << "\n";
-    out << ifBranch.block;
-    return out;
-}
-std::ostream& operator<<(std::ostream& out, IfBranch* ifBranch) {
-    if (ifBranch->cond) out << ifBranch->cond << "\n";
-    out << ifBranch->block;
-    return out;
+void IfExp::IfBranch::print(std::ostream &out) {
+    if (cond) out << cond << "\n";
+    out << block;
 }
 
 IfExp::~IfExp() {
+    delete ifBranch;
     elseIfBranches.clear();
     delete elseBranch;
 }
-void IfExp::setIfBranch(const IfBranch& branch) { ifBranch = std::move(branch); }
-void IfExp::setElseBranch(IfBranch* branch) {elseBranch = branch; }
+void IfExp::addElseIfBranch(Exp* cond, Block* block) {
+    elseIfBranches.emplace_back(cond, block);
+}
+void IfExp::setElseBranch(Exp* cond, Block* block) {
+    elseBranch = new IfBranch(cond, block);
+}
 void IfExp::print(std::ostream& out) {
-    out << "if " << ifBranch;
-    for (const auto& ifBranch : elseIfBranches) {
-        out << "else if " << ifBranch;
+    out << "if ";
+    ifBranch->print(out);
+    for (auto ifBranch : elseIfBranches) {
+        out << "else if ";
+        ifBranch.print(out);
     }
-    if (elseBranch) out << "else" << elseBranch;
+    if (elseBranch) {
+        out << "else ";
+        elseBranch->print(out);
+    }
 }
 
 LoopExp::~LoopExp() {

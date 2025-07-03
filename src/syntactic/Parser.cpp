@@ -279,7 +279,7 @@ Stmt* Parser::parseStatement() {
         return new WhileStmt(cond, block);
     }
     else if (check(Token::IF) || check(Token::LOOP)) {
-        return new ExpStmt(parseExpression());
+        return new ExpStmt(parseFactorExp(), true);
     }
     else if (match(Token::PRINT)) {
         if (!match(Token::OPEN_PARENTHESIS)) {
@@ -608,24 +608,21 @@ Exp* Parser::parseFactorExp() {
     else if (match(Token::IF)) {
         Exp* cond = parseExpression();
         Block* block = parseBlock();
-        IfBranch ifBranch = IfBranch(cond, block);
 
-        std::list<IfBranch> elseIfBranches;
+        IfExp* exp = new IfExp(cond, block);
+
         while (check(Token::ELSE) && peek() == Token::IF) {
             match(Token::ELSE);
             match(Token::IF);
             cond = parseExpression();
             block = parseBlock();
-            elseIfBranches.emplace_back(cond, block);
+            exp->addElseIfBranch(cond, block);
         }
-
-        IfExp* exp = new IfExp(ifBranch, elseIfBranches);
 
         if (match(Token::ELSE)) {
             cond = nullptr;
             block = parseBlock();
-            IfBranch* elseBranch = new IfBranch(cond, block);
-            exp->setElseBranch(elseBranch);
+            exp->setElseBranch(cond, block);
         }
 
         return exp;
