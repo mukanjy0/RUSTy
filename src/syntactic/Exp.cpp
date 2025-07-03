@@ -9,6 +9,12 @@ Value::Type Value::stringToType(std::string type) {
     else if (type == "()") return UNIT;
     throw std::runtime_error("invalid type: " + type);
 }
+bool Value::isArray() {
+    return size > 0;
+}
+bool Value::isFunction() {
+    return fun;
+}
 std::ostream& operator<<(std::ostream& out, const Value& var) {
     if (var.size > 0) out << "[ ";
     int i {};

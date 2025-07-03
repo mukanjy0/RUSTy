@@ -13,6 +13,7 @@ private:
     bool match(Token::Type type);
     Token currentToken();
 
+    std::pair<int,int> getPos();
     static std::string debugInfo(const Token& token);
     void ensureSemicolon(const std::string& message);
     BinaryExp::Operation tokenTypeToBinaryOperation(Token::Type type);

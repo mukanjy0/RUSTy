@@ -18,7 +18,10 @@ struct Value {
     std::list<int> numericValues {};
     // in case of array has multiple values, otherwise only one
     std::list<std::string> stringValues {};
+    // array of types for functions
+    std::list<Type> types {};
 
+    bool fun;
     bool ref;
     bool mut;
     // by default size = 0, otherwise, it's an array
@@ -30,25 +33,30 @@ struct Value {
 
     Value() : type(UNDEFINED) {}
 
-    Value(Type type, std::string stringValue, bool ref=false, bool mut=false)
+    Value(Type type, std::string stringValue,
+          bool ref=false, bool mut=false, bool fun=false)
         : type(type), stringValues({stringValue}),
         ref(ref), mut(mut) {}
 
-    Value(Type type, int numericValue, bool ref=false, bool mut=false)
+    Value(Type type, int numericValue,
+          bool ref=false, bool mut=false, bool fun=false)
         : type(type), numericValues({numericValue}),
         ref(ref), mut(mut) {}
 
     Value(Type type, std::list<std::string> stringValues,
-        bool ref=false, bool mut=false)
+        bool ref=false, bool mut=false, bool fun=false)
         : type(type), stringValues(std::move(stringValues)),
         ref(ref), mut(mut) {}
 
     Value(Type type, std::list<int> numericValues,
-        bool ref=false, bool mut=false)
+        bool ref=false, bool mut=false, bool fun=false)
         : type(type), numericValues(std::move(numericValues)),
         ref(ref), mut(mut) {}
 
     ~Value() = default;
+
+    bool isArray();
+    bool isFunction();
 
     static Type stringToType(std::string type);
     friend std::ostream& operator<<(std::ostream& out, const Value& var);
@@ -57,12 +65,15 @@ struct Value {
 class Exp;
 
 class Stmt {
+protected:
+    int line;
+    int col;
 public:
     Stmt(const Stmt &) = default;
     Stmt(Stmt &&) = delete;
     Stmt &operator=(const Stmt &) = default;
     Stmt &operator=(Stmt &&) = delete;
-    Stmt() = default;
+    Stmt(int line, int col) : line(line), col(col) {}
     virtual ~Stmt() = 0;
     virtual void accept(Visitor *visitor) = 0;
     virtual void print(std::ostream &out) = 0;
@@ -72,9 +83,12 @@ public:
 class Block {
     FRIENDS
 
+    int line;
+    int col;
     std::list<Stmt *> stmts;
 public:
-    explicit Block(std::list<Stmt *> stmts) : stmts(std::move(stmts)) {}
+    Block(int line, int col, std::list<Stmt *> stmts)
+        : line(line), col(col), stmts(std::move(stmts)) {}
     ~Block();
 
     Block(const Block &) = default;
@@ -87,11 +101,15 @@ public:
 };
 
 class Exp {
+protected:
+    int line;
+    int col;
 public:
+    Exp(int line, int col) : line(line), col(col) {}
     virtual ~Exp() = 0;
-    virtual Value accept(Visitor* visitor) = 0;
-    virtual void print(std::ostream& out) = 0;
-    friend std::ostream& operator<<(std::ostream& out, Exp* exp);
+    virtual Value accept(Visitor *visitor) = 0;
+    virtual void print(std::ostream &out) = 0;
+    friend std::ostream &operator<<(std::ostream &out, Exp *exp);
 };
 
 class BinaryExp : public Exp {
@@ -102,7 +120,8 @@ public:
         PLUS, MINUS, TIMES, DIV, // arithmetical
     };
 
-    BinaryExp(Operation op, Exp *lhs, Exp *rhs) : op(op), lhs(lhs), rhs(rhs) {}
+    BinaryExp(int line, int col, Operation op, Exp *lhs, Exp *rhs) 
+        : Exp(line, col), op(op), lhs(lhs), rhs(rhs) {}
     ~BinaryExp();
 
     void print(std::ostream& out);
@@ -121,7 +140,8 @@ public:
         LNOT, // logical
     };
 
-    UnaryExp(Operation op, Exp *exp) : op(op), exp(exp) {}
+    UnaryExp(int line, int col, Operation op, Exp *exp) 
+        : Exp(line, col), op(op), exp(exp) {}
     ~UnaryExp();
 
     void print(std::ostream& out);
@@ -140,7 +160,8 @@ class Literal : public Exp {
     Value value;
 
 public:
-    explicit Literal(Value value) : value(value) {}
+    Literal(int line, int col, Value value) 
+        : Exp(line, col), value(value) {}
     ~Literal();
 
     void print(std::ostream& out);
@@ -153,7 +174,8 @@ class Variable : public Exp {
     std::string name;
 
 public:
-    Variable(std::string name) : name(std::move(name)) {}
+    Variable(int line, int col, std::string name) 
+        : Exp(line, col), name(std::move(name)) {}
     ~Variable();
 
     void print(std::ostream& out);
@@ -167,8 +189,8 @@ class FunCall : public Exp {
   std::list<Exp *> args;
 
 public:
-    FunCall(std::string id, std::list<Exp *> args)
-          : id(std::move(id)), args(std::move(args)) {}
+    FunCall(int line, int col, std::string id, std::list<Exp *> args)
+          : Exp(line, col), id(std::move(id)), args(std::move(args)) {}
     ~FunCall();
 
     void print(std::ostream& out);
@@ -191,7 +213,9 @@ public:
         void print(std::ostream &out);
     };
 
-    IfExp(Exp* cond, Block* block) {
+    IfExp(int line, int col, Exp* cond, Block* block)
+        : Exp(line, col)
+    {
         ifBranch = new IfBranch(cond, block);
     }
     ~IfExp();
@@ -225,7 +249,8 @@ class LoopExp : public Exp {
 
     Block* block;
 public:
-    LoopExp(Block *block) : block(block) {}
+    LoopExp(int line, int col, Block *block) 
+        : Exp(line, col), block(block) {}
     ~LoopExp();
 
     void print(std::ostream& out);
@@ -238,7 +263,8 @@ class SubscriptExp : public Exp {
     std::string id;
     Exp* exp;
 public:
-    SubscriptExp(std::string id, Exp* exp) : id(id), exp(exp) {}
+    SubscriptExp(int line, int col, std::string id, Exp* exp) 
+        : Exp(line, col), id(id), exp(exp) {}
     ~SubscriptExp();
 
     void print(std::ostream& out);
@@ -253,10 +279,10 @@ class SliceExp : public Exp {
     Exp* end;
     bool inclusive {};
 public:
-    SliceExp(std::string id, Exp* start, Exp* end) 
-        : id(id), start(start), end(end) {}
-    SliceExp(std::string id, Exp* start, Exp* end, bool inclusive) 
-        : id(id), start(start), end(end), inclusive(inclusive) {}
+    SliceExp(int line, int col, std::string id, Exp* start, Exp* end) 
+        : Exp(line, col), id(id), start(start), end(end) {}
+    SliceExp(int line, int col, std::string id, Exp* start, Exp* end, bool inclusive) 
+        : Exp(line, col), id(id), start(start), end(end), inclusive(inclusive) {}
     ~SliceExp();
 
     void print(std::ostream& out);
@@ -269,10 +295,10 @@ class ReferenceExp : public Exp {
     Exp* exp;
     int count; // number of reference operators
 public:
-    ReferenceExp(Exp* exp)  
-        : exp(exp), count(1) {}
-    ReferenceExp(Exp* exp, int count)  
-        : exp(exp), count(count) {}
+    ReferenceExp(int line, int col, Exp* exp)  
+        : Exp(line, col), exp(exp), count(1) {}
+    ReferenceExp(int line, int col, Exp* exp, int count)  
+        : Exp(line, col), exp(exp), count(count) {}
     ~ReferenceExp();
 
     void print(std::ostream& out);
@@ -284,8 +310,8 @@ class ArrayExp : public Exp {
 
     std::list<Exp*> elements;
 public:
-    explicit ArrayExp(std::list<Exp *> elements)
-            : elements(std::move(elements)) {}
+    explicit ArrayExp(int line, int col, std::list<Exp *> elements)
+            : Exp(line, col), elements(std::move(elements)) {}
     ~ArrayExp();
 
     void print(std::ostream& out);
@@ -298,7 +324,8 @@ class UniformArrayExp : public Exp {
     Exp *value;
     Exp *size;
 public:
-    UniformArrayExp(Exp *value, Exp *size) : value(value), size(size) {}
+    UniformArrayExp(int line, int col, Exp *value, Exp *size) 
+        : Exp(line, col), value(value), size(size) {}
     ~UniformArrayExp();
 
     void print(std::ostream& out);

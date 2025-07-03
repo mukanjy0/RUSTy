@@ -14,11 +14,11 @@ class DecStmt : public Stmt {
     Exp* rhs {};
 
 public:
-    DecStmt(std::string id, Value var)
-    : id(std::move(id)), var(var) {}
+    DecStmt(int line, int col, std::string id, Value var)
+        : Stmt(line, col), id(std::move(id)), var(var) {}
 
-    DecStmt(std::string id, Value var, Exp *rhs)
-    : id(std::move(id)), var(var), rhs(rhs) {}
+    DecStmt(int line, int col, std::string id, Value var, Exp *rhs)
+        : Stmt(line, col), id(std::move(id)), var(var), rhs(rhs) {}
 
     ~DecStmt() override;
 
@@ -33,11 +33,11 @@ class AssignStmt : public Stmt {
     bool ref {};
 
 public:
-    AssignStmt(Exp* lhs, Exp *rhs)
-        : lhs(lhs), rhs(rhs) {}
+    AssignStmt(int line, int col, Exp* lhs, Exp *rhs)
+        : Stmt(line, col), lhs(lhs), rhs(rhs) {}
 
-    AssignStmt(Exp* lhs, Exp *rhs, bool ref)
-        : lhs(lhs), rhs(rhs), ref(ref) {}
+    AssignStmt(int line, int col, Exp* lhs, Exp *rhs, bool ref)
+        : Stmt(line, col), lhs(lhs), rhs(rhs), ref(ref) {}
 
     ~AssignStmt() override;
     void print(std::ostream& out) override;
@@ -51,8 +51,8 @@ class CompoundAssignStmt : public Stmt {
     Exp* rhs;
 
 public:
-    CompoundAssignStmt(BinaryExp::Operation op, Exp *lhs, Exp *rhs)
-        : op(op), lhs(lhs), rhs(rhs) {}
+    CompoundAssignStmt(int line, int col, BinaryExp::Operation op, Exp *lhs, Exp *rhs)
+        : Stmt(line, col), op(op), lhs(lhs), rhs(rhs) {}
 
     ~CompoundAssignStmt() override;
     void print(std::ostream& out) override;
@@ -68,10 +68,14 @@ class ForStmt : public Stmt {
     bool inclusive {};
 
 public:
-    ForStmt(std::string id, Exp *start, Exp *end, Block *block)
-    : id(std::move(id)), start(start), end(end), block(block) {}
-    ForStmt(std::string id, Exp *start, Exp *end, Block *block, bool inclusive)
-    : id(std::move(id)), start(start), end(end), block(block), inclusive(inclusive) {}
+    ForStmt(int line, int col,
+            std::string id, Exp *start, Exp *end, Block *block)
+    : Stmt(line, col), id(std::move(id)), start(start), end(end), block(block) {}
+
+    ForStmt(int line, int col,
+            std::string id, Exp *start, Exp *end, Block *block, bool inclusive)
+    : Stmt(line, col), id(std::move(id)), start(start), end(end),
+        block(block), inclusive(inclusive) {}
     ~ForStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
@@ -83,7 +87,8 @@ class WhileStmt : public Stmt {
     Block* block;
 
 public:
-    WhileStmt(Exp *cond, Block *block) : cond(cond), block(block) {}
+    WhileStmt(int line, int col, Exp *cond, Block *block) 
+        : Stmt(line, col), cond(cond), block(block) {}
     ~WhileStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
@@ -95,10 +100,10 @@ class PrintStmt : public Stmt {
     std::list<Exp*> args;
 
 public:
-    explicit PrintStmt(std::string strLiteral)
-    : strLiteral(std::move(strLiteral)) {}
-    PrintStmt(std::string strLiteral, std::list<Exp *> args)
-    : strLiteral(std::move(strLiteral)), args(std::move(args)) {}
+    PrintStmt(int line, int col, std::string strLiteral)
+    : Stmt(line, col), strLiteral(std::move(strLiteral)) {}
+    PrintStmt(int line, int col, std::string strLiteral, std::list<Exp *> args)
+    : Stmt(line, col), strLiteral(std::move(strLiteral)), args(std::move(args)) {}
     ~PrintStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
@@ -108,8 +113,9 @@ class BreakStmt : public Stmt {
     FRIENDS
     Exp* exp {};
 public:
-    BreakStmt() = default;
-    explicit BreakStmt(Exp* exp) : exp(exp) {};
+    BreakStmt(int line, int col) : Stmt(line, col) {}
+    BreakStmt(int line, int col, Exp* exp) 
+        : Stmt(line, col), exp(exp) {};
     ~BreakStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
@@ -119,8 +125,9 @@ class ReturnStmt : public Stmt {
     FRIENDS
     Exp* exp {};
 public:
-    ReturnStmt() = default;
-    explicit ReturnStmt(Exp* exp) : exp(exp) {};
+    ReturnStmt(int line, int col) : Stmt(line, col) {}
+    ReturnStmt(int line, int col, Exp* exp) 
+        : Stmt(line, col), exp(exp) {};
     ~ReturnStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;
@@ -131,9 +138,11 @@ class ExpStmt : public Stmt {
     Exp* exp {};
     bool returnValue {};
 public:
-    ExpStmt() = default;
-    explicit ExpStmt(Exp* exp) : exp(exp) {};
-    ExpStmt(Exp* exp, bool returnValue) : exp(exp), returnValue(returnValue) {};
+    ExpStmt(int line, int col) : Stmt(line, col) {}
+    ExpStmt(int line, int col, Exp* exp) 
+        : Stmt(line, col), exp(exp) {};
+    ExpStmt(int line, int col, Exp* exp, bool returnValue) 
+        : Stmt(line, col), exp(exp), returnValue(returnValue) {};
     ~ExpStmt() override;
     void print(std::ostream& out) override;
     void accept(Visitor* visitor) override;

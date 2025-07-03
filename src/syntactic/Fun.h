@@ -6,20 +6,25 @@
 #include "Stmt.h"
 
 struct Param {
+    int line;
+    int col;
     Value::Type type;
     std::string id;
     Param() = default;
-    Param(Value::Type type, std::string id) : type(type), id(id) {}
+    Param(int line, int col, Value::Type type, std::string id) 
+        : line(line), col(col), type(type), id(id) {}
 };
 
 class Fun {
     FRIENDS
+    int line;
+    int col;
     std::list<Param> params;
     Block* block;
 
 public:
-    explicit Fun(std::list<Param> params, Block *block)
-            : params(std::move(params)), block(block) {}
+    explicit Fun(int line, int col, std::list<Param> params, Block *block)
+            : line(line), col(col), params(std::move(params)), block(block) {}
     ~Fun();
     void accept(Visitor* visitor);
     friend std::ostream& operator<<(std::ostream& out, const Fun* fun);

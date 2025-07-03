@@ -8,6 +8,10 @@ Parser::~Parser() {
     delete scanner;
 }
 
+std::pair<int,int> Parser::getPos() {
+    return {currentToken().line, currentToken().col};
+}
+
 std::string Parser::debugInfo(const Token& token) {
     return "Token: " + std::string(token) + " | Content: " + token.content
              + "\nat line: " + std::to_string(token.line)
@@ -71,6 +75,7 @@ Program* Parser::parse() {
 }
 
 Block* Parser::parseBlock() {
+    auto [line, col] = getPos();
     if (!match(Token::OPEN_CURLY)) {
         throw std::runtime_error("expected '{' to start block\ngot: "
                                  + debugInfo(currentToken()));
@@ -88,11 +93,15 @@ Block* Parser::parseBlock() {
                                  + debugInfo(currentToken()));
     }
 
-    return new Block(stmts);
+    return new Block(line, col, stmts);
 }
 
 Param Parser::parseParameter() {
+    auto [line, col] = getPos();
+
     Param param;
+    param.line = line;
+    param.col = col;
     if (!check(Token::ID)) {
         throw std::runtime_error("expected id in parameter list\ngot: "
                                  + debugInfo(currentToken()));
@@ -116,6 +125,7 @@ Param Parser::parseParameter() {
 }
 
 std::pair<std::string, Fun*> Parser::parseFunction() {
+    auto [line, col] = getPos();
     if (!match(Token::FN)) {
         throw std::runtime_error("expected function declaration\ngot: "
                                  + debugInfo(currentToken()));
@@ -147,10 +157,11 @@ std::pair<std::string, Fun*> Parser::parseFunction() {
 
     Block* block = parseBlock();
 
-    return {id, new Fun(params, block)};
+    return {id, new Fun(line, col, params, block)};
 }
 
 Exp* Parser::parseRhs() {
+    auto [line, col] = getPos();
     if (match(Token::OPEN_BRACKET)) {
         Exp* exp = parseExpression();
         if (match(Token::SEMICOLON)) {
@@ -159,7 +170,7 @@ Exp* Parser::parseRhs() {
                 throw std::runtime_error("expected closing bracket in uniform array\ngot: "
                                          + debugInfo(currentToken()));
             }
-            return new UniformArrayExp(exp, size);
+            return new UniformArrayExp(line, col, exp, size);
         }
         std::list<Exp*> elements = {exp};
         while (match(Token::COMMA)) {
@@ -169,7 +180,7 @@ Exp* Parser::parseRhs() {
             throw std::runtime_error("expected closing bracket in array\ngot: "
                                      + debugInfo(currentToken()));
         }
-        return new ArrayExp(elements);
+        return new ArrayExp(line, col, elements);
     }
     else {
         return parseExpression();
@@ -177,6 +188,7 @@ Exp* Parser::parseRhs() {
 }
 
 Stmt* Parser::parseStatement() {
+    auto [line, col] = getPos();
     if (match(Token::LET)) {
         Value var {};
         if (match(Token::MUT)) {
@@ -229,7 +241,7 @@ Stmt* Parser::parseStatement() {
             }
         }
         if (match(Token::SEMICOLON)) {
-            return new DecStmt(id, var);
+            return new DecStmt(line, col, id, var);
         }
         if (!match(Token::ASSIGN)) {
             throw std::runtime_error("expected '=' in declaration\ngot: "
@@ -244,7 +256,7 @@ Stmt* Parser::parseStatement() {
         }
         ensureSemicolon("expected ';' after declaration statement");
 
-        return new DecStmt(id, var, rhs);
+        return new DecStmt(line, col, id, var, rhs);
 
     }
     else if (match(Token::FOR)) {
@@ -270,16 +282,16 @@ Stmt* Parser::parseStatement() {
         Exp* end = parseExpression();
         Block* block = parseBlock();
 
-        return new ForStmt(id, start, end, block, inclusive);
+        return new ForStmt(line, col, id, start, end, block, inclusive);
     }
     else if (match(Token::WHILE)) {
         Exp* cond = parseExpression();
         Block* block = parseBlock();
 
-        return new WhileStmt(cond, block);
+        return new WhileStmt(line, col, cond, block);
     }
     else if (check(Token::IF) || check(Token::LOOP)) {
-        return new ExpStmt(parseFactorExp(), true);
+        return new ExpStmt(line, col, parseFactorExp(), true);
     }
     else if (match(Token::PRINT)) {
         if (!match(Token::OPEN_PARENTHESIS)) {
@@ -305,12 +317,12 @@ Stmt* Parser::parseStatement() {
 
         ensureSemicolon("expected ';' after print statement");
 
-        return new PrintStmt(literal, args);
+        return new PrintStmt(line, col, literal, args);
     }
     else if (match(Token::BREAK)) {
         // if break is last statement in block, it can be missing ';'
         if (match(Token::SEMICOLON) || check(Token::CLOSE_CURLY)) {
-            return new BreakStmt();
+            return new BreakStmt(line, col);
         }
         Exp* exp = parseExpression();
         // if break is last statement in block, it can be missing ';'
@@ -318,12 +330,12 @@ Stmt* Parser::parseStatement() {
             throw std::runtime_error("expected ';' after break expression\ngot: "
                                      + debugInfo(currentToken()));
         }
-        return new BreakStmt(exp);
+        return new BreakStmt(line, col, exp);
     }
     else if (match(Token::RETURN)) {
         // if return is last statement in block, it can be missing ';'
         if (match(Token::SEMICOLON) || check(Token::CLOSE_CURLY)) {
-            return new ReturnStmt();
+            return new ReturnStmt(line, col);
         }
         Exp* exp = parseExpression();
         // if return is last statement in block, it can be missing ';'
@@ -332,7 +344,7 @@ Stmt* Parser::parseStatement() {
                                      + debugInfo(currentToken()));
         }
 
-        return new ReturnStmt(exp);
+        return new ReturnStmt(line, col, exp);
     }
     else if (match(Token::REFERENCE)) {
         std::string id = currentToken().content;
@@ -341,7 +353,7 @@ Stmt* Parser::parseStatement() {
                                      + debugInfo(currentToken()));
         }
 
-        Exp* lhs = new Variable(id);
+        Exp* lhs = new Variable(line, col, id);
 
         if (!match(Token::ASSIGN)) {
             throw std::runtime_error("expected '=' after & id in assignment statement\ngot: "
@@ -351,7 +363,7 @@ Stmt* Parser::parseStatement() {
 
         ensureSemicolon("expected ';' after assignment statement");
 
-        return new AssignStmt(lhs, rhs, true);
+        return new AssignStmt(line, col, lhs, rhs, true);
     }
     else if (check(Token::ID)) {
         // take a snapshot of scanner for possible later restoration
@@ -360,12 +372,12 @@ Stmt* Parser::parseStatement() {
         std::string id = currentToken().content;
         match(Token::ID);
         if (match(Token::ASSIGN)) {
-            Exp* lhs = new Variable(id);
+            Exp* lhs = new Variable(line, col, id);
             Exp* rhs = parseRhs();
 
             ensureSemicolon("expected ';' after assignment statement");
 
-            return new AssignStmt(lhs, rhs);
+            return new AssignStmt(line, col, lhs, rhs);
         }
         else if (
                 check(Token::PLUS_ASSIGN)
@@ -376,12 +388,12 @@ Stmt* Parser::parseStatement() {
             BinaryExp::Operation op = tokenTypeToBinaryOperation(currentToken().type);
             scanner->next();
 
-            Exp* lhs = new Variable(id);
+            Exp* lhs = new Variable(line, col, id);
             Exp* rhs = parseExpression();
 
             ensureSemicolon("expected ';' after compound assignment statement");
 
-            return new CompoundAssignStmt(op, lhs, rhs);
+            return new CompoundAssignStmt(line, col, op, lhs, rhs);
         }
         else {
             if (match(Token::OPEN_BRACKET)) {
@@ -391,7 +403,7 @@ Stmt* Parser::parseStatement() {
                                              + std::string(" in statement\ngot: ")
                                              + debugInfo(currentToken()));
                 }
-                Exp* lhs = new SubscriptExp(id, exp);
+                Exp* lhs = new SubscriptExp(line, col, id, exp);
                 if (!match(Token::ASSIGN)) {
                     if (check(Token::PLUS_ASSIGN)
                         || check(Token::MINUS_ASSIGN)
@@ -404,7 +416,7 @@ Stmt* Parser::parseStatement() {
                         Exp* rhs = parseExpression();
                         ensureSemicolon("expected ';' after compound assignment statement");
 
-                        return new CompoundAssignStmt(op, lhs, rhs);
+                        return new CompoundAssignStmt(line, col, op, lhs, rhs);
                     }
                     else {
                         // if it is not an assign statement, it must be an expression statement
@@ -415,7 +427,7 @@ Stmt* Parser::parseStatement() {
                     Exp* rhs = parseExpression();
                     ensureSemicolon("expected ';' after compound assignment statement");
 
-                    return new AssignStmt(lhs, rhs);
+                    return new AssignStmt(line, col, lhs, rhs);
                 }
             }
             else {
@@ -426,16 +438,17 @@ Stmt* Parser::parseStatement() {
     // it's equivalent to else (if no return was triggered, do this)
     Exp* exp = parseExpression();
     if (match(Token::SEMICOLON)) {
-        return new ExpStmt(exp);
+        return new ExpStmt(line, col, exp);
     }
     if (check(Token::CLOSE_CURLY)) {
-        return new ExpStmt(exp, true);
+        return new ExpStmt(line, col, exp, true);
     }
     throw std::runtime_error("expected valid statement\ngot: "
                              + debugInfo(currentToken()));
 }
 
 Exp* Parser::parseExpression() {
+    auto [line, col] = getPos();
     Exp* exp = parseNotExp();
     if (check(Token::LOR)
         || check(Token::LAND)
@@ -444,15 +457,16 @@ Exp* Parser::parseExpression() {
         scanner->next();
 
         Exp* rhs = parseExpression();
-        exp = new BinaryExp(op, exp, rhs);
+        exp = new BinaryExp(line, col, op, exp, rhs);
     }
     return exp;
 }
 
 Exp* Parser::parseNotExp() {
+    auto [line, col] = getPos();
     if (match(Token::LNOT)) {
         Exp* exp = parseExpression();
-        return new UnaryExp(UnaryExp::LNOT, exp);
+        return new UnaryExp(line, col, UnaryExp::LNOT, exp);
     }
     else {
         return parseRelationalExp();
@@ -460,6 +474,7 @@ Exp* Parser::parseNotExp() {
 }
 
 Exp* Parser::parseRelationalExp() {
+    auto [line, col] = getPos();
     Exp* exp = parseArithmeticExp();
     if (check(Token::EQ)
         || check(Token::GT)
@@ -473,12 +488,13 @@ Exp* Parser::parseRelationalExp() {
         scanner->next();
 
         Exp* rhs = parseArithmeticExp();
-        exp = new BinaryExp(op, exp, rhs);
+        exp = new BinaryExp(line, col, op, exp, rhs);
     }
     return exp;
 }
 
 Exp* Parser::parseArithmeticExp() {
+    auto [line, col] = getPos();
     Exp* exp = parseTermExp();
     if (check(Token::PLUS)
         || check(Token::MINUS)
@@ -487,12 +503,13 @@ Exp* Parser::parseArithmeticExp() {
         scanner->next();
 
         Exp* rhs = parseArithmeticExp();
-        exp = new BinaryExp(op, exp, rhs);
+        exp = new BinaryExp(line, col, op, exp, rhs);
     }
     return exp;
 }
 
 Exp* Parser::parseTermExp() {
+    auto [line, col] = getPos();
     Exp* exp = parseReferenceFactorExp();
     if (check(Token::TIMES)
         || check(Token::DIV)
@@ -501,27 +518,29 @@ Exp* Parser::parseTermExp() {
         scanner->next();
 
         Exp* rhs = parseTermExp();
-        exp = new BinaryExp(op, exp, rhs);
+        exp = new BinaryExp(line, col, op, exp, rhs);
     }
     return exp;
 }
 
 Exp* Parser::parseReferenceFactorExp() {
+    auto [line, col] = getPos();
     if (match(Token::REFERENCE)) {
         // int count {1};
         // while (match(Token::REFERENCE)) {
         //     ++count;
         // }
         Exp* exp = parseFactorExp();
-        return new ReferenceExp(exp);
+        return new ReferenceExp(line, col, exp);
     }
     return parseFactorExp();
 }
 
 Exp* Parser::parseFactorExp() {
+    auto [line, col] = getPos();
     if (match(Token::OPEN_PARENTHESIS)) {
         if (match(Token::CLOSE_PARENTHESIS)) {
-            return new Literal(Value(Value::UNIT, "()"));
+            return new Literal(line, col, Value(Value::UNIT, "()"));
         }
         Exp* exp = parseExpression();
         if (!match(Token::CLOSE_PARENTHESIS)) {
@@ -533,22 +552,22 @@ Exp* Parser::parseFactorExp() {
     else if (check(Token::BOOLEAN)) {
         int value = currentToken().content == "true";
         match(Token::BOOLEAN);
-        return new Literal(Value(Value::BOOL, value));
+        return new Literal(line, col, Value(Value::BOOL, value));
     }
     else if (check(Token::CHAR)) {
         auto value = std::string(1,currentToken().content[0]);
         match(Token::CHAR);
-        return new Literal(Value(Value::CHAR, value));
+        return new Literal(line, col, Value(Value::CHAR, value));
     }
     else if (check(Token::NUMBER)) {
         int value = stoi(currentToken().content);
         match(Token::NUMBER);
-        return new Literal(Value(Value::I32, value));
+        return new Literal(line, col, Value(Value::I32, value));
     }
     else if (check(Token::STRING)) {
         std::string value = currentToken().content;
         match(Token::STRING);
-        return new Literal(Value(Value::STR, value));
+        return new Literal(line, col, Value(Value::STR, value));
     }
     else if (check(Token::ID)) {
         std::string id = currentToken().content;
@@ -556,7 +575,7 @@ Exp* Parser::parseFactorExp() {
         if (match(Token::OPEN_PARENTHESIS)) {
             std::list<Exp*> args;
             if (match(Token::CLOSE_PARENTHESIS)) {
-                return new FunCall(id, args);
+                return new FunCall(line, col, id, args);
             }
             args.push_back(parseExpression());
             while (match(Token::COMMA)) {
@@ -568,7 +587,7 @@ Exp* Parser::parseFactorExp() {
                                          + debugInfo(currentToken()));
             }
 
-            return new FunCall(id, args);
+            return new FunCall(line, col, id, args);
         }
         else if (match(Token::OPEN_BRACKET)) {
             Exp *start {}, *end {};
@@ -590,18 +609,18 @@ Exp* Parser::parseFactorExp() {
                     throw std::runtime_error("expected ']' to close slice expression"
                                              + debugInfo(currentToken()));
                 }
-                return new SliceExp(id, start, end, inclusive);
+                return new SliceExp(line, col, id, start, end, inclusive);
             }
             else {
                 if (!match(Token::CLOSE_BRACKET)) {
                     throw std::runtime_error("expected ']' to close subscript expression"
                                              + debugInfo(currentToken()));
                 }
-                return new SubscriptExp(id, start);
+                return new SubscriptExp(line, col, id, start);
             }
         }
         else {
-            return new Variable(id);
+            return new Variable(line, col, id);
         }
 
     }
@@ -609,7 +628,7 @@ Exp* Parser::parseFactorExp() {
         Exp* cond = parseExpression();
         Block* block = parseBlock();
 
-        IfExp* exp = new IfExp(cond, block);
+        IfExp* exp = new IfExp(line, col, cond, block);
 
         while (check(Token::ELSE) && peek() == Token::IF) {
             match(Token::ELSE);
@@ -628,7 +647,7 @@ Exp* Parser::parseFactorExp() {
         return exp;
     }
     else if (match(Token::LOOP)) {
-        return new LoopExp(parseBlock());
+        return new LoopExp(line, col, parseBlock());
     }
     else {
         throw std::runtime_error("expected valid factor expression\ngot: "
