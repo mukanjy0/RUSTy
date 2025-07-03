@@ -108,5 +108,6 @@ ExpStmt::~ExpStmt() {
     delete exp;
 }
 void ExpStmt::print(std::ostream& out) {
-    out << exp << ";";
+    out << exp;
+    if (!returnValue) out << ";";
 }

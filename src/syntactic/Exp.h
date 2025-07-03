@@ -10,19 +10,21 @@ class CodeGen;
 
 struct Value {
     enum Type { BOOL, CHAR, I32, STR, ID, UNIT, UNDEFINED};
-    bool ref {};
-    bool mut {};
+
     Type type {};
+    // in case of array has multiple values, otherwise only one
+    std::list<int> numericValues {}; 
+    // in case of array has multiple values, otherwise only one
+    std::list<std::string> stringValues {};
+
+    bool ref;
+    bool mut;
     // by default size = 0, otherwise, it's an array
     int size {};
     // for subscript expression
     int index {};
     // for slice expression
-    int left, right;
-    // in case of array has multiple values, otherwise only one
-    std::list<int> numericValues; 
-    // in case of array has multiple values, otherwise only one
-    std::list<std::string> stringValues;
+    int left {}, right {};
 
     Value() : type(UNDEFINED) {}
 
@@ -54,19 +56,30 @@ class Exp;
 
 class Stmt {
 public:
+    Stmt(const Stmt &) = default;
+    Stmt(Stmt &&) = delete;
+    Stmt &operator=(const Stmt &) = default;
+    Stmt &operator=(Stmt &&) = delete;
+    Stmt() = default;
     virtual ~Stmt() = 0;
-    virtual void accept(Visitor* visitor) = 0;
-    virtual void print(std::ostream& out) = 0;
-    friend std::ostream& operator<<(std::ostream& out, Stmt* stmt);
+    virtual void accept(Visitor *visitor) = 0;
+    virtual void print(std::ostream &out) = 0;
+    friend std::ostream &operator<<(std::ostream &out, Stmt *stmt);
 };
 
 class Block {
     friend class CodeGen;
 
-    std::list<Stmt*> stmts;
+    std::list<Stmt *> stmts;
 public:
-    Block(std::list<Stmt *> stmts) : stmts(std::move(stmts)) {}
+    explicit Block(std::list<Stmt *> stmts) : stmts(std::move(stmts)) {}
     ~Block();
+
+    Block(const Block &) = default;
+    Block(Block &&) = delete;
+    Block &operator=(const Block &) = default;
+    Block &operator=(Block &&) = delete;
+
     Value accept(Visitor *visitor);
     friend std::ostream& operator<<(std::ostream& out, Block* block);
 };
@@ -90,7 +103,7 @@ public:
     BinaryExp(Operation op, Exp *lhs, Exp *rhs) : op(op), lhs(lhs), rhs(rhs) {}
     ~BinaryExp();
 
-    virtual void print(std::ostream& out);
+    void print(std::ostream& out);
     Value accept(Visitor* visitor);
 private:
     friend class CodeGen;
@@ -109,7 +122,7 @@ public:
     UnaryExp(Operation op, Exp *exp) : op(op), exp(exp) {}
     ~UnaryExp();
 
-    virtual void print(std::ostream& out);
+    void print(std::ostream& out);
     Value accept(Visitor* visitor);
 
 private:
@@ -128,7 +141,7 @@ public:
     explicit Literal(Value value) : value(value) {}
     ~Literal();
 
-    virtual void print(std::ostream& out);
+    void print(std::ostream& out);
     Value accept(Visitor* visitor);
 };
 
@@ -141,7 +154,7 @@ public:
     Variable(std::string name) : name(std::move(name)) {}
     ~Variable();
 
-    virtual void print(std::ostream& out);
+    void print(std::ostream& out);
     Value accept(Visitor* visitor);
 };
 
@@ -156,38 +169,38 @@ public:
           : id(std::move(id)), args(std::move(args)) {}
     ~FunCall();
 
-    virtual void print(std::ostream& out);
+    void print(std::ostream& out);
     Value accept(Visitor* visitor);
 };
 
-class IfBranch {
-    friend class IfExp;
-
-    Exp* cond;
-    Block* block;
-public:
-    IfBranch(Exp *cond, Block *block) : cond(cond), block(block) {}
-    ~IfBranch();
-
-    IfBranch(const IfBranch &) = default;
-    IfBranch(IfBranch &&) = delete;
-    IfBranch &operator=(const IfBranch &) = default;
-    IfBranch &operator=(IfBranch &&) = delete;
-
-    friend std::ostream &operator<<(std::ostream &out, IfBranch ifBranch);
-    friend std::ostream &operator<<(std::ostream &out, IfBranch *ifBranch);
-};
-
 class IfExp : public Exp {
+    class IfBranch {
+        friend class IfExp;
+
+        Exp* cond;
+        Block* block;
+    public:
+        IfBranch(Exp *cond, Block *block) : cond(cond), block(block) {}
+        ~IfBranch();
+
+        IfBranch(const IfBranch &) = default;
+        IfBranch(IfBranch &&) = delete;
+        IfBranch &operator=(const IfBranch &) = default;
+        IfBranch &operator=(IfBranch &&) = delete;
+
+        void print(std::ostream &out);
+    };
+
     friend class CodeGen;
 
-    IfBranch ifBranch;
+    IfBranch* ifBranch;
     std::list<IfBranch> elseIfBranches;
     IfBranch* elseBranch {};
 
 public:
-    IfExp(const IfBranch &ifBranch, std::list<IfBranch> elseIfBranches)
-        : ifBranch(ifBranch), elseIfBranches(std::move(elseIfBranches)) {}
+    IfExp(Exp* cond, Block* block) {
+        ifBranch = new IfBranch(cond, block);
+    }
     ~IfExp();
 
     IfExp(const IfExp &) = default;
@@ -195,10 +208,10 @@ public:
     IfExp &operator=(const IfExp &) = default;
     IfExp &operator=(IfExp &&) = delete;
 
-    void setIfBranch(const IfBranch& branch);
-    void setElseBranch(IfBranch *branch);
+    void addElseIfBranch(Exp* cond, Block* block);
+    void setElseBranch(Exp* cond, Block* block);
 
-    virtual void print(std::ostream &out);
+    void print(std::ostream &out);
     Value accept(Visitor *visitor);
 };
 
@@ -210,7 +223,7 @@ public:
     LoopExp(Block *block) : block(block) {}
     ~LoopExp();
 
-    virtual void print(std::ostream& out);
+    void print(std::ostream& out);
     Value accept(Visitor* visitor);
 };
 
@@ -223,7 +236,7 @@ public:
     SubscriptExp(std::string id, Exp* exp) : id(id), exp(exp) {}
     ~SubscriptExp();
 
-    virtual void print(std::ostream& out);
+    void print(std::ostream& out);
     Value accept(Visitor* visitor);
 };
 
@@ -241,7 +254,7 @@ public:
         : id(id), start(start), end(end), inclusive(inclusive) {}
     ~SliceExp();
 
-    virtual void print(std::ostream& out);
+    void print(std::ostream& out);
     Value accept(Visitor* visitor);
 };
 
@@ -257,7 +270,7 @@ public:
         : exp(exp), count(count) {}
     ~ReferenceExp();
 
-    virtual void print(std::ostream& out);
+    void print(std::ostream& out);
     Value accept(Visitor* visitor);
 };
 
@@ -270,7 +283,7 @@ public:
             : elements(std::move(elements)) {}
     ~ArrayExp();
 
-    virtual void print(std::ostream& out);
+    void print(std::ostream& out);
     Value accept(Visitor* visitor);
 };
 
@@ -283,7 +296,7 @@ public:
     UniformArrayExp(Exp *value, Exp *size) : value(value), size(size) {}
     ~UniformArrayExp();
 
-    virtual void print(std::ostream& out);
+    void print(std::ostream& out);
     Value accept(Visitor* visitor);
 };
 
