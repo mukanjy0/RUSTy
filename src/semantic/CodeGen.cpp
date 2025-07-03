@@ -1,14 +1,14 @@
 #include "CodeGen.h"
 
 // Destructor
-CodeGen::~CodeGen() {}
+CodeGen::~CodeGen() = default;
 
 // Visit methods for expressions
 Value CodeGen::visit(Block* block) {
     for(auto stmt : block->stmts) {
         stmt->accept(this);
     }
-    return Value();
+    return {};
 }
 
 Value CodeGen::visit(BinaryExp* exp) {
@@ -77,7 +77,7 @@ Value CodeGen::visit(BinaryExp* exp) {
         default:
             throw std::runtime_error("Invalid binary operation");
     }
-    return Value();
+    return {};
 
 }
 
@@ -94,47 +94,57 @@ Value CodeGen::visit(UnaryExp* exp) {
     }
 
     out << " movq %rcx, %rax\n";
-    return Value();
+    return {};
 }
 
 Value CodeGen::visit(Literal* exp) {
     out << " movq $" << exp->value << ", %rax\n";
-    return Value();
+    return {};
 }
 
 Value CodeGen::visit(Variable* exp) {
     // Implementation here
-    return Value();
+    return {};
 }
 
 Value CodeGen::visit(FunCall* exp) {
     // Implementation here
-    return Value();
+    return {};
 }
 
 Value CodeGen::visit(IfExp* exp) {
     // Implementation here
-    return Value();
+    return {};
 }
 
 Value CodeGen::visit(LoopExp* exp) {
     // Implementation here
-    return Value();
+    return {};
 }
 
 Value CodeGen::visit(SubscriptExp* exp) {
     // Implementation here
-    return Value();
+    return {};
 }
 
 Value CodeGen::visit(SliceExp* exp) {
     // Implementation here
-    return Value();
+    return {};
 }
 
 Value CodeGen::visit(ReferenceExp* exp) {
     // Implementation here
-    return Value();
+    return {};
+}
+
+Value CodeGen::visit(ArrayExp* exp) {
+    std::cout << exp;
+    return {};
+}
+
+Value CodeGen::visit(UniformArrayExp* exp) {
+    std::cout << exp;
+    return {};
 }
 
 // Visit methods for statements

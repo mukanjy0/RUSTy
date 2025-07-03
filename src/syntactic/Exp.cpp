@@ -44,7 +44,7 @@ std::ostream& operator<<(std::ostream& out, const Value& var) {
     return out;
 }
 
-Stmt::~Stmt() {}
+Stmt::~Stmt() = default;
 std::ostream& operator<<(std::ostream& out, Stmt* stmt) {
     stmt->print(out);
     return out;
@@ -65,7 +65,7 @@ std::ostream& operator<<(std::ostream& out, Block* block) {
     return out;
 }
 
-Exp::~Exp() {}
+Exp::~Exp() = default;
 std::ostream& operator<<(std::ostream& out, Exp* exp) {
     exp->print(out);
     return out;
@@ -104,12 +104,12 @@ void UnaryExp::print(std::ostream& out) {
     out << exp;
 }
 
-Literal::~Literal() {}
+Literal::~Literal() = default;
 void Literal::print(std::ostream& out) {
     out << value;
 }
 
-Variable::~Variable() {}
+Variable::~Variable() = default;
 void Variable::print(std::ostream& out) {
     out << name;
 }

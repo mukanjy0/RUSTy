@@ -23,7 +23,7 @@ public:
     };
 
     Token();
-    Token(Type type);
+    explicit Token(Type type);
     Token(Type type, std::string content, int col, int line);
     ~Token();
     Type getType() const;
@@ -36,8 +36,8 @@ private:
 
     Type type;
     std::string content;
-    int col;
-    int line;
+    int col{};
+    int line{};
     friend std::ostream& operator<<(std::ostream& out, const Token& token);
 };
 

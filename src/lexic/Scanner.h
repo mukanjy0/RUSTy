@@ -15,8 +15,8 @@ private:
         int col;
         Token current;
     public:
-      Snapshot(int pos, int line, int col, Token current)
-          : pos(pos), line(line), col(col), current(std::move(current)) {}
+      Snapshot(int pos, int line, int col, const Token& current)
+          : pos(pos), line(line), col(col), current(current) {}
     };
 
     char* source;
@@ -31,7 +31,7 @@ private:
     bool isWhitespace (char ch);
     void advance ();
 public:
-    Scanner(char* filename);
+    explicit Scanner(char* filename);
     ~Scanner();
 
     bool eof ();

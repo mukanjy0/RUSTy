@@ -5,7 +5,7 @@ Token::Token() : type(BEG) {}
 
 Token::Token(Type type) : type(type) {}
 
-Token::Token(Type type, std::string content, int col, int line) 
+Token::Token(Type type, std::string content, int col, int line)
     : type(type), content(content), col(col), line(line) {}
 
 Token::~Token() {}

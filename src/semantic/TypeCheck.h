@@ -1,15 +1,16 @@
-#ifndef RUSTY_GENCODE_H
-#define RUSTY_GENCODE_H
+//
+// Created by jose on 01/07/25.
+//
+
+#ifndef TYPECHECK_H
+#define TYPECHECK_H
 
 #include "Visitor.h"
 
-class CodeGen : public Visitor {
-private:
-    std::ostream& out;
+class TypeCheck final : public Visitor {
 public:
-    CodeGen(SymbolTable* table, std::ostream& out): Visitor(table), out(out){}
-    explicit CodeGen(std::ostream& out): Visitor(nullptr), out(out){}
-    ~CodeGen() override;
+    explicit TypeCheck(SymbolTable* table = nullptr) : Visitor(table) {}
+    ~TypeCheck() override;
     Value visit(Block* block) override;
     Value visit(BinaryExp* exp) override;
     Value visit(UnaryExp* exp) override;
@@ -36,4 +37,4 @@ public:
     void visit(Program* program) override;
 };
 
-#endif //RUSTY_GENCODE_H
+#endif //TYPECHECK_H

@@ -76,6 +76,4 @@ void Program::accept(Visitor* visitor) {
 }
 
 // VISITOR
-
-Visitor::~Visitor() {}
-
+Visitor::~Visitor() = default;

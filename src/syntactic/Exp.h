@@ -1,6 +1,8 @@
 #ifndef EXP_H
 #define EXP_H
 
+#define FRIENDS friend class CodeGen; friend class TypeCheck; friend class NameRes;
+
 #include <iostream>
 #include <string>
 #include <list>
@@ -13,7 +15,7 @@ struct Value {
 
     Type type {};
     // in case of array has multiple values, otherwise only one
-    std::list<int> numericValues {}; 
+    std::list<int> numericValues {};
     // in case of array has multiple values, otherwise only one
     std::list<std::string> stringValues {};
 
@@ -46,7 +48,7 @@ struct Value {
         : type(type), numericValues(std::move(numericValues)),
         ref(ref), mut(mut) {}
 
-    ~Value() {}
+    ~Value() = default;
 
     static Type stringToType(std::string type);
     friend std::ostream& operator<<(std::ostream& out, const Value& var);
@@ -68,7 +70,7 @@ public:
 };
 
 class Block {
-    friend class CodeGen;
+    FRIENDS
 
     std::list<Stmt *> stmts;
 public:
@@ -106,7 +108,7 @@ public:
     void print(std::ostream& out);
     Value accept(Visitor* visitor);
 private:
-    friend class CodeGen;
+    FRIENDS
 
     Operation op;
     Exp* lhs;
@@ -126,14 +128,14 @@ public:
     Value accept(Visitor* visitor);
 
 private:
-    friend class CodeGen;
+    FRIENDS
 
     Operation op;
     Exp* exp;
 };
 
 class Literal : public Exp {
-    friend class CodeGen;
+    FRIENDS
 
     Value value;
 
@@ -146,7 +148,7 @@ public:
 };
 
 class Variable : public Exp {
-    friend class CodeGen;
+    FRIENDS
 
     std::string name;
 
@@ -159,7 +161,7 @@ public:
 };
 
 class FunCall : public Exp {
-  friend class CodeGen;
+    FRIENDS
 
   std::string id;
   std::list<Exp *> args;
@@ -210,7 +212,7 @@ public:
     Value accept(Visitor *visitor);
 
 private:
-    friend class CodeGen;
+    FRIENDS
 
     IfBranch* ifBranch;
     std::list<IfBranch*> elseIfBranches;
@@ -219,7 +221,7 @@ private:
 };
 
 class LoopExp : public Exp {
-    friend class CodeGen;
+    FRIENDS
 
     Block* block;
 public:
@@ -231,7 +233,7 @@ public:
 };
 
 class SubscriptExp : public Exp {
-    friend class CodeGen;
+    FRIENDS
 
     std::string id;
     Exp* exp;
@@ -244,7 +246,7 @@ public:
 };
 
 class SliceExp : public Exp {
-    friend class CodeGen;
+    FRIENDS
 
     std::string id;
     Exp* start;
@@ -262,7 +264,7 @@ public:
 };
 
 class ReferenceExp : public Exp {
-    friend class CodeGen;
+    FRIENDS
 
     Exp* exp;
     int count; // number of reference operators

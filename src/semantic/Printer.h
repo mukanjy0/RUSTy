@@ -6,31 +6,31 @@
 class Printer : public Visitor {
 public:
     Printer() = default;
-    ~Printer();
-    Value visit(Block* block);
-    Value visit(BinaryExp* exp);
-    Value visit(UnaryExp* exp);
-    Value visit(Literal* exp);
-    Value visit(Variable* exp);
-    Value visit(FunCall* exp);
-    Value visit(IfExp* exp);
-    Value visit(LoopExp* exp);
-    Value visit(SubscriptExp* exp);
-    Value visit(SliceExp* exp);
-    Value visit(ReferenceExp* exp);
-    Value visit(ArrayExp* exp);
-    Value visit(UniformArrayExp* exp);
-    void visit(DecStmt* stmt);
-    void visit(AssignStmt* stmt);
-    void visit(CompoundAssignStmt* stmt);
-    void visit(ForStmt* stmt);
-    void visit(WhileStmt* stmt);
-    void visit(PrintStmt* stmt);
-    void visit(BreakStmt* stmt);
-    void visit(ReturnStmt* stmt);
-    void visit(ExpStmt* stmt);
-    void visit(Fun* fun);
-    void visit(Program* program);
+    ~Printer() override;
+    Value visit(Block* block) override;
+    Value visit(BinaryExp* exp) override;
+    Value visit(UnaryExp* exp) override;
+    Value visit(Literal* exp) override;
+    Value visit(Variable* exp) override;
+    Value visit(FunCall* exp) override;
+    Value visit(IfExp* exp) override;
+    Value visit(LoopExp* exp) override;
+    Value visit(SubscriptExp* exp) override;
+    Value visit(SliceExp* exp) override;
+    Value visit(ReferenceExp* exp) override;
+    Value visit(ArrayExp* exp) override;
+    Value visit(UniformArrayExp* exp) override;
+    void visit(DecStmt* stmt) override;
+    void visit(AssignStmt* stmt) override;
+    void visit(CompoundAssignStmt* stmt) override;
+    void visit(ForStmt* stmt) override;
+    void visit(WhileStmt* stmt) override;
+    void visit(PrintStmt* stmt) override;
+    void visit(BreakStmt* stmt) override;
+    void visit(ReturnStmt* stmt) override;
+    void visit(ExpStmt* stmt) override;
+    void visit(Fun* fun) override;
+    void visit(Program* program) override;
 };
 
 #endif

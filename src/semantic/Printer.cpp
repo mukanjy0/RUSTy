@@ -1,69 +1,71 @@
 #include "Printer.h"
 
-Printer::~Printer() {}
+// PRINT VISITOR
+
+Printer::~Printer() = default;
 Value Printer::visit(Block* block) {
     std::cout << block;
-    return Value();
+    return {};
 }
 
 Value Printer::visit(BinaryExp* exp) {
     std::cout << exp;
-    return Value();
+    return {};
 }
 
 Value Printer::visit(UnaryExp* exp) {
     std::cout << exp;
-    return Value();
+    return {};
 }
 
 Value Printer::visit(Literal* exp) {
     std::cout << exp;
-    return Value();
+    return {};
 }
 
 Value Printer::visit(Variable* exp) {
     std::cout << exp;
-    return Value();
+    return {};
 }
 
 Value Printer::visit(FunCall* exp) {
     std::cout << exp;
-    return Value();
+    return {};
 }
 
 Value Printer::visit(IfExp* exp) {
     std::cout << exp;
-    return Value();
+    return {};
 }
 
 Value Printer::visit(LoopExp* exp) {
     std::cout << exp;
-    return Value();
+    return {};
 }
 
 Value Printer::visit(SubscriptExp* exp) {
     std::cout << exp;
-    return Value();
+    return {};
 }
 
 Value Printer::visit(SliceExp* exp) {
     std::cout << exp;
-    return Value();
+    return {};
 }
 
 Value Printer::visit(ReferenceExp* exp) {
     std::cout << exp;
-    return Value();
+    return {};
 }
 
 Value Printer::visit(ArrayExp* exp) {
     std::cout << exp;
-    return Value();
+    return {};
 }
 
 Value Printer::visit(UniformArrayExp* exp) {
     std::cout << exp;
-    return Value();
+    return {};
 }
 
 void Printer::visit(DecStmt* stmt) {

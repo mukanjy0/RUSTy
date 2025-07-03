@@ -88,7 +88,7 @@ void Scanner::advance() {
                 current.type = Token::SINGULAR_QUOTE; 
             }
             break;
-        case '&': 
+        case '&':
             if (source[pos + 1] == '&') {
                 increasePos();
                 current.type = Token::LAND;
@@ -97,7 +97,7 @@ void Scanner::advance() {
                 current.type = Token::REFERENCE;
             }
             break;
-        case '|': 
+        case '|':
             if (source[increasePos()] == '|') {
                 current.type = Token::LOR;
             }
@@ -326,7 +326,7 @@ Token Scanner::getNextToken () {
 }
 
 Scanner::Snapshot Scanner::getSnapshot () {
-    return Snapshot(pos, line, col, current);
+    return {pos, line, col, current};
 }
 
 void Scanner::restoreSnapshot (const Snapshot& snapshot) {
