@@ -14,7 +14,7 @@ void SymbolTable::popScope() {
     }
 }
 
-bool SymbolTable::declare(const std::string& name, const Var& value) {
+bool SymbolTable::declare(const std::string& name, const Val& value) {
     if (scopes_.empty()) {
         pushScope();
     }
@@ -23,7 +23,7 @@ bool SymbolTable::declare(const std::string& name, const Var& value) {
     return inserted;
 }
 
-bool SymbolTable::update(const std::string& name, const Var& value) {
+bool SymbolTable::update(const std::string& name, const Val& value) {
     if (auto* sym = lookup(name)) {
         *sym = value;
         return true;
@@ -31,7 +31,7 @@ bool SymbolTable::update(const std::string& name, const Var& value) {
     return false;
 }
 
-Var* SymbolTable::lookup(const std::string& name) {
+Val* SymbolTable::lookup(const std::string& name) {
     for (auto it = scopes_.rbegin(); it != scopes_.rend(); ++it) {  // reverse iteration
         auto found = it->find(name);
         if (found != it->end()) {

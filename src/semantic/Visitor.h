@@ -1,7 +1,7 @@
 #ifndef VISITOR_H
 #define VISITOR_H
 
-#include "../syntax/Fun.h"
+#include "../syntactic/Fun.h"
 #include "SymbolTable.h"
 
 class Visitor {
@@ -10,17 +10,17 @@ protected:
 public:
     explicit Visitor(SymbolTable* table = nullptr) : table(table) {}
     virtual ~Visitor() = 0;
-    virtual Var visit(Block* block) = 0;
-    virtual Var visit(BinaryExp* exp) = 0;
-    virtual Var visit(UnaryExp* exp) = 0;
-    virtual Var visit(Literal* exp) = 0;
-    virtual Var visit(Variable* exp) = 0;
-    virtual Var visit(FunCall* exp) = 0;
-    virtual Var visit(IfExp* exp) = 0;
-    virtual Var visit(LoopExp* exp) = 0;
-    virtual Var visit(SubscriptExp* exp) = 0;
-    virtual Var visit(SliceExp* exp) = 0;
-    virtual Var visit(ReferenceExp* exp) = 0;
+    virtual Val visit(Block* block) = 0;
+    virtual Val visit(BinaryExp* exp) = 0;
+    virtual Val visit(UnaryExp* exp) = 0;
+    virtual Val visit(Literal* exp) = 0;
+    virtual Val visit(Variable* exp) = 0;
+    virtual Val visit(FunCall* exp) = 0;
+    virtual Val visit(IfExp* exp) = 0;
+    virtual Val visit(LoopExp* exp) = 0;
+    virtual Val visit(SubscriptExp* exp) = 0;
+    virtual Val visit(SliceExp* exp) = 0;
+    virtual Val visit(ReferenceExp* exp) = 0;
     virtual void visit(DecStmt* stmt) = 0;
     virtual void visit(AssignStmt* stmt) = 0;
     virtual void visit(CompoundAssignStmt* stmt) = 0;

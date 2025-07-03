@@ -4,14 +4,14 @@
 CodeGen::~CodeGen() = default;
 
 // Visit methods for expressions
-Var CodeGen::visit(Block* block) {
+Val CodeGen::visit(Block* block) {
     for(auto stmt : block->stmts) {
         stmt->accept(this);
     }
     return {};
 }
 
-Var CodeGen::visit(BinaryExp* exp) {
+Val CodeGen::visit(BinaryExp* exp) {
     exp->lhs->accept(this);
     out << " pushq %rax\n";
     exp->rhs->accept(this);
@@ -81,7 +81,7 @@ Var CodeGen::visit(BinaryExp* exp) {
 
 }
 
-Var CodeGen::visit(UnaryExp* exp) {
+Val CodeGen::visit(UnaryExp* exp) {
     exp->exp->accept(this);
     out << " movq %rax, %rcx\n";
 
@@ -97,42 +97,42 @@ Var CodeGen::visit(UnaryExp* exp) {
     return {};
 }
 
-Var CodeGen::visit(Literal* exp) {
+Val CodeGen::visit(Literal* exp) {
     out << " movq $" << exp->value << ", %rax\n";
     return {};
 }
 
-Var CodeGen::visit(Variable* exp) {
+Val CodeGen::visit(Variable* exp) {
     // Implementation here
     return {};
 }
 
-Var CodeGen::visit(FunCall* exp) {
+Val CodeGen::visit(FunCall* exp) {
     // Implementation here
     return {};
 }
 
-Var CodeGen::visit(IfExp* exp) {
+Val CodeGen::visit(IfExp* exp) {
     // Implementation here
     return {};
 }
 
-Var CodeGen::visit(LoopExp* exp) {
+Val CodeGen::visit(LoopExp* exp) {
     // Implementation here
     return {};
 }
 
-Var CodeGen::visit(SubscriptExp* exp) {
+Val CodeGen::visit(SubscriptExp* exp) {
     // Implementation here
     return {};
 }
 
-Var CodeGen::visit(SliceExp* exp) {
+Val CodeGen::visit(SliceExp* exp) {
     // Implementation here
     return {};
 }
 
-Var CodeGen::visit(ReferenceExp* exp) {
+Val CodeGen::visit(ReferenceExp* exp) {
     // Implementation here
     return {};
 }

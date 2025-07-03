@@ -11,14 +11,14 @@
 class DecStmt : public Stmt {
     FRIENDS
     std::string id;
-    Var var;
+    Val var;
     Exp* rhs {};
 
 public:
-    DecStmt(std::string id, const Var& var)
+    DecStmt(std::string id, const Val& var)
     : id(std::move(id)), var(var) {}
 
-    DecStmt(std::string id, const Var& var, Exp *rhs)
+    DecStmt(std::string id, const Val& var, Exp *rhs)
     : id(std::move(id)), var(var), rhs(rhs) {}
 
     ~DecStmt() override;

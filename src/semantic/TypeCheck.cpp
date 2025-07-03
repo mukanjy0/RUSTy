@@ -8,14 +8,14 @@
 TypeCheck::~TypeCheck() = default;
 
 // Visit methods for expressions
-Var TypeCheck::visit(Block* block) {
+Val TypeCheck::visit(Block* block) {
     for(auto stmt : block->stmts) {
         stmt->accept(this);
     }
     return {};
 }
 
-Var TypeCheck::visit(BinaryExp* exp) {
+Val TypeCheck::visit(BinaryExp* exp) {
     exp->lhs->accept(this);
     exp->rhs->accept(this);
 
@@ -58,7 +58,7 @@ Var TypeCheck::visit(BinaryExp* exp) {
 
 }
 
-Var TypeCheck::visit(UnaryExp* exp) {
+Val TypeCheck::visit(UnaryExp* exp) {
     exp->exp->accept(this);
 
     switch (exp->op) {
@@ -70,38 +70,38 @@ Var TypeCheck::visit(UnaryExp* exp) {
     return {};
 }
 
-Var TypeCheck::visit(Literal* exp) {
-    return {Var::I32, 0};
+Val TypeCheck::visit(Literal* exp) {
+    return {Val::I32, 0};
 }
 
-Var TypeCheck::visit(Variable* exp) {
+Val TypeCheck::visit(Variable* exp) {
     // Implementation here
     return {};
 }
 
-Var TypeCheck::visit(FunCall* exp) {
+Val TypeCheck::visit(FunCall* exp) {
     // Implementation here
     return {};
 }
 
-Var TypeCheck::visit(IfExp* exp) {
+Val TypeCheck::visit(IfExp* exp) {
     // Implementation here
     return {};
 }
 
-Var TypeCheck::visit(LoopExp* exp) {
+Val TypeCheck::visit(LoopExp* exp) {
     // Implementation here
     return {};
 }
 
-Var TypeCheck::visit(SubscriptExp* exp) {
+Val TypeCheck::visit(SubscriptExp* exp) {
     return {};
 }
 
-Var TypeCheck::visit(SliceExp* exp) {
+Val TypeCheck::visit(SliceExp* exp) {
     return {};
 }
-Var TypeCheck::visit(ReferenceExp* exp) {
+Val TypeCheck::visit(ReferenceExp* exp) {
     return {};
 }
 

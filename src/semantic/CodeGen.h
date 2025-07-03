@@ -10,17 +10,17 @@ public:
     CodeGen(SymbolTable* table, std::ostream& out): Visitor(table), out(out){}
     explicit CodeGen(std::ostream& out): Visitor(nullptr), out(out){}
     ~CodeGen() override;
-    Var visit(Block* block) override;
-    Var visit(BinaryExp* exp) override;
-    Var visit(UnaryExp* exp) override;
-    Var visit(Literal* exp) override;
-    Var visit(Variable* exp) override;
-    Var visit(FunCall* exp) override;
-    Var visit(IfExp* exp) override;
-    Var visit(LoopExp* exp) override;
-    Var visit(SubscriptExp* exp) override;
-    Var visit(SliceExp* exp) override;
-    Var visit(ReferenceExp* exp) override;
+    Val visit(Block* block) override;
+    Val visit(BinaryExp* exp) override;
+    Val visit(UnaryExp* exp) override;
+    Val visit(Literal* exp) override;
+    Val visit(Variable* exp) override;
+    Val visit(FunCall* exp) override;
+    Val visit(IfExp* exp) override;
+    Val visit(LoopExp* exp) override;
+    Val visit(SubscriptExp* exp) override;
+    Val visit(SliceExp* exp) override;
+    Val visit(ReferenceExp* exp) override;
     void visit(DecStmt* stmt) override;
     void visit(AssignStmt* stmt) override;
     void visit(CompoundAssignStmt* stmt) override;

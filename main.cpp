@@ -1,5 +1,5 @@
 #include <iostream>
-#include "src/syntax/Parser.h"
+#include "src/syntactic/Parser.h"
 #include "src/semantic/Printer.h"
 #include "src/semantic/NameRes.h"
 #include "src/semantic/TypeCheck.h"
