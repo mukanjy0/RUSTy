@@ -109,8 +109,8 @@ void Literal::print(std::ostream& out) {
     out << value;
 }
 
-Valueiable::~Valueiable() {}
-void Valueiable::print(std::ostream& out) {
+Variable::~Variable() {}
+void Variable::print(std::ostream& out) {
     out << name;
 }
 

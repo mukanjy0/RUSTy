@@ -11,7 +11,7 @@ public:
     Value visit(BinaryExp* exp);
     Value visit(UnaryExp* exp);
     Value visit(Literal* exp);
-    Value visit(Valueiable* exp);
+    Value visit(Variable* exp);
     Value visit(FunCall* exp);
     Value visit(IfExp* exp);
     Value visit(LoopExp* exp);

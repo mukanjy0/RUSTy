@@ -341,7 +341,7 @@ Stmt* Parser::parseStatement() {
                                      + debugInfo(currentToken()));
         }
 
-        Exp* lhs = new Valueiable(id);
+        Exp* lhs = new Variable(id);
 
         if (!match(Token::ASSIGN)) {
             throw std::runtime_error("expected '=' after & id in assignment statement\ngot: " 
@@ -360,7 +360,7 @@ Stmt* Parser::parseStatement() {
         std::string id = currentToken().content;
         match(Token::ID);
         if (match(Token::ASSIGN)) {
-            Exp* lhs = new Valueiable(id);
+            Exp* lhs = new Variable(id);
             Exp* rhs = parseRhs();
 
             ensureSemicolon("expected ';' after assignment statement");
@@ -376,7 +376,7 @@ Stmt* Parser::parseStatement() {
             BinaryExp::Operation op = tokenTypeToBinaryOperation(currentToken().type);
             scanner->next();
 
-            Exp* lhs = new Valueiable(id);
+            Exp* lhs = new Variable(id);
             Exp* rhs = parseExpression();
 
             ensureSemicolon("expected ';' after compound assignment statement");
@@ -601,7 +601,7 @@ Exp* Parser::parseFactorExp() {
             }
         }
         else {
-            return new Valueiable(id);
+            return new Variable(id);
         }
 
     }

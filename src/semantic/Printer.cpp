@@ -21,7 +21,7 @@ Value Printer::visit(Literal* exp) {
     return Value();
 }
 
-Value Printer::visit(Valueiable* exp) {
+Value Printer::visit(Variable* exp) {
     std::cout << exp;
     return Value();
 }

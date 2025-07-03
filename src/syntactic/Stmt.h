@@ -24,7 +24,7 @@ public:
 };
 
 class AssignStmt : public Stmt {
-    Exp* lhs; // will be either Valueiable or Subscript
+    Exp* lhs; // will be either Variable or Subscript
     Exp* rhs;
     bool ref {};
 
@@ -42,7 +42,7 @@ public:
 
 class CompoundAssignStmt : public Stmt {
     BinaryExp::Operation op;
-    Exp* lhs; // will be either Valueiable or Subscript
+    Exp* lhs; // will be either Variable or Subscript
     Exp* rhs;
 
 public:

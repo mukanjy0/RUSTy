@@ -10,7 +10,7 @@ public:
     virtual Value visit(BinaryExp* exp) = 0;
     virtual Value visit(UnaryExp* exp) = 0;
     virtual Value visit(Literal* exp) = 0;
-    virtual Value visit(Valueiable* exp) = 0;
+    virtual Value visit(Variable* exp) = 0;
     virtual Value visit(FunCall* exp) = 0;
     virtual Value visit(IfExp* exp) = 0;
     virtual Value visit(LoopExp* exp) = 0;

@@ -102,7 +102,7 @@ Value CodeGen::visit(Literal* exp) {
     return Value();
 }
 
-Value CodeGen::visit(Valueiable* exp) {
+Value CodeGen::visit(Variable* exp) {
     // Implementation here
     return Value();
 }

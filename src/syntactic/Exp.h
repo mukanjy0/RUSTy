@@ -132,14 +132,14 @@ public:
     Value accept(Visitor* visitor);
 };
 
-class Valueiable : public Exp {
+class Variable : public Exp {
     friend class CodeGen;
 
     std::string name;
 
 public:
-    Valueiable(std::string name) : name(std::move(name)) {}
-    ~Valueiable();
+    Variable(std::string name) : name(std::move(name)) {}
+    ~Variable();
 
     virtual void print(std::ostream& out);
     Value accept(Visitor* visitor);

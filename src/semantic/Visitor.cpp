@@ -14,7 +14,7 @@ Value UnaryExp::accept(Visitor* visitor) {
 Value Literal::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-Value Valueiable::accept(Visitor* visitor) {
+Value Variable::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
 Value FunCall::accept(Visitor* visitor) {
