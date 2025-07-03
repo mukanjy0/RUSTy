@@ -7,7 +7,7 @@ FunList → Fun FunList'
 FunList' → Fun FunList'
 FunList' → Ɛ
 
-Fun → fn id '(' ParamList ')' Block
+Fun → fn id '(' ParamList ')' [-> type] Block
 
 FunCall → id '(' ArgList ')'
 
@@ -16,9 +16,9 @@ ArgList → Exp [, ArgList]
 
 ParamList → Ɛ
 ParamList → Param [, ParamList]
-Param → type id
+Param → id : type
 
-Block → { StmtList }
+Block → { StmtList [; return [Exp]] }
 
 StmtList → Stmt StmtList
 StmtList → Stmt'
@@ -27,19 +27,20 @@ StmtList → Ɛ
 // Declaration
 Stmt → let [mut] id [= Rhs] ;
 Stmt → let [mut] id : [&] type [= Exp] ;
-Stmt → let [mut] id : '[' type ; number ']' [= Rhs] ;
+Stmt → let [mut] id : '[' [&] type ; Exp ']' [= Rhs] ;
 // Assignment
 Stmt → [&] id = Rhs ;
-Stmt → [&] SubscriptExp = Exp ;
-Stmt → [&] SliceExp = Exp ;
 Stmt → id (+-*/)= Exp ;
+Stmt → SubscriptExp = Exp ;
+Stmt → SubscriptExp (+-*/)= Exp ;
 // Auxiliary
-Rhs → Exp | ('[' literal ; number ']') | ('[' [literal (, literal)*] ']')
+Rhs → Exp | ('[' Exp ; Exp ']') | ('[' [Exp (, Exp)*] ']')
 // Flow control
 Stmt → for id in Exp [..|..=] Exp Block
 Stmt → while Exp Block
 Stmt → break [Exp] [;]
-Stmt → return [Exp] [;]
+Stmt → return ;
+Stmt → return Exp ;
 // Macro
 Stmt → println! '(' str [(, Exp)*] ')' ;
 // Exp
@@ -69,8 +70,7 @@ TermExp → ReferenceFactorExp
 TermExp → ReferenceFactorExp * ReferenceFactorExp
 TermExp → ReferenceFactorExp / ReferenceFactorExp
 
-ReferenceFactorExp → & ReferenceFactorExp
-ReferenceFactorExp → FactorExp
+ReferenceFactorExp → [&] FactorExp
 
 FactorExp → '(' Exp ')'
 FactorExp → Literal
@@ -88,5 +88,6 @@ Literal -> number
 Literal -> boolean
 Literal -> char
 Literal -> str
+Literal -> ()
 
 ```

@@ -4,10 +4,10 @@
 #include "Stmt.h"
 
 struct Param {
-    Var::Type type;
+    Value::Type type;
     std::string id;
     Param() = default;
-    Param(Var::Type type, std::string id) : type(type), id(id) {}
+    Param(Value::Type type, std::string id) : type(type), id(id) {}
 };
 
 class Fun {
@@ -23,10 +23,10 @@ public:
 };
 
 class Program {
-    std::map<std::string,Fun*> funs;
+    std::list<std::pair<std::string,Fun*>> funs;
 
 public:
-    explicit Program(std::map<std::string,Fun*> funs) : funs(std::move(funs)) {}
+    explicit Program(std::list<std::pair<std::string,Fun*>>  funs) : funs(std::move(funs)) {}
     ~Program();
     void accept(Visitor* visitor);
     friend std::ostream& operator<<(std::ostream& out, Program* program);

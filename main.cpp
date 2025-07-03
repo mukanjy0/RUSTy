@@ -1,6 +1,6 @@
 #include <iostream>
-#include "src/Parser.h"
-#include "src/Visitor.h"
+#include "src/syntactic/Parser.h"
+#include "src/semantic/Printer.h"
 
 using namespace std;
 
@@ -14,8 +14,12 @@ int main(int argc, char* argv[]) {
 
     Scanner scanner (filename);
 
+    cout << "\n=======================\n";
+    cout << "Printing scanned tokens...";
+    cout << "\n=======================\n";
+
     while (!scanner.eof()) {
-        cout << scanner.getNextToken() << "- (" << scanner.getTokenContent() << ")"<< endl;
+        cout << scanner.getNextToken() << " - " << scanner.getTokenContent() << endl;
     }
 
     Parser parser (filename);
@@ -23,6 +27,10 @@ int main(int argc, char* argv[]) {
     Program* program = parser.parse();
 
     Printer printer;
+
+    cout << "\n=======================\n";
+    cout << "Printing source code...";
+    cout << "\n=======================\n";
 
     printer.visit(program);
 
