@@ -1,5 +1,4 @@
 #include "Fun.h"
-#include <iostream>
 
 Fun::~Fun() {
     delete block;

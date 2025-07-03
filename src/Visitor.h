@@ -17,6 +17,8 @@ public:
     virtual Var visit(SubscriptExp* exp) = 0;
     virtual Var visit(SliceExp* exp) = 0;
     virtual Var visit(ReferenceExp* exp) = 0;
+    virtual Var visit(ArrayExp* exp) = 0;
+    virtual Var visit(UniformArrayExp* exp) = 0;
     virtual void visit(DecStmt* stmt) = 0;
     virtual void visit(AssignStmt* stmt) = 0;
     virtual void visit(CompoundAssignStmt* stmt) = 0;
@@ -45,6 +47,8 @@ public:
     Var visit(SubscriptExp* exp);
     Var visit(SliceExp* exp);
     Var visit(ReferenceExp* exp);
+    Var visit(ArrayExp* exp);
+    Var visit(UniformArrayExp* exp);
     void visit(DecStmt* stmt);
     void visit(AssignStmt* stmt);
     void visit(CompoundAssignStmt* stmt);

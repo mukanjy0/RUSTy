@@ -10,7 +10,7 @@ Parser::~Parser() {
 }
 
 std::string Parser::debugInfo(Token token) {
-    return token.content
+    return "Token: " + std::string(token) + " | Content: " + token.content
              + "\nat line: " + std::to_string(token.line)
              + " | column: " + std::to_string(token.col);
 }
@@ -61,12 +61,12 @@ Token Parser::currentToken() {
 }
 
 Program* Parser::parse() {
-    std::map<std::string,Fun*> funs;
+    std::list<std::pair<std::string,Fun*>> funs;
     auto [id, fun] = parseFunction();
-    funs[id] = fun;
+    funs.emplace_back(id, fun);
     while (!scanner->eof()) {
         auto [id, fun] = parseFunction();
-        funs[id] = fun;
+        funs.emplace_back(id, fun);
     }
     return new Program(funs);
 }
@@ -152,8 +152,29 @@ std::pair<std::string, Fun*> Parser::parseFunction() {
 }
 
 Exp* Parser::parseRhs() {
-    // TODO
-    return parseExpression();
+    if (match(Token::OPEN_BRACKET)) {
+        Exp* exp = parseExpression();
+        if (match(Token::SEMICOLON)) {
+            Exp* size = parseExpression();
+            if (!match(Token::CLOSE_BRACKET)) {
+                throw std::runtime_error("expected closing bracket in uniform array\ngot: " 
+                                         + debugInfo(currentToken()));
+            }
+            return new UniformArrayExp(exp, size);
+        }
+        std::list<Exp*> elements = {exp};
+        while (match(Token::COMMA)) {
+            elements.push_back(parseExpression());
+        }
+        if (!match(Token::CLOSE_BRACKET)) {
+            throw std::runtime_error("expected closing bracket in array\ngot: " 
+                                     + debugInfo(currentToken()));
+        }
+        return new ArrayExp(elements);
+    }
+    else {
+        return parseExpression();
+    }
 }
 
 Stmt* Parser::parseStatement() {
@@ -258,6 +279,9 @@ Stmt* Parser::parseStatement() {
 
         return new WhileStmt(cond, block);
     }
+    else if (check(Token::IF) || check(Token::LOOP)) {
+        return new ExpStmt(parseExpression());
+    }
     else if (match(Token::PRINT)) {
         if (!match(Token::OPEN_PARENTHESIS)) {
             throw std::runtime_error("expected '(' after 'println!'\ngot: " 
@@ -324,7 +348,7 @@ Stmt* Parser::parseStatement() {
             throw std::runtime_error("expected '=' after & id in assignment statement\ngot: " 
                                      + debugInfo(currentToken()));
         }
-        Exp* rhs = parseExpression();
+        Exp* rhs = parseRhs();
 
         ensureSemicolon("expected ';' after assignment statement");
 
@@ -338,7 +362,7 @@ Stmt* Parser::parseStatement() {
         match(Token::ID);
         if (match(Token::ASSIGN)) {
             Exp* lhs = new Variable(id);
-            Exp* rhs = parseExpression();
+            Exp* rhs = parseRhs();
 
             ensureSemicolon("expected ';' after assignment statement");
 
@@ -470,7 +494,7 @@ Exp* Parser::parseArithmeticExp() {
 }
 
 Exp* Parser::parseTermExp() {
-    Exp* exp = parseFactorExp();
+    Exp* exp = parseReferenceFactorExp();
     if (check(Token::TIMES)
         || check(Token::DIV)
     ) {
@@ -513,7 +537,7 @@ Exp* Parser::parseFactorExp() {
         return new Literal(Var(Var::BOOL, value));
     }
     else if (check(Token::CHAR)) {
-        char value = currentToken().content[0];
+        auto value = std::string(1,currentToken().content[0]);
         match(Token::CHAR);
         return new Literal(Var(Var::CHAR, value));
     }
@@ -554,11 +578,11 @@ Exp* Parser::parseFactorExp() {
                 start = parseExpression();
             }
             if (check(Token::RANGE_IN) || check(Token::RANGE_EX)) {
-                if (match(Token::RANGE_EX)) {
+                if (match(Token::RANGE_IN)) {
                     inclusive = true;
                 }
                 else {
-                    match(Token::RANGE_IN);
+                    match(Token::RANGE_EX);
                 } 
                 if (!check(Token::CLOSE_BRACKET)) {
                     end = parseExpression();
@@ -583,10 +607,9 @@ Exp* Parser::parseFactorExp() {
 
     }
     else if (match(Token::IF)) {
-        IfExp* exp;
         Exp* cond = parseExpression();
         Block* block = parseBlock();
-        exp->setIfBranch(IfBranch(cond, block));
+        IfBranch ifBranch = IfBranch(cond, block);
 
         std::list<IfBranch> elseIfBranches;
         while (check(Token::ELSE) && peek() == Token::IF) {
@@ -597,10 +620,13 @@ Exp* Parser::parseFactorExp() {
             elseIfBranches.emplace_back(cond, block);
         }
 
+        IfExp* exp = new IfExp(ifBranch, elseIfBranches);
+
         if (match(Token::ELSE)) {
             cond = nullptr;
             block = parseBlock();
-            exp->setElseBranch(new IfBranch(cond, block));
+            IfBranch* elseBranch = new IfBranch(cond, block);
+            exp->setElseBranch(elseBranch);
         }
 
         return exp;

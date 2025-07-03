@@ -35,6 +35,12 @@ Var SliceExp::accept(Visitor* visitor) {
 Var ReferenceExp::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
+Var ArrayExp::accept(Visitor* visitor) {
+    return visitor->visit(this);
+}
+Var UniformArrayExp::accept(Visitor* visitor) {
+    return visitor->visit(this);
+}
 void DecStmt::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
@@ -126,6 +132,16 @@ Var Printer::visit(SliceExp* exp) {
 }
 
 Var Printer::visit(ReferenceExp* exp) {
+    std::cout << exp;
+    return Var();
+}
+
+Var Printer::visit(ArrayExp* exp) {
+    std::cout << exp;
+    return Var();
+}
+
+Var Printer::visit(UniformArrayExp* exp) {
     std::cout << exp;
     return Var();
 }

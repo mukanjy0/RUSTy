@@ -23,15 +23,16 @@ bool Scanner::isWhitespace(char ch) {
 }
 
 void Scanner::advance() {
+    // std::cout << line << ':' << col << std::endl;
     while (pos < size && isWhitespace(source[pos])) {
         increasePos();
     }
-    current.content.clear();
     if (pos == size) current.type = Token::END;
     if (current.type == Token::END) return;
 
     current.line = line;
     current.col = col;
+    current.content = source[pos];
 
     switch (source[pos]) {
         case ':': current.type = Token::COLON; break;
@@ -274,15 +275,15 @@ Scanner::Scanner (char* filename) {
     std::stringstream buffer;
     buffer << f.rdbuf();
 
-    size = buffer.str().length();
-    source = new char [size];
+    size = strlen(buffer.str().c_str());
+    source = new char [size + 1];
     strcpy (source, buffer.str().c_str());
 
     f.close();
 }
 
 Scanner::~Scanner() {
-    delete source;
+    delete[] source;
 }
 
 bool Scanner::eof () {
@@ -290,15 +291,14 @@ bool Scanner::eof () {
 }
 
 Token::Type Scanner::peek() {
-    int prevPos = pos;
-    Token aux = current;
+    auto snapshot = getSnapshot();
 
     advance();
 
-    std::swap(aux, current);
-    pos = prevPos;
+    auto type = current.type;
+    restoreSnapshot(snapshot);
 
-    return aux.type;
+    return type;
 }
 
 bool Scanner::check(const Token& token) {

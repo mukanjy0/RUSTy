@@ -1,5 +1,6 @@
-#include <iostream>
 #include "Exp.h"
+#include "Token.h"
+#include <iostream>
 
 Var::Type Var::stringToType(std::string type) {
     if (type == "bool") return BOOL;
@@ -21,7 +22,7 @@ std::ostream& operator<<(std::ostream& out, const Var& var) {
             break;
         case Var::CHAR:
             for (auto el : var.stringValues) {
-                out << el[0];
+                out << '\'' << el[0] << '\'';
                 if (++i < var.size) out << ", ";
             }
             break;
@@ -33,7 +34,7 @@ std::ostream& operator<<(std::ostream& out, const Var& var) {
             break;
         case Var::STR:
             for (auto el : var.stringValues) {
-                out << el;
+                out << '"' << el << '"';
                 if (++i < var.size) out << ", ";
             }
             break;
@@ -135,12 +136,12 @@ IfBranch::~IfBranch() {
     delete block;
 }
 std::ostream& operator<<(std::ostream& out, IfBranch ifBranch) {
-    out << ifBranch.cond << "\n";
+    if (ifBranch.cond) out << ifBranch.cond << "\n";
     out << ifBranch.block;
     return out;
 }
 std::ostream& operator<<(std::ostream& out, IfBranch* ifBranch) {
-    out << ifBranch->cond << "\n";
+    if (ifBranch->cond) out << ifBranch->cond << "\n";
     out << ifBranch->block;
     return out;
 }
@@ -149,14 +150,14 @@ IfExp::~IfExp() {
     elseIfBranches.clear();
     delete elseBranch;
 }
-void IfExp::setIfBranch(IfBranch branch) { ifBranch = branch; }
+void IfExp::setIfBranch(const IfBranch& branch) { ifBranch = std::move(branch); }
 void IfExp::setElseBranch(IfBranch* branch) {elseBranch = branch; }
 void IfExp::print(std::ostream& out) {
     out << "if " << ifBranch;
     for (auto ifBranch : elseIfBranches) {
         out << "else if " << ifBranch;
     }
-    if (elseBranch) out << "else " << elseBranch;
+    if (elseBranch) out << "else" << elseBranch;
 }
 
 LoopExp::~LoopExp() {
@@ -179,9 +180,12 @@ SliceExp::~SliceExp() {
     delete end;
 }
 void SliceExp::print(std::ostream& out) {
-    out << id << '[' << start << "..";
+    out << id << '[';
+    if (start) out << start;
+    out << "..";
     if (inclusive) out << '=';
-    out << end << ']';
+    if (end) out << end;
+    out << ']';
 }
 
 ReferenceExp::~ReferenceExp() {
@@ -192,3 +196,26 @@ void ReferenceExp::print(std::ostream& out) {
     out << exp;
 }
 
+ArrayExp::~ArrayExp() {
+    for (auto el : elements) {
+        delete el;
+    }
+    elements.clear();
+}
+void ArrayExp::print(std::ostream& out) {
+    out << '[';
+    size_t i {};
+    for (auto el : elements) {
+        out << el;
+        if (++i < elements.size()) out << ", ";
+    }
+    out << ']';
+}
+
+UniformArrayExp::~UniformArrayExp() {
+    delete value;
+    delete size;
+}
+void UniformArrayExp::print(std::ostream& out) {
+    out << '[' << value << "; " << size << ']';
+}

@@ -2,7 +2,6 @@
 #define STMT_H
 
 #include "Exp.h"
-#include <map>
 #include <list>
 #include <string>
 

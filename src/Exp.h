@@ -146,13 +146,14 @@ public:
 };
 
 class FunCall : public Exp {
-    friend class CodeGen;
+  friend class CodeGen;
 
-    std::string id;
-    std::list<Exp*> args;
+  std::string id;
+  std::list<Exp *> args;
 
 public:
-    FunCall(std::string id, std::list<Exp*> args) : id(id), args(args) {}
+    FunCall(std::string id, std::list<Exp *> args)
+          : id(std::move(id)), args(std::move(args)) {}
     ~FunCall();
 
     virtual void print(std::ostream& out);
@@ -165,10 +166,16 @@ class IfBranch {
     Exp* cond;
     Block* block;
 public:
-    IfBranch(Exp* cond, Block* block) : cond(cond), block(block) {}
+    IfBranch(Exp *cond, Block *block) : cond(cond), block(block) {}
     ~IfBranch();
-    friend std::ostream& operator<<(std::ostream& out, IfBranch ifBranch);
-    friend std::ostream& operator<<(std::ostream& out, IfBranch* ifBranch);
+
+    IfBranch(const IfBranch &) = default;
+    IfBranch(IfBranch &&) = delete;
+    IfBranch &operator=(const IfBranch &) = default;
+    IfBranch &operator=(IfBranch &&) = delete;
+
+    friend std::ostream &operator<<(std::ostream &out, IfBranch ifBranch);
+    friend std::ostream &operator<<(std::ostream &out, IfBranch *ifBranch);
 };
 
 class IfExp : public Exp {
@@ -179,21 +186,20 @@ class IfExp : public Exp {
     IfBranch* elseBranch {};
 
 public:
-    IfExp(IfBranch ifBranch)
-        : ifBranch(ifBranch) {}
-    IfExp(IfBranch ifBranch, std::list<IfBranch> elseIfBranches)
+    IfExp(const IfBranch &ifBranch, std::list<IfBranch> elseIfBranches)
         : ifBranch(ifBranch), elseIfBranches(std::move(elseIfBranches)) {}
-    IfExp(IfBranch ifBranch, std::list<IfBranch> elseIfBranches,
-          IfBranch* elseBranch)
-        : ifBranch(ifBranch), elseIfBranches(std::move(elseIfBranches)),
-        elseBranch(elseBranch) {}
     ~IfExp();
 
-    void setIfBranch(IfBranch branch);
-    void setElseBranch(IfBranch* branch);
+    IfExp(const IfExp &) = default;
+    IfExp(IfExp &&) = delete;
+    IfExp &operator=(const IfExp &) = default;
+    IfExp &operator=(IfExp &&) = delete;
 
-    virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
+    void setIfBranch(const IfBranch& branch);
+    void setElseBranch(IfBranch *branch);
+
+    virtual void print(std::ostream &out);
+    Var accept(Visitor *visitor);
 };
 
 class LoopExp : public Exp {
@@ -250,6 +256,32 @@ public:
     ReferenceExp(Exp* exp, int count)  
         : exp(exp), count(count) {}
     ~ReferenceExp();
+
+    virtual void print(std::ostream& out);
+    Var accept(Visitor* visitor);
+};
+
+class ArrayExp : public Exp {
+    friend class CodeGen;
+
+    std::list<Exp*> elements;
+public:
+    explicit ArrayExp(std::list<Exp *> elements)
+            : elements(std::move(elements)) {}
+    ~ArrayExp();
+
+    virtual void print(std::ostream& out);
+    Var accept(Visitor* visitor);
+};
+
+class UniformArrayExp : public Exp {
+    friend class CodeGen;
+
+    Exp *value;
+    Exp *size;
+public:
+    UniformArrayExp(Exp *value, Exp *size) : value(value), size(size) {}
+    ~UniformArrayExp();
 
     virtual void print(std::ostream& out);
     Var accept(Visitor* visitor);
