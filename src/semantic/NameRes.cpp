@@ -44,14 +44,14 @@ Value NameRes::visit(FunCall* exp) {
 }
 
 Value NameRes::visit(IfExp* exp) {
-    exp->ifBranch.cond->accept(this);
-    exp->ifBranch.block->accept(this);
+    exp->ifBranch->getCondition()->accept(this);
+    exp->ifBranch->getBlock()->accept(this);
     for (auto& br : exp->elseIfBranches) {
-        br.cond->accept(this);
-        br.block->accept(this);
+        br->getCondition()->accept(this);
+        br->getBlock()->accept(this);
     }
     if (exp->elseBranch) {
-        exp->elseBranch->block->accept(this);
+        exp->elseBranch->getBlock()->accept(this);
     }
     return {};
 }
@@ -77,12 +77,12 @@ Value NameRes::visit(ReferenceExp* exp) {
 }
 
 Value NameRes::visit(ArrayExp* exp) {
-    std::cout << exp;
+    // std::cout << exp;
     return {};
 }
 
 Value NameRes::visit(UniformArrayExp* exp) {
-    std::cout << exp;
+    // std::cout << exp;
     return {};
 }
 
