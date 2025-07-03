@@ -8,7 +8,7 @@
 class Visitor;
 class CodeGen;
 
-struct Var {
+struct Value {
     enum Type { BOOL, CHAR, I32, STR, ID, UNIT, UNDEFINED};
     bool ref {};
     bool mut {};
@@ -24,30 +24,30 @@ struct Var {
     // in case of array has multiple values, otherwise only one
     std::list<std::string> stringValues;
 
-    Var() : type(UNDEFINED) {}
+    Value() : type(UNDEFINED) {}
 
-    Var(Type type, std::string stringValue, bool ref=false, bool mut=false)
+    Value(Type type, std::string stringValue, bool ref=false, bool mut=false)
         : type(type), stringValues({stringValue}),
         ref(ref), mut(mut) {}
 
-    Var(Type type, int numericValue, bool ref=false, bool mut=false)
+    Value(Type type, int numericValue, bool ref=false, bool mut=false)
         : type(type), numericValues({numericValue}),
         ref(ref), mut(mut) {}
 
-    Var(Type type, std::list<std::string> stringValues,
+    Value(Type type, std::list<std::string> stringValues,
         bool ref=false, bool mut=false)
         : type(type), stringValues(std::move(stringValues)),
         ref(ref), mut(mut) {}
 
-    Var(Type type, std::list<int> numericValues,
+    Value(Type type, std::list<int> numericValues,
         bool ref=false, bool mut=false)
         : type(type), numericValues(std::move(numericValues)),
         ref(ref), mut(mut) {}
 
-    ~Var() {}
+    ~Value() {}
 
     static Type stringToType(std::string type);
-    friend std::ostream& operator<<(std::ostream& out, const Var& var);
+    friend std::ostream& operator<<(std::ostream& out, const Value& var);
 };
 
 class Exp;
@@ -67,14 +67,14 @@ class Block {
 public:
     Block(std::list<Stmt *> stmts) : stmts(std::move(stmts)) {}
     ~Block();
-    Var accept(Visitor *visitor);
+    Value accept(Visitor *visitor);
     friend std::ostream& operator<<(std::ostream& out, Block* block);
 };
 
 class Exp {
 public:
     virtual ~Exp() = 0;
-    virtual Var accept(Visitor* visitor) = 0;
+    virtual Value accept(Visitor* visitor) = 0;
     virtual void print(std::ostream& out) = 0;
     friend std::ostream& operator<<(std::ostream& out, Exp* exp);
 };
@@ -91,7 +91,7 @@ public:
     ~BinaryExp();
 
     virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
+    Value accept(Visitor* visitor);
 private:
     friend class CodeGen;
 
@@ -110,7 +110,7 @@ public:
     ~UnaryExp();
 
     virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
+    Value accept(Visitor* visitor);
 
 private:
     friend class CodeGen;
@@ -122,27 +122,27 @@ private:
 class Literal : public Exp {
     friend class CodeGen;
 
-    Var value;
+    Value value;
 
 public:
-    explicit Literal(Var value) : value(value) {}
+    explicit Literal(Value value) : value(value) {}
     ~Literal();
 
     virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
+    Value accept(Visitor* visitor);
 };
 
-class Variable : public Exp {
+class Valueiable : public Exp {
     friend class CodeGen;
 
     std::string name;
 
 public:
-    Variable(std::string name) : name(std::move(name)) {}
-    ~Variable();
+    Valueiable(std::string name) : name(std::move(name)) {}
+    ~Valueiable();
 
     virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
+    Value accept(Visitor* visitor);
 };
 
 class FunCall : public Exp {
@@ -157,7 +157,7 @@ public:
     ~FunCall();
 
     virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
+    Value accept(Visitor* visitor);
 };
 
 class IfBranch {
@@ -199,7 +199,7 @@ public:
     void setElseBranch(IfBranch *branch);
 
     virtual void print(std::ostream &out);
-    Var accept(Visitor *visitor);
+    Value accept(Visitor *visitor);
 };
 
 class LoopExp : public Exp {
@@ -211,7 +211,7 @@ public:
     ~LoopExp();
 
     virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
+    Value accept(Visitor* visitor);
 };
 
 class SubscriptExp : public Exp {
@@ -224,7 +224,7 @@ public:
     ~SubscriptExp();
 
     virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
+    Value accept(Visitor* visitor);
 };
 
 class SliceExp : public Exp {
@@ -242,7 +242,7 @@ public:
     ~SliceExp();
 
     virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
+    Value accept(Visitor* visitor);
 };
 
 class ReferenceExp : public Exp {
@@ -258,7 +258,7 @@ public:
     ~ReferenceExp();
 
     virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
+    Value accept(Visitor* visitor);
 };
 
 class ArrayExp : public Exp {
@@ -271,7 +271,7 @@ public:
     ~ArrayExp();
 
     virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
+    Value accept(Visitor* visitor);
 };
 
 class UniformArrayExp : public Exp {
@@ -284,7 +284,7 @@ public:
     ~UniformArrayExp();
 
     virtual void print(std::ostream& out);
-    Var accept(Visitor* visitor);
+    Value accept(Visitor* visitor);
 };
 
 #endif

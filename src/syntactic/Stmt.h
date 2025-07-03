@@ -7,14 +7,14 @@
 
 class DecStmt : public Stmt {
     std::string id;
-    Var var;
+    Value var;
     Exp* rhs {};
 
 public:
-    DecStmt(std::string id, Var var)
+    DecStmt(std::string id, Value var)
     : id(std::move(id)), var(var) {}
 
-    DecStmt(std::string id, Var var, Exp *rhs)
+    DecStmt(std::string id, Value var, Exp *rhs)
     : id(std::move(id)), var(var), rhs(rhs) {}
 
     ~DecStmt();
@@ -24,7 +24,7 @@ public:
 };
 
 class AssignStmt : public Stmt {
-    Exp* lhs; // will be either Variable or Subscript
+    Exp* lhs; // will be either Valueiable or Subscript
     Exp* rhs;
     bool ref {};
 
@@ -42,7 +42,7 @@ public:
 
 class CompoundAssignStmt : public Stmt {
     BinaryExp::Operation op;
-    Exp* lhs; // will be either Variable or Subscript
+    Exp* lhs; // will be either Valueiable or Subscript
     Exp* rhs;
 
 public:

@@ -4,14 +4,14 @@
 CodeGen::~CodeGen() {}
 
 // Visit methods for expressions
-Var CodeGen::visit(Block* block) {
+Value CodeGen::visit(Block* block) {
     for(auto stmt : block->stmts) {
         stmt->accept(this);
     }
-    return Var();
+    return Value();
 }
 
-Var CodeGen::visit(BinaryExp* exp) {
+Value CodeGen::visit(BinaryExp* exp) {
     exp->lhs->accept(this);
     out << " pushq %rax\n";
     exp->rhs->accept(this);
@@ -77,11 +77,11 @@ Var CodeGen::visit(BinaryExp* exp) {
         default:
             throw std::runtime_error("Invalid binary operation");
     }
-    return Var();
+    return Value();
 
 }
 
-Var CodeGen::visit(UnaryExp* exp) {
+Value CodeGen::visit(UnaryExp* exp) {
     exp->exp->accept(this);
     out << " movq %rax, %rcx\n";
 
@@ -94,47 +94,47 @@ Var CodeGen::visit(UnaryExp* exp) {
     }
 
     out << " movq %rcx, %rax\n";
-    return Var();
+    return Value();
 }
 
-Var CodeGen::visit(Literal* exp) {
+Value CodeGen::visit(Literal* exp) {
     out << " movq $" << exp->value << ", %rax\n";
-    return Var();
+    return Value();
 }
 
-Var CodeGen::visit(Variable* exp) {
+Value CodeGen::visit(Valueiable* exp) {
     // Implementation here
-    return Var();
+    return Value();
 }
 
-Var CodeGen::visit(FunCall* exp) {
+Value CodeGen::visit(FunCall* exp) {
     // Implementation here
-    return Var();
+    return Value();
 }
 
-Var CodeGen::visit(IfExp* exp) {
+Value CodeGen::visit(IfExp* exp) {
     // Implementation here
-    return Var();
+    return Value();
 }
 
-Var CodeGen::visit(LoopExp* exp) {
+Value CodeGen::visit(LoopExp* exp) {
     // Implementation here
-    return Var();
+    return Value();
 }
 
-Var CodeGen::visit(SubscriptExp* exp) {
+Value CodeGen::visit(SubscriptExp* exp) {
     // Implementation here
-    return Var();
+    return Value();
 }
 
-Var CodeGen::visit(SliceExp* exp) {
+Value CodeGen::visit(SliceExp* exp) {
     // Implementation here
-    return Var();
+    return Value();
 }
 
-Var CodeGen::visit(ReferenceExp* exp) {
+Value CodeGen::visit(ReferenceExp* exp) {
     // Implementation here
-    return Var();
+    return Value();
 }
 
 // Visit methods for statements

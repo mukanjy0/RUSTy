@@ -1,5 +1,4 @@
 #include "Parser.h"
-#include "Token.h"
 
 Parser::Parser(char* filename) {
     scanner = new Scanner(filename);
@@ -110,7 +109,7 @@ Param Parser::parseParameter() {
         throw std::runtime_error("expected type in parameter list\ngot: " 
                                  + debugInfo(currentToken()));
     }
-    param.type = Var::stringToType(currentToken().content);
+    param.type = Value::stringToType(currentToken().content);
     match(Token::TYPE);
 
     return param;
@@ -179,7 +178,7 @@ Exp* Parser::parseRhs() {
 
 Stmt* Parser::parseStatement() {
     if (match(Token::LET)) {
-        Var var {};
+        Value var {};
         if (match(Token::MUT)) {
             var.mut = true;
         }
@@ -197,7 +196,7 @@ Stmt* Parser::parseStatement() {
                     throw std::runtime_error("expected type after ':' in array declaration\ngot: " 
                                              + debugInfo(currentToken()));
                 }
-                var.type = Var::stringToType(currentToken().content);
+                var.type = Value::stringToType(currentToken().content);
                 match(Token::TYPE);
 
                 if (!match(Token::SEMICOLON)) {
@@ -225,7 +224,7 @@ Stmt* Parser::parseStatement() {
                     throw std::runtime_error("expected type after ':' in variable declaration\ngot: " 
                                              + debugInfo(currentToken()));
                 }
-                var.type = Var::stringToType(currentToken().content);
+                var.type = Value::stringToType(currentToken().content);
                 match(Token::TYPE);
             }
         }
@@ -342,7 +341,7 @@ Stmt* Parser::parseStatement() {
                                      + debugInfo(currentToken()));
         }
 
-        Exp* lhs = new Variable(id);
+        Exp* lhs = new Valueiable(id);
 
         if (!match(Token::ASSIGN)) {
             throw std::runtime_error("expected '=' after & id in assignment statement\ngot: " 
@@ -361,7 +360,7 @@ Stmt* Parser::parseStatement() {
         std::string id = currentToken().content;
         match(Token::ID);
         if (match(Token::ASSIGN)) {
-            Exp* lhs = new Variable(id);
+            Exp* lhs = new Valueiable(id);
             Exp* rhs = parseRhs();
 
             ensureSemicolon("expected ';' after assignment statement");
@@ -377,7 +376,7 @@ Stmt* Parser::parseStatement() {
             BinaryExp::Operation op = tokenTypeToBinaryOperation(currentToken().type);
             scanner->next();
 
-            Exp* lhs = new Variable(id);
+            Exp* lhs = new Valueiable(id);
             Exp* rhs = parseExpression();
 
             ensureSemicolon("expected ';' after compound assignment statement");
@@ -522,7 +521,7 @@ Exp* Parser::parseReferenceFactorExp() {
 Exp* Parser::parseFactorExp() {
     if (match(Token::OPEN_PARENTHESIS)) {
         if (match(Token::CLOSE_PARENTHESIS)) {
-            return new Literal(Var(Var::UNIT, "()"));
+            return new Literal(Value(Value::UNIT, "()"));
         }
         Exp* exp = parseExpression();
         if (!match(Token::CLOSE_PARENTHESIS)) {
@@ -534,22 +533,22 @@ Exp* Parser::parseFactorExp() {
     else if (check(Token::BOOLEAN)) {
         int value = currentToken().content == "true";
         match(Token::BOOLEAN);
-        return new Literal(Var(Var::BOOL, value));
+        return new Literal(Value(Value::BOOL, value));
     }
     else if (check(Token::CHAR)) {
         auto value = std::string(1,currentToken().content[0]);
         match(Token::CHAR);
-        return new Literal(Var(Var::CHAR, value));
+        return new Literal(Value(Value::CHAR, value));
     }
     else if (check(Token::NUMBER)) {
         int value = stoi(currentToken().content);
         match(Token::NUMBER);
-        return new Literal(Var(Var::I32, value));
+        return new Literal(Value(Value::I32, value));
     }
     else if (check(Token::STRING)) {
         std::string value = currentToken().content;
         match(Token::STRING);
-        return new Literal(Var(Var::STR, value));
+        return new Literal(Value(Value::STR, value));
     }
     else if (check(Token::ID)) {
         std::string id = currentToken().content;
@@ -602,7 +601,7 @@ Exp* Parser::parseFactorExp() {
             }
         }
         else {
-            return new Variable(id);
+            return new Valueiable(id);
         }
 
     }

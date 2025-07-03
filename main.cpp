@@ -1,6 +1,6 @@
 #include <iostream>
-#include "src/Parser.h"
-#include "src/Visitor.h"
+#include "src/syntactic/Parser.h"
+#include "src/semantic/Printer.h"
 
 using namespace std;
 

@@ -7,14 +7,14 @@ void DecStmt::print(std::ostream& out) {
     out << "let ";
     if (var.mut) out << "mut ";
     out << id;
-    if (var.type != Var::UNDEFINED) out << ": ";
+    if (var.type != Value::UNDEFINED) out << ": ";
     if (var.ref) out << '&';
     switch(var.type) {
-        case Var::BOOL: out << "bool"; break;
-        case Var::CHAR: out << "char"; break;
-        case Var::I32: out << "i32"; break;
-        case Var::STR: out << "str"; break;
-        case Var::UNIT: out << "()"; break;
+        case Value::BOOL: out << "bool"; break;
+        case Value::CHAR: out << "char"; break;
+        case Value::I32: out << "i32"; break;
+        case Value::STR: out << "str"; break;
+        case Value::UNIT: out << "()"; break;
         default: break;
     }
     if (rhs) {

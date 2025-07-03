@@ -1,7 +1,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "Scanner.h"
+#include "../lexic/Scanner.h"
 #include "Fun.h"
 
 class Parser {

@@ -4,10 +4,10 @@
 #include "Stmt.h"
 
 struct Param {
-    Var::Type type;
+    Value::Type type;
     std::string id;
     Param() = default;
-    Param(Var::Type type, std::string id) : type(type), id(id) {}
+    Param(Value::Type type, std::string id) : type(type), id(id) {}
 };
 
 class Fun {

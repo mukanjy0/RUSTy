@@ -9,17 +9,17 @@ private:
 public:
     CodeGen(std::ostream& out):out(out){};
     ~CodeGen();
-    Var visit(Block* block);
-    Var visit(BinaryExp* exp);
-    Var visit(UnaryExp* exp);
-    Var visit(Literal* exp);
-    Var visit(Variable* exp);
-    Var visit(FunCall* exp);
-    Var visit(IfExp* exp);
-    Var visit(LoopExp* exp);
-    Var visit(SubscriptExp* exp);
-    Var visit(SliceExp* exp);
-    Var visit(ReferenceExp* exp);
+    Value visit(Block* block);
+    Value visit(BinaryExp* exp);
+    Value visit(UnaryExp* exp);
+    Value visit(Literal* exp);
+    Value visit(Valueiable* exp);
+    Value visit(FunCall* exp);
+    Value visit(IfExp* exp);
+    Value visit(LoopExp* exp);
+    Value visit(SubscriptExp* exp);
+    Value visit(SliceExp* exp);
+    Value visit(ReferenceExp* exp);
     void visit(DecStmt* stmt);
     void visit(AssignStmt* stmt);
     void visit(CompoundAssignStmt* stmt);
