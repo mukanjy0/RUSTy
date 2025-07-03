@@ -14,12 +14,12 @@ class SymbolTable {
 public:
     void pushScope();
     void popScope();
-    bool declare(const std::string& name, const Val& value);
-    bool update(const std::string& name, const Val& value);
-    Val* lookup(const std::string& name);
+    bool declare(const std::string& name, const Value& value);
+    bool update(const std::string& name, const Value& value);
+    Value* lookup(const std::string& name);
 
 private:
-    std::vector<std::unordered_map<std::string, Val>> scopes_;
+    std::vector<std::unordered_map<std::string, Value>> scopes_;
 
 };
 

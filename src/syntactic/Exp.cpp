@@ -1,7 +1,7 @@
 #include <iostream>
 #include "Exp.h"
 
-Val::Type Val::stringToType(const std::string& type) {
+Value::Type Value::stringToType(const std::string& type) {
     if (type == "bool") return BOOL;
     else if (type == "char") return CHAR;
     else if (type == "i32") return I32;
@@ -9,35 +9,35 @@ Val::Type Val::stringToType(const std::string& type) {
     else if (type == "()") return UNIT;
     throw std::runtime_error("invalid type: " + type);
 }
-std::ostream& operator<<(std::ostream& out, const Val& var) {
+std::ostream& operator<<(std::ostream& out, const Value& var) {
     if (var.size > 0) out << "[ ";
     int i {};
     switch(var.type) {
-        case Val::BOOL:
+        case Value::BOOL:
             for (auto el : var.numericValues) {
                 out << std::boolalpha << (el > 0);
                 if (++i < var.size) out << ", ";
             }
             break;
-        case Val::CHAR:
+        case Value::CHAR:
             for (auto el : var.stringValues) {
                 out << el[0];
                 if (++i < var.size) out << ", ";
             }
             break;
-        case Val::I32:
+        case Value::I32:
             for (auto el : var.numericValues) {
                 out << el;
                 if (++i < var.size) out << ", ";
             }
             break;
-        case Val::STR:
+        case Value::STR:
             for (const auto& el : var.stringValues) {
                 out << el;
                 if (++i < var.size) out << ", ";
             }
             break;
-        case Val::UNIT: out << "()"; break;
+        case Value::UNIT: out << "()"; break;
         default: throw std::runtime_error("expected well-defined type for printing");
     }
     if (var.size > 0) out << "] ";

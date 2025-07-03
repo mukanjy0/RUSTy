@@ -2,37 +2,37 @@
 
 // ACCEPT
 
-Val Block::accept(Visitor* visitor) {
+Value Block::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-Val BinaryExp::accept(Visitor* visitor) {
+Value BinaryExp::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-Val UnaryExp::accept(Visitor* visitor) {
+Value UnaryExp::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-Val Literal::accept(Visitor* visitor) {
+Value Literal::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-Val Variable::accept(Visitor* visitor) {
+Value Variable::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-Val FunCall::accept(Visitor* visitor) {
+Value FunCall::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-Val IfExp::accept(Visitor* visitor) {
+Value IfExp::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-Val LoopExp::accept(Visitor* visitor) {
+Value LoopExp::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-Val SubscriptExp::accept(Visitor* visitor) {
+Value SubscriptExp::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-Val SliceExp::accept(Visitor* visitor) {
+Value SliceExp::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-Val ReferenceExp::accept(Visitor* visitor) {
+Value ReferenceExp::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
 void DecStmt::accept(Visitor* visitor) {

@@ -8,10 +8,10 @@
 #include "Stmt.h"
 
 struct Param {
-    Val::Type type{};
+    Value::Type type{};
     std::string id;
     Param() = default;
-    Param(Val::Type type, std::string id) : type(type), id(std::move(id)) {}
+    Param(Value::Type type, std::string id) : type(type), id(std::move(id)) {}
 };
 
 class Fun {

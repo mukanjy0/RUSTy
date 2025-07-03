@@ -7,57 +7,57 @@
 // PRINT VISITOR
 
 Printer::~Printer() = default;
-Val Printer::visit(Block* block) {
+Value Printer::visit(Block* block) {
     std::cout << block;
     return {};
 }
 
-Val Printer::visit(BinaryExp* exp) {
+Value Printer::visit(BinaryExp* exp) {
     std::cout << exp;
     return {};
 }
 
-Val Printer::visit(UnaryExp* exp) {
+Value Printer::visit(UnaryExp* exp) {
     std::cout << exp;
     return {};
 }
 
-Val Printer::visit(Literal* exp) {
+Value Printer::visit(Literal* exp) {
     std::cout << exp;
     return {};
 }
 
-Val Printer::visit(Variable* exp) {
+Value Printer::visit(Variable* exp) {
     std::cout << exp;
     return {};
 }
 
-Val Printer::visit(FunCall* exp) {
+Value Printer::visit(FunCall* exp) {
     std::cout << exp;
     return {};
 }
 
-Val Printer::visit(IfExp* exp) {
+Value Printer::visit(IfExp* exp) {
     std::cout << exp;
     return {};
 }
 
-Val Printer::visit(LoopExp* exp) {
+Value Printer::visit(LoopExp* exp) {
     std::cout << exp;
     return {};
 }
 
-Val Printer::visit(SubscriptExp* exp) {
+Value Printer::visit(SubscriptExp* exp) {
     std::cout << exp;
     return {};
 }
 
-Val Printer::visit(SliceExp* exp) {
+Value Printer::visit(SliceExp* exp) {
     std::cout << exp;
     return {};
 }
 
-Val Printer::visit(ReferenceExp* exp) {
+Value Printer::visit(ReferenceExp* exp) {
     std::cout << exp;
     return {};
 }

@@ -3,7 +3,7 @@
 
 NameRes::~NameRes() = default;
 
-Val NameRes::visit(Block* block) {
+Value NameRes::visit(Block* block) {
     table->pushScope();
     for (auto stmt : block->stmts) {
         stmt->accept(this);
@@ -12,23 +12,23 @@ Val NameRes::visit(Block* block) {
     return {};
 }
 
-Val NameRes::visit(BinaryExp* exp) {
+Value NameRes::visit(BinaryExp* exp) {
     exp->lhs->accept(this);
     exp->rhs->accept(this);
     return {};
 }
 
-Val NameRes::visit(UnaryExp* exp) {
+Value NameRes::visit(UnaryExp* exp) {
     exp->exp->accept(this);
     return {};
 }
 
-Val NameRes::visit(Literal* exp) {
+Value NameRes::visit(Literal* exp) {
     (void)exp; // unused
     return {};
 }
 
-Val NameRes::visit(Variable* exp) {
+Value NameRes::visit(Variable* exp) {
     if (!table->lookup(exp->name)) {
         std::cerr << "Name resolution error: undefined variable '"
                   << exp->name << "'\n";
@@ -36,14 +36,14 @@ Val NameRes::visit(Variable* exp) {
     return {};
 }
 
-Val NameRes::visit(FunCall* exp) {
+Value NameRes::visit(FunCall* exp) {
     for (auto arg : exp->args) {
         arg->accept(this);
     }
     return {};
 }
 
-Val NameRes::visit(IfExp* exp) {
+Value NameRes::visit(IfExp* exp) {
     exp->ifBranch.cond->accept(this);
     exp->ifBranch.block->accept(this);
     for (auto& br : exp->elseIfBranches) {
@@ -56,22 +56,22 @@ Val NameRes::visit(IfExp* exp) {
     return {};
 }
 
-Val NameRes::visit(LoopExp* exp) {
+Value NameRes::visit(LoopExp* exp) {
     exp->block->accept(this);
     return {};
 }
 
-Val NameRes::visit(SubscriptExp* exp) {
+Value NameRes::visit(SubscriptExp* exp) {
     // Implementation here
     return {};
 }
 
-Val NameRes::visit(SliceExp* exp) {
+Value NameRes::visit(SliceExp* exp) {
     // Implementation here
     return {};
 }
 
-Val NameRes::visit(ReferenceExp* exp) {
+Value NameRes::visit(ReferenceExp* exp) {
     // Implementation here
     return {};
 }

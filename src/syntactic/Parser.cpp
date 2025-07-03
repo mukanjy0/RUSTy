@@ -110,7 +110,7 @@ Param Parser::parseParameter() {
         throw std::runtime_error("expected type in parameter list\ngot: "
                                  + debugInfo(currentToken()));
     }
-    param.type = Val::stringToType(currentToken().content);
+    param.type = Value::stringToType(currentToken().content);
     match(Token::TYPE);
 
     return param;
@@ -158,7 +158,7 @@ Exp* Parser::parseRhs() {
 
 Stmt* Parser::parseStatement() {
     if (match(Token::LET)) {
-        Val var {};
+        Value var {};
         if (match(Token::MUT)) {
             var.mut = true;
         }
@@ -176,7 +176,7 @@ Stmt* Parser::parseStatement() {
                     throw std::runtime_error("expected type after ':' in array declaration\ngot: "
                                              + debugInfo(currentToken()));
                 }
-                var.type = Val::stringToType(currentToken().content);
+                var.type = Value::stringToType(currentToken().content);
                 match(Token::TYPE);
 
                 if (!match(Token::SEMICOLON)) {
@@ -204,7 +204,7 @@ Stmt* Parser::parseStatement() {
                     throw std::runtime_error("expected type after ':' in variable declaration\ngot: "
                                              + debugInfo(currentToken()));
                 }
-                var.type = Val::stringToType(currentToken().content);
+                var.type = Value::stringToType(currentToken().content);
                 match(Token::TYPE);
             }
         }
@@ -498,7 +498,7 @@ Exp* Parser::parseReferenceFactorExp() {
 Exp* Parser::parseFactorExp() {
     if (match(Token::OPEN_PARENTHESIS)) {
         if (match(Token::CLOSE_PARENTHESIS)) {
-            return new Literal(Val(Val::UNIT, "()"));
+            return new Literal(Value(Value::UNIT, "()"));
         }
         Exp* exp = parseExpression();
         if (!match(Token::CLOSE_PARENTHESIS)) {
@@ -510,22 +510,22 @@ Exp* Parser::parseFactorExp() {
     else if (check(Token::BOOLEAN)) {
         int value = currentToken().content == "true";
         match(Token::BOOLEAN);
-        return new Literal(Val(Val::BOOL, value));
+        return new Literal(Value(Value::BOOL, value));
     }
     else if (check(Token::CHAR)) {
         char value = currentToken().content[0];
         match(Token::CHAR);
-        return new Literal(Val(Val::CHAR, value));
+        return new Literal(Value(Value::CHAR, value));
     }
     else if (check(Token::NUMBER)) {
         int value = stoi(currentToken().content);
         match(Token::NUMBER);
-        return new Literal(Val(Val::I32, value));
+        return new Literal(Value(Value::I32, value));
     }
     else if (check(Token::STRING)) {
         std::string value = currentToken().content;
         match(Token::STRING);
-        return new Literal(Val(Val::STR, value));
+        return new Literal(Value(Value::STR, value));
     }
     else if (check(Token::ID)) {
         std::string id = currentToken().content;

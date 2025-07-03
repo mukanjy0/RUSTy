@@ -10,11 +10,11 @@ void DecStmt::print(std::ostream& out) {
     out << id << " :";
     if (var.ref) out << '&';
     switch(var.type) {
-        case Val::BOOL: out << "bool"; break;
-        case Val::CHAR: out << "char"; break;
-        case Val::I32: out << "i32"; break;
-        case Val::STR: out << "str"; break;
-        case Val::UNIT: out << "()"; break;
+        case Value::BOOL: out << "bool"; break;
+        case Value::CHAR: out << "char"; break;
+        case Value::I32: out << "i32"; break;
+        case Value::STR: out << "str"; break;
+        case Value::UNIT: out << "()"; break;
         default: out << "undefined"; break;
     }
     if (rhs) {

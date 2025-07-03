@@ -10,7 +10,7 @@
 
 class Visitor;
 
-struct Val {
+struct Value {
     enum Type { BOOL, CHAR, I32, STR, ID, UNIT, UNDEFINED};
     bool ref {};
     bool mut {};
@@ -26,30 +26,30 @@ struct Val {
     // in case of array has multiple values, otherwise only one
     std::list<std::string> stringValues;
 
-    Val() : type(UNDEFINED) {}
+    Value() : type(UNDEFINED) {}
 
-    Val(Type type, std::string stringValue, bool ref=false, bool mut=false)
+    Value(Type type, std::string stringValue, bool ref=false, bool mut=false)
         : type(type), stringValues({std::move(stringValue)}),
         ref(ref), mut(mut) {}
 
-    Val(Type type, int numericValue, bool ref=false, bool mut=false)
+    Value(Type type, int numericValue, bool ref=false, bool mut=false)
         : type(type), numericValues({numericValue}),
         ref(ref), mut(mut) {}
 
-    Val(Type type, std::list<std::string> stringValues,
+    Value(Type type, std::list<std::string> stringValues,
         bool ref=false, bool mut=false)
         : type(type), stringValues(std::move(stringValues)),
         ref(ref), mut(mut) {}
 
-    Val(Type type, std::list<int> numericValues,
+    Value(Type type, std::list<int> numericValues,
         bool ref=false, bool mut=false)
         : type(type), numericValues(std::move(numericValues)),
         ref(ref), mut(mut) {}
 
-    ~Val() = default;
+    ~Value() = default;
 
     static Type stringToType(const std::string& type);
-    friend std::ostream& operator<<(std::ostream& out, const Val& var);
+    friend std::ostream& operator<<(std::ostream& out, const Value& var);
 };
 
 class Exp;
@@ -69,14 +69,14 @@ class Block {
 public:
     explicit Block(std::list<Stmt *> stmts) : stmts(std::move(stmts)) {}
     ~Block();
-    Val accept(Visitor *visitor);
+    Value accept(Visitor *visitor);
     friend std::ostream& operator<<(std::ostream& out, const Block* block);
 };
 
 class Exp {
 public:
     virtual ~Exp() = 0;
-    virtual Val accept(Visitor* visitor) = 0;
+    virtual Value accept(Visitor* visitor) = 0;
     virtual void print(std::ostream& out) = 0;
     friend std::ostream& operator<<(std::ostream& out, Exp* exp);
 };
@@ -93,7 +93,7 @@ public:
     ~BinaryExp() override;
 
     void print(std::ostream& out) override;
-    Val accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 private:
     FRIENDS
 
@@ -112,7 +112,7 @@ public:
     ~UnaryExp() override;
 
     void print(std::ostream& out) override;
-    Val accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 
 private:
     FRIENDS
@@ -124,14 +124,14 @@ private:
 class Literal : public Exp {
     FRIENDS
 
-    Val value;
+    Value value;
 
 public:
-    explicit Literal(const Val& value) : value(value) {}
+    explicit Literal(const Value& value) : value(value) {}
     ~Literal() override;
 
     void print(std::ostream& out) override;
-    Val accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class Variable : public Exp {
@@ -144,7 +144,7 @@ public:
     ~Variable() override;
 
     void print(std::ostream& out) override;
-    Val accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class FunCall : public Exp {
@@ -158,7 +158,7 @@ public:
     ~FunCall() override;
 
     void print(std::ostream& out) override;
-    Val accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class IfBranch {
@@ -195,7 +195,7 @@ public:
     void setElseBranch(IfBranch* branch);
 
     void print(std::ostream& out) override;
-    Val accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class LoopExp : public Exp {
@@ -207,7 +207,7 @@ public:
     ~LoopExp() override;
 
     void print(std::ostream& out) override;
-    Val accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class SubscriptExp : public Exp {
@@ -220,7 +220,7 @@ public:
     ~SubscriptExp() override;
 
     void print(std::ostream& out) override;
-    Val accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class SliceExp : public Exp {
@@ -238,7 +238,7 @@ public:
     ~SliceExp() override;
 
     void print(std::ostream& out) override;
-    Val accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class ReferenceExp : public Exp {
@@ -254,7 +254,7 @@ public:
     ~ReferenceExp() override;
 
     void print(std::ostream& out) override;
-    Val accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 #endif
