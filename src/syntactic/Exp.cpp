@@ -134,6 +134,12 @@ IfExp::IfBranch::~IfBranch() {
     delete cond;
     delete block;
 }
+Exp* IfExp::IfBranch::getCondition() {
+    return cond;
+}
+Block* IfExp::IfBranch::getBlock() {
+    return block;
+}
 void IfExp::IfBranch::print(std::ostream &out) {
     if (cond) out << cond << "\n";
     out << block;
