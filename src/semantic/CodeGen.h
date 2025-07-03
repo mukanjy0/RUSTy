@@ -6,6 +6,9 @@
 class CodeGen : public Visitor {
 private:
     std::ostream& out;
+
+    void mov(Value::Type, char lr, char rr);
+
 public:
     CodeGen(SymbolTable* table, std::ostream& out): Visitor(table), out(out){}
     explicit CodeGen(std::ostream& out): Visitor(nullptr), out(out){}

@@ -19,12 +19,13 @@ class Fun {
     FRIENDS
     int line;
     int col;
+    Value::Type type;
     std::list<Param> params;
     Block* block;
 
 public:
-    explicit Fun(int line, int col, std::list<Param> params, Block *block)
-            : line(line), col(col), params(std::move(params)), block(block) {}
+    Fun(int line, int col, Value::Type type, std::list<Param> params, Block *block)
+            : line(line), col(col), type(type), params(std::move(params)), block(block) {}
     ~Fun();
     void accept(Visitor* visitor);
     friend std::ostream& operator<<(std::ostream& out, const Fun* fun);

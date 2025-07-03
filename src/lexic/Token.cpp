@@ -26,6 +26,7 @@ Token::operator std::string() const {
         case Token::RANGE_IN: return "RANGE_IN";
         case Token::RANGE_EX: return "RANGE_EX";
         case Token::REFERENCE: return "REFERENCE";
+        case Token::ARROW: return "ARROW";
         case Token::FN: return "FN";
         case Token::RETURN: return "RETURN";
         case Token::BREAK: return "BREAK";
