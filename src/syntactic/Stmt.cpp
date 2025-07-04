@@ -1,24 +1,21 @@
 #include "Stmt.h"
-#include <iostream>
-
-std::ostream& operator<<(std::ostream& out, Exp* exp) {
-    exp->print(out);
-    return out;
-}
 
 DecStmt::~DecStmt() {
-    delete var;
     delete rhs;
 }
 void DecStmt::print(std::ostream& out) {
     out << "let ";
-    if (var->mut) out << "mut ";
-    out << id << " :";
-    switch(var->type) {
-        case Var::BOOL: out << "bool"; break;
-        case Var::CHAR: out << "char"; break;
-        case Var::I32: out << "i32"; break;
-        case Var::STR: out << "String"; break;
+    if (var.mut) out << "mut ";
+    out << id;
+    if (var.type != Value::UNDEFINED) out << ": ";
+    if (var.ref) out << '&';
+    switch(var.type) {
+        case Value::BOOL: out << "bool"; break;
+        case Value::CHAR: out << "char"; break;
+        case Value::I32: out << "i32"; break;
+        case Value::STR: out << "str"; break;
+        case Value::UNIT: out << "()"; break;
+        default: break;
     }
     if (rhs) {
         out << " = " << rhs;
@@ -30,7 +27,23 @@ AssignStmt::~AssignStmt() {
     delete rhs;
 }
 void AssignStmt::print(std::ostream& out) {
+    if (ref) out << '&';
     out << lhs << " = " << rhs << ";";
+}
+
+CompoundAssignStmt::~CompoundAssignStmt() {
+    delete rhs;
+}
+void CompoundAssignStmt::print(std::ostream& out) {
+    out << lhs;
+    switch(op) {
+        case BinaryExp::PLUS: out << " +"; break;
+        case BinaryExp::MINUS: out << " -"; break;
+        case BinaryExp::TIMES: out << " *"; break;
+        case BinaryExp::DIV: out << " /"; break;
+        default: throw std::runtime_error("invalid compound assign operation");
+    }
+    out << "= " << rhs << ";";
 }
 
 ForStmt::~ForStmt() {
@@ -73,16 +86,28 @@ void PrintStmt::print(std::ostream& out) {
     out << ");";
 }
 
+BreakStmt::~BreakStmt() {
+    delete exp;
+}
+void BreakStmt::print(std::ostream& out) {
+    out << "break";
+    if (exp) out << ' ' << exp;
+    out << ";";
+}
+
 ReturnStmt::~ReturnStmt() {
     delete exp;
 }
 void ReturnStmt::print(std::ostream& out) {
-    out << "return " << exp << ";";
+    out << "return";
+    if (exp) out << ' ' << exp;
+    out << ";";
 }
 
 ExpStmt::~ExpStmt() {
     delete exp;
 }
 void ExpStmt::print(std::ostream& out) {
-    out << exp << ";";
+    out << exp;
+    if (!returnValue) out << ";";
 }

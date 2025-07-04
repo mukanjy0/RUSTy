@@ -1,108 +1,72 @@
 import subprocess
 from pathlib import Path
 
-# -------------------------------
-# Step 1: Compile C++ backend (RUSTy)
-# -------------------------------
-
-# Define source directory and output directory
+# output directory
+out_dir = Path("output")
+# cpp directory
 cpp_dir = Path("src")
-output_dir = Path("out")
-output_dir.mkdir(parents=True, exist_ok=True)  # Ensure output directory exists
+source_files = [str(file) for file in cpp_dir.rglob("*.cpp")]
+source_files.append("main.cpp")
 
-# Collect C++ source files
-# source_files = list(cpp_dir.glob("*.cpp"))
-# source_files.append("main.cpp")
-source_files = ["main.cpp"]
+# Compile
+print("[1] Compiling...")
+compile_cmd = ["g++", "-std=c++20"] + source_files + ["-o", out_dir/"main"]
+comp_rusty = subprocess.run(compile_cmd)
 
-print("[1] Compiling RUSTy (C++)...")
-compile_cpp_cmd = ["g++"] + source_files + ["-o", str(output_dir / "main")]
-cpp_result = subprocess.run(compile_cpp_cmd)
-
-# Check for C++ compilation errors
-if cpp_result.returncode != 0:
-    print("\033[91mError: C++ compilation failed\033[0m")  # Red text
+# Check for compilation errors
+if comp_rusty.returncode != 0:
+    print("\033[91mCompiling Error\033[0m") # Red text
     exit(1)
 
-# -------------------------------
-# Step 2: Compile and run each Rust file
-# -------------------------------
 
-rust_dir = Path("input")
-rust_outputs = []
+print("[2] Compiling Rust files...")
+rust_dir = Path('input')
+rust_output = []
 
-print("[2] Compiling and executing Rust files...")
+for i, file in enumerate(rust_dir.glob("*.rs")):
+    # Rust file compilation
+    path = str(file)
+    output_path = out_dir/str(file.name)[:-3]
+    compile_cmd = ["rustc", path, "-o",output_path]
 
-for i, rust_file in enumerate(rust_dir.glob("*.rs")):
-    rust_executable = output_dir / rust_file.stem
+    print(f"\t[{i}] Compiling on Rust: {file}")
+    comp_rust = subprocess.run(compile_cmd, capture_output=True, text=True)
 
-    print(f"\t[{i}] Compiling Rust: {rust_file}")
-    compile_rust_cmd = ["rustc", str(rust_file), "-o", str(rust_executable)]
-    rust_compile_result = subprocess.run(compile_rust_cmd, capture_output=True, text=True)
+    # Successful compilation
+    if comp_rust.returncode == 0:
+        print(f"\033[92m\t[{i}] Rust compiling complete\033[0m")
 
-    if rust_compile_result.returncode != 0:
-        print(f"\033[91mError: Rust compilation failed for {rust_file}\033[0m")
-        exit(1)
+        ejec_cmd = [output_path]
+        result_rust = subprocess.run(ejec_cmd, capture_output=True, text=True)
 
-    print(f"\033[92m\t[{i}] Rust compilation successful\033[0m")
-
-    # Run compiled Rust program
-    rust_run_result = subprocess.run(["./"+str(rust_executable)], capture_output=True, text=True)
-
-    if rust_run_result.returncode != 0:
-        print(f"\033[91mError: Rust execution failed for {rust_file}\033[0m")
-        exit(1)
-
-    print(f"\033[92m\t[{i}] Rust execution successful\033[0m")
-    rust_outputs.append(rust_run_result.stdout)
-
-    # -------------------------------
-    # Step 3: Run RUSTy on the same file and compare results
-    # -------------------------------
-
-    print(f"\t[{i}] Running RUSTy (C++) with {rust_file}...")
-    rusty_run_cmd = [str(output_dir / "main"), str(rust_file)]
-    rusty_result = subprocess.run(rusty_run_cmd, capture_output=True, text=True)
-
-    if rusty_result.returncode != 0:
-        print(f"\033[91mError: RUSTy execution failed on {rust_file}\033[0m")
-        exit(1)
-
-    print(f"\033[92m\t[{i}] RUSTy execution successful\033[0m")
-
-    # -------------------------------
-    # Step 4: Compile generated assembly and compare outputs
-    # -------------------------------
-
-    print(f"\t[{i}] Compiling generated assembly for {rust_file.stem}...")
-
-    assembly_file = Path("input/ass") / f"{rust_file.stem}.s"
-    assembly_executable = output_dir / f"{rust_file.stem}_ass"
-
-    compile_asm_cmd = ["g++", str(assembly_file), "-o", str(assembly_executable)]
-    asm_compile_result = subprocess.run(compile_asm_cmd)
-
-    if asm_compile_result.returncode != 0:
-        print("\033[91mError: Assembly compilation failed\033[0m")
-        exit(1)
-
-    # Execute compiled assembly
-    asm_run_result = subprocess.run([str(assembly_executable)], capture_output=True, text=True)
-
-    if asm_run_result.returncode != 0:
-        print(f"\033[91mError: Assembly execution failed on {rust_file}\033[0m")
-        exit(1)
-
-    # Compare output with original Rust execution
-    if rust_outputs[i].split() == asm_run_result.stdout.split():
-        print(f"\033[92m\t[{i}] ✅ Output match: RUSTy == Rust\033[0m")
+        if result_rust.returncode == 0:
+            print(f"\033[92m\t[{i}] Rust excecution complete\033[0m")
+            rust_output.append(result_rust.stdout)
+        else:  
+            print(f"\033[91mExecuting error on {file}\033[0m")
+            exit(1)
     else:
-        print(f"\033[91m\t[{i}] ❌ Output mismatch: RUSTy != Rust\033[0m")
-        print(f"\033[33m--- RUSTy output:\n{asm_run_result.stdout}\033[0m")
-        print(f"\033[34m--- Rust output:\n{rust_outputs[i]}\033[0m")
+        print(f"\033[91mCompiling Error on {file}\033[0m")
         exit(1)
 
-# -------------------------------
-# All Done
-# -------------------------------
-print("\n\033[92mAll compilations and comparisons were successful!\033[0m")
+
+    print(f"\t[{i}] Compiling on RUSTy")
+    result_rusty = subprocess.run([out_dir/"main", str(file)], capture_output=True, text=True)
+    if result_rusty.returncode == 0:
+        print(f"\033[92m\t[{i}] RUSTy execution complete\033[0m")
+
+        if rust_output[i] == result_rusty.stdout:
+            print(f"\033[92m\t[{i}] RUSTy output matches Rust output\033[0m")
+        else:
+            print(f"\033[91m\t[{i}] RUSTy output does not match Rust output\033[0m")
+            print(f"\033[33mRUSTy output:\n{result_rusty.stdout}\n---\033[0m")
+            print(f"\033[34mRust output:\n{rust_output[i]}\n===\033[0m")
+            exit(1)
+
+    else:
+        print(result_rusty.stdout)
+        print(f"\033[91mRUSTy execution error on {file}\033[0m")
+        print(result_rusty.stderr)
+
+
+print("Compilación exitosa.\n")

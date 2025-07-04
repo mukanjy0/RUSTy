@@ -4,18 +4,36 @@
 #include <sstream>
 #include <error.h>
 
-using namespace std;
+int Scanner::increasePos() {
+    current.content += source[pos];
+    ++col;
+    return ++pos;
+}
+
+int Scanner::increasePos (const int& rhs) {
+    col += rhs;
+    return pos += rhs;
+}
 
 bool Scanner::isWhitespace(char ch) {
+    if (ch == '\n') {
+        ++line;
+        col = 0;
+    }
     return ch == ' ' || ch == '\n' || ch == '\r' || ch == '\t';
 }
 
 void Scanner::advance() {
+    // std::cout << line << ':' << col << std::endl;
     while (pos < size && isWhitespace(source[pos])) {
-        ++pos;
+        increasePos(1);
     }
     if (pos == size) current.type = Token::END;
     if (current.type == Token::END) return;
+
+    current.line = line;
+    current.col = col;
+    current.content.clear();
 
     switch (source[pos]) {
         case ':': current.type = Token::COLON; break;
@@ -23,9 +41,9 @@ void Scanner::advance() {
         case ',': current.type = Token::COMMA; break;
         case '.': 
             if (pos + 1 < size && source[pos + 1] == '.') {
-                ++pos;
+                increasePos();
                 if (pos + 1 < size && source[pos + 1] == '=') {
-                    ++pos;
+                    increasePos();
                     current.type = Token::RANGE_IN; 
                 }
                 else {
@@ -45,41 +63,52 @@ void Scanner::advance() {
         case ')': current.type = Token::CLOSE_PARENTHESIS; break;
         case '\'': 
             if (pos + 1 < size && source[pos + 1] == '\'') {
-                throw runtime_error("empty character literal");
+                throw std::runtime_error("empty character literal");
             }
             // standard characters like 'a'
             if (pos + 2 < size && source[pos + 2] == '\'') {
-                current.content = string(1, source[pos + 1]);
-                pos += 2;
+                current.content = std::string(1, source[pos + 1]);
+                increasePos(2);
                 current.type = Token::CHAR; 
             }
             // escaped characters like '\n'
             else if (pos + 3 < size && source[pos + 3] == '\''
                 && source[pos + 1] == '\\'
                 ) {
-                current.content = string(1, source[pos + 1]) + string(1, source[pos+2]);
-                pos += 3;
+                switch(source[pos+2]) {
+                    case 'n': current.content = "\n";
+                    case 'r': current.content = "\r";
+                    case 't': current.content = "\t";
+                    case '\\': current.content = "\\";
+                    default: throw std::runtime_error("invalid escaped character");
+                }
+                increasePos(3);
                 current.type = Token::CHAR; 
             }
             else {
                 current.type = Token::SINGULAR_QUOTE; 
             }
             break;
-        case '&': 
-            if (source[++pos] == '&') current.type = Token::LAND;
+        case '&':
+            if (source[pos + 1] == '&') {
+                increasePos();
+                current.type = Token::LAND;
+            }
             else {
-                throw std::runtime_error("Invalid operator: &" + string(1, source[pos]));
+                current.type = Token::REFERENCE;
             }
             break;
-        case '|': 
-            if (source[++pos] == '|') current.type = Token::LOR;
+        case '|':
+            if (source[increasePos()] == '|') {
+                current.type = Token::LOR;
+            }
             else {
-                throw std::runtime_error("Invalid operator: |" + string(1, source[pos]));
+                throw std::runtime_error("Invalid operator: |" + std::string(1, source[pos]));
             }
             break;
         case '=': 
             if (source[pos + 1] == '=') {
-                ++pos;
+                increasePos();
                 current.type = Token::EQ;
             } 
             else {
@@ -88,7 +117,7 @@ void Scanner::advance() {
             break;
         case '>': 
             if (source[pos + 1] == '=') {
-                ++pos;
+                increasePos();
                 current.type = Token::GE;
             }
             else {
@@ -97,7 +126,7 @@ void Scanner::advance() {
             break;
         case '<': 
             if (source[pos + 1] == '=') {
-                ++pos;
+                increasePos();
                 current.type = Token::LE;
             }
             else {
@@ -106,47 +135,83 @@ void Scanner::advance() {
             break;
         case '!': 
             if (source[pos + 1] == '=') {
-                ++pos;
+                increasePos();
                 current.type = Token::NEQ;
             }
             else {
                 current.type = Token::LNOT;
             }
             break;
-        case '+': current.type = Token::PLUS; break;
-        case '-': current.type = Token::MINUS; break;
-        case '*': current.type = Token::TIMES; break;
+        case '+': 
+            if (source[pos + 1] == '=') {
+                increasePos();
+                current.type = Token::PLUS_ASSIGN;
+            }
+            else {
+                current.type = Token::PLUS;
+            }
+            break;
+        case '-':
+            if (source[pos + 1] == '=') {
+                increasePos();
+                current.type = Token::MINUS_ASSIGN;
+            }
+            if (source[pos + 1] == '>') {
+                increasePos();
+                current.type = Token::ARROW;
+            }
+            else {
+                current.type = Token::MINUS;
+            }
+            break;
+        case '*': 
+            if (source[pos + 1] == '=') {
+                increasePos();
+                current.type = Token::TIMES_ASSIGN;
+            }
+            else {
+                current.type = Token::TIMES;
+            }
+            break;
         case '/': 
             if (pos + 1 == size || source[pos + 1] != '/') {
-                current.type = Token::DIV;
+                if (source[pos + 1] == '=') {
+                    increasePos();
+                    current.type = Token::DIV_ASSIGN;
+                }
+                else {
+                    current.type = Token::DIV;
+                }
                 break;
             }
-            ++pos;
-            while (pos + 1 < size && source[++pos] != '\n') {}
+            increasePos();
+            while (pos + 1 < size && source[increasePos()] != '\n') {}
             return advance();
         case '"': 
-            while (++pos < size && source[pos] != '"') {
-                current.content += string(1, source[pos]);
+            increasePos(1);
+            while (pos < size && source[pos] != '"') {
+                increasePos();
             }
             if (pos == size) {
                 throw std::runtime_error("Opening double quotations where not matched with closing ones");
             }
+            increasePos(1);
             current.type = Token::STRING;
-            break;
+            return;
         default:
-            if (isalpha(source[pos])) {
-                current.content = string(1, source[pos]);
-                while (pos + 1 < size && isalnum(source[pos + 1])) {
-                    ++pos;
-                    current.content += source[pos];
+            if (isalpha(source[pos]) || source[pos] == '_') {
+                increasePos();
+                while (pos < size && (isalnum(source[pos]) || source[pos] == '_')) {
+                    increasePos();
                 }
                 if (current.content == "i32"
                     || current.content == "bool"
                     || current.content == "char"
+                    || current.content == "str"
                 ) {
                     current.type = Token::TYPE;
                 }
-                if (current.content == "true"
+                else if (current.content == "true"
                     || current.content == "false"
                 ) {
                     current.type = Token::BOOLEAN;
@@ -185,45 +250,46 @@ void Scanner::advance() {
                     current.type = Token::ELSE;
                 }
                 else if (current.content == "println"
-                        && pos < size && source[pos + 1] == '!') 
+                        && pos < size && source[pos] == '!') 
                 {
-                    ++pos;
+                    increasePos();
                     current.type = Token::PRINT;
                 }
                 else {
                     current.type = Token::ID;
                 }
+                return;
             }
             else if (isdigit(source[pos])) {
-                current.content = string(1, source[pos]);
-                while (pos + 1 < size && isdigit(source[pos + 1])) {
-                    ++pos;
-                    current.content += source[pos];
+                increasePos();
+                while (pos < size && isdigit(source[pos])) {
+                    increasePos();
                 }
                 current.type = Token::NUMBER;
+                return;
             }
             else {
                 throw std::runtime_error("Invalid token");
             }
     }
-    ++pos;
+    increasePos();
 }
 
 Scanner::Scanner (char* filename) {
-    ifstream f (filename);
+    std::ifstream f (filename);
 
-    stringstream buffer;
+    std::stringstream buffer;
     buffer << f.rdbuf();
 
-    size = buffer.str().length();
-    source = new char [size];
+    size = strlen(buffer.str().c_str());
+    source = new char [size + 1];
     strcpy (source, buffer.str().c_str());
 
     f.close();
 }
 
 Scanner::~Scanner() {
-    delete source;
+    delete[] source;
 }
 
 bool Scanner::eof () {
@@ -231,15 +297,14 @@ bool Scanner::eof () {
 }
 
 Token::Type Scanner::peek() {
-    int prevPos = pos;
-    Token aux = current;
+    auto snapshot = getSnapshot();
 
     advance();
 
-    swap(aux, current);
-    pos = prevPos;
+    auto type = current.type;
+    restoreSnapshot(snapshot);
 
-    return aux.type;
+    return type;
 }
 
 bool Scanner::check(const Token& token) {
@@ -252,9 +317,26 @@ bool Scanner::match(const Token& token) {
     return true;
 }
 
+void Scanner::next () { 
+    advance();
+}
+
 Token Scanner::getToken () { return current; }
+
+std::string Scanner::getTokenContent() {return current.content; }
 
 Token Scanner::getNextToken () { 
     advance();
     return current; 
+}
+
+Scanner::Snapshot Scanner::getSnapshot () {
+    return {pos, line, col, current};
+}
+
+void Scanner::restoreSnapshot (const Snapshot& snapshot) {
+    pos = snapshot.pos;
+    line = snapshot.line;
+    col = snapshot.col;
+    current = snapshot.current;
 }

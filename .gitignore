@@ -1,5 +1,9 @@
-/out
+output/*
+!output/.gitkeep
+rusty
+*.o
 *.out
 cmake-build-debug/
 CMakeLists.txt
 .idea/
+.venv
