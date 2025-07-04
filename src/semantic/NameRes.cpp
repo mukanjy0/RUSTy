@@ -18,11 +18,9 @@ void NameRes::update(const std::string& id, const Value& val, int line, int col)
 }
 
 Value* NameRes::lookup(const std::string& id, int line, int col) const {
-    auto* val = table->lookup(id);
-    if (!val) {
-        throw std::runtime_error("undefined identifier '" + id + "' at " + std::to_string(line) + ':' + std::to_string(col));
-    }
-    return val;
+    if (auto* val = table->lookup(id); val) {
+        return val;
+    } throw std::runtime_error("undefined identifier '" + id + "' at " + std::to_string(line) + ':' + std::to_string(col));
 }
 
 Value NameRes::visit(Block* block) {
@@ -56,9 +54,14 @@ Value NameRes::visit(Variable* exp) {
 }
 
 Value NameRes::visit(FunCall* exp) {
-    for (auto arg : exp->args) {
-        arg->accept(this);
+    if (auto* val = lookup(exp->id, exp->line, exp->col); !val->isFunction()) {
+        throw std::runtime_error(
+            "‘" + exp->id + "’ is not a function at " +
+            std::to_string(exp->line) + ":" +
+            std::to_string(exp->col));
     }
+    for (auto* arg : exp->args)
+        arg->accept(this);
     return {};
 }
 
