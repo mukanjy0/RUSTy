@@ -37,11 +37,10 @@ async def compile_rust(rust_code: RustCode):
         # -------------------------------
         # Step 2: Compile the C++ backend (RUSTy)
         # -------------------------------
-        cpp_source_files = ["main.cpp"]
-        # cpp_dir = Path("src")
-        # source_files = list(cpp_dir.glob("*.cpp"))
-        # source_files.append("main.cpp")
-        compile_cmd = ["g++"] + cpp_source_files + ["-o", "main"]
+        cpp_dir = Path("src")
+        cpp_source_files = list(cpp_dir.rglob("*.cpp"))
+        cpp_source_files.append("main.cpp")
+        compile_cmd = ["g++"] + [str(f) for f in cpp_source_files] + ["-o", "main"]
 
         print("[1] Compiling RUSTy backend...")
         rusty_compile = subprocess.run(compile_cmd, capture_output=True, text=True)
