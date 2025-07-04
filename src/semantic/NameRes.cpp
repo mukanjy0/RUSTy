@@ -142,7 +142,8 @@ void NameRes::visit(Fun* fun) {
     table->pushScope();
     for (auto& param : fun->params) {
         Value val; val.type=param.type;
-        table->declare(param.id, val);
+        if (!table->declare(param.id, val))
+            throw std::runtime_error("redeclaration on the same scope" + fun->line + ':' + fun->col);
     }
     fun->block->accept(this);
     table->popScope();
@@ -150,10 +151,11 @@ void NameRes::visit(Fun* fun) {
 
 void NameRes::visit(Program* program) {
     for (const auto& [id, fun]: program->funs) {
-        Value val; // add return type
+        Value val{fun->type, true};
         for (const auto& param : fun->params)
-            val.types.push_back(param.type);
-        table->declare(id, val);
+            val.addType(param.type);
+        if (!table->declare(id, val))
+            throw std::runtime_error("redeclaration on the same scope" + fun->line + ':' + fun->col);
     }
     for (const auto& [id, fun]: program->funs) {
         fun->accept(this);

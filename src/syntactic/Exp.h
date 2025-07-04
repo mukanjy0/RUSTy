@@ -53,6 +53,9 @@ struct Value {
         : type(type), numericValues(std::move(numericValues)),
         ref(ref), mut(mut) {}
 
+    Value(Type type, bool fun=false)
+        : type(type), fun(fun) {}
+
     ~Value() = default;
 
     bool isArray();
