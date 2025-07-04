@@ -35,6 +35,11 @@ public:
     void visit(ExpStmt* stmt) override;
     void visit(Fun* fun) override;
     void visit(Program* program) override;
+
+private:
+    void declare(const std::string& id, const Value& val, int line, int col) const;
+    void update(const std::string& id, const Value& val, int line, int col) const;
+    Value* lookup(const std::string& id, int line, int col) const;
 };
 
 

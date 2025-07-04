@@ -311,7 +311,7 @@ public:
 };
 
 class ArrayExp : public Exp {
-    friend class CodeGen;
+    FRIENDS
 
     std::list<Exp*> elements;
 public:
@@ -324,7 +324,7 @@ public:
 };
 
 class UniformArrayExp : public Exp {
-    friend class CodeGen;
+    FRIENDS
 
     Exp *value;
     Exp *size;

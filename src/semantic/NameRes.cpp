@@ -1,7 +1,29 @@
 #include "NameRes.h"
 #include <iostream>
+#include <ranges>
+#include <string>
 
 NameRes::~NameRes() = default;
+
+void NameRes::declare(const std::string& id, const Value& val, int line, int col) const {
+    if (!table->declare(id, val)) {
+        throw std::runtime_error("redeclaration on the same scope " + std::to_string(line) + ':' + std::to_string(col));
+    }
+}
+
+void NameRes::update(const std::string& id, const Value& val, int line, int col) const {
+    if (!table->update(id, val)) {
+        throw std::runtime_error("update of undefined identifier '" + id + "' at " + std::to_string(line) + ':' + std::to_string(col));
+    }
+}
+
+Value* NameRes::lookup(const std::string& id, int line, int col) const {
+    auto* val = table->lookup(id);
+    if (!val) {
+        throw std::runtime_error("undefined identifier '" + id + "' at " + std::to_string(line) + ':' + std::to_string(col));
+    }
+    return val;
+}
 
 Value NameRes::visit(Block* block) {
     table->pushScope();
@@ -29,10 +51,7 @@ Value NameRes::visit(Literal* exp) {
 }
 
 Value NameRes::visit(Variable* exp) {
-    if (!table->lookup(exp->name)) {
-        std::cerr << "Name resolution error: undefined variable '"
-                  << exp->name << "'\n";
-    }
+    lookup(exp->name, exp->line, exp->col);
     return {};
 }
 
@@ -62,35 +81,38 @@ Value NameRes::visit(LoopExp* exp) {
 }
 
 Value NameRes::visit(SubscriptExp* exp) {
-    // Implementation here
+    lookup(exp->id, exp->line, exp->col);
+    exp->exp->accept(this);
     return {};
 }
 
 Value NameRes::visit(SliceExp* exp) {
-    // Implementation here
+    lookup(exp->id, exp->line, exp->col);
+    if (exp->start) exp->start->accept(this);
+    if (exp->end) exp->end->accept(this);
     return {};
 }
 
 Value NameRes::visit(ReferenceExp* exp) {
-    // Implementation here
+    exp->exp->accept(this);
     return {};
 }
 
 Value NameRes::visit(ArrayExp* exp) {
-    // std::cout << exp;
+    for (auto el : exp->elements) {
+        el->accept(this);
+    }
     return {};
 }
 
 Value NameRes::visit(UniformArrayExp* exp) {
-    // std::cout << exp;
+    exp->value->accept(this);
+    exp->size->accept(this);
     return {};
 }
 
 void NameRes::visit(DecStmt* stmt) {
-    if (!table->declare(stmt->id, stmt->var)) {
-        std::cerr << "Name resolution error: redeclaration of '"
-                  << stmt->id << "'\n";
-    }
+    declare(stmt->id, stmt->var, stmt->line, stmt->col);
     if (stmt->rhs) {
         stmt->rhs->accept(this);
     }
@@ -110,7 +132,7 @@ void NameRes::visit(ForStmt* stmt) {
     stmt->start->accept(this);
     stmt->end->accept(this);
     table->pushScope();
-    table->declare(stmt->id, {});
+    declare(stmt->id, {}, stmt->line, stmt->col);
     stmt->block->accept(this);
     table->popScope();
 }
@@ -127,11 +149,11 @@ void NameRes::visit(PrintStmt* stmt) {
 }
 
 void NameRes::visit(BreakStmt* stmt) {
-    stmt->exp->accept(this);
+    if (stmt->exp) stmt->exp->accept(this);
 }
 
 void NameRes::visit(ReturnStmt* stmt) {
-    stmt->exp->accept(this);
+    if (stmt->exp) stmt->exp->accept(this);
 }
 
 void NameRes::visit(ExpStmt* stmt) {
@@ -142,8 +164,7 @@ void NameRes::visit(Fun* fun) {
     table->pushScope();
     for (auto& param : fun->params) {
         Value val; val.type=param.type;
-        if (!table->declare(param.id, val))
-            throw std::runtime_error("redeclaration on the same scope" + fun->line + ':' + fun->col);
+        declare(param.id, val, param.line, param.col);
     }
     fun->block->accept(this);
     table->popScope();
@@ -154,10 +175,9 @@ void NameRes::visit(Program* program) {
         Value val{fun->type, true};
         for (const auto& param : fun->params)
             val.addType(param.type);
-        if (!table->declare(id, val))
-            throw std::runtime_error("redeclaration on the same scope" + fun->line + ':' + fun->col);
+        declare(id, val, fun->line, fun->col);
     }
-    for (const auto& [id, fun]: program->funs) {
+    for (const auto &fun: program->funs | std::views::values) {
         fun->accept(this);
     }
 }
