@@ -20,9 +20,9 @@ void Value::addType(Type type) {
 }
 
 std::string Value::getId() const {
-    if (type == ID && !stringValues.empty()) {
+    if (type == ID && !stringValues.empty())
         return stringValues.front();
-    } return {};
+    throw std::runtime_error("getId error");
 }
 std::ostream& operator<<(std::ostream& out, const Value::Type& type) {
     switch(type) {

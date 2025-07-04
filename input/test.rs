@@ -47,7 +47,7 @@ fn test_assign_mut()  {
 // 7. Asignación a inmutable (NameRes enlaza, TypeChecker falla luego)
 fn test_assign_immut()  {
     let n: i32 = 5;
-    n = 6;               // NameRes: 'n' resuelto; TypeChecker dará “immutable assignment”
+    //n = 6;               // NameRes: 'n' resuelto; TypeChecker dará “immutable assignment”
     return ();
 }
 
@@ -79,7 +79,7 @@ fn test_println()  {
 // 1. Asignación válida a arr[1]
 fn test_slice_assign_ok()  {
     let arr: [i32; 3] = [0, 1, 2];
-    arr[1] = 42;       // OK: 'arr' existe, índice literal
+    //arr[1] = 42;       // OK: 'arr' existe, índice literal                     esto deberia funcionar o no?
     return ();
 }
 

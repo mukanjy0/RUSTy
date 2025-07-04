@@ -39,7 +39,7 @@ public:
 private:
     Value lookup(const std::string& id) const;
     void declare(const std::string& id, const Value& val) const;
-    void assertMut(const std::string& id, int line, int col) const;
+    static void assertMut(const Value& val, int line, int col) ;
     static void assertType(Value::Type from, Value::Type to, int line, int col) ;
     int getScopeDepth() const;
 

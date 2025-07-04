@@ -14,12 +14,10 @@ int TypeCheck::getScopeDepth() const {
     return table->getScopeDepth();
 }
 
-void TypeCheck::assertMut(const std::string& id, int line, int col) const {
-    Value* v = table->lookup(id);
-    if (!v->mut) {
-        throw std::runtime_error("cannot assign to immutable variable '" + id +
-                                 "' at " + std::to_string(line) + ':' +
-                                 std::to_string(col));
+void TypeCheck::assertMut(const Value& val, int line, int col) {
+    if (!val.mut) {
+        throw std::runtime_error("cannot assign to immutable variable at "
+                                + std::to_string(line) + ':' + std::to_string(col));
     }
 }
 
@@ -205,8 +203,7 @@ Value TypeCheck::visit(DecStmt* stmt) {
 
 Value TypeCheck::visit(AssignStmt* stmt) {
     Value lhsVal = stmt->lhs->accept(this);
-    std::string id = lhsVal.getId();
-    assertMut(id, stmt->line, stmt->col);
+    assertMut(lhsVal, stmt->line, stmt->col);
     Value rhs = stmt->rhs->accept(this);
     assertType(rhs.type, lhsVal.type, stmt->line, stmt->col);
     return {Value::UNIT};
@@ -214,8 +211,7 @@ Value TypeCheck::visit(AssignStmt* stmt) {
 
 Value TypeCheck::visit(CompoundAssignStmt* stmt) {
     Value lhsVal = stmt->lhs->accept(this);
-    std::string id = lhsVal.getId();
-    assertMut(id, stmt->line, stmt->col);
+    assertMut(lhsVal, stmt->line, stmt->col);
     Value rhs = stmt->rhs->accept(this);
     assertType(lhsVal.type, Value::I32, stmt->line, stmt->col);
     assertType(rhs.type, Value::I32, stmt->line, stmt->col);
