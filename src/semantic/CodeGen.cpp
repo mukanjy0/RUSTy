@@ -148,47 +148,46 @@ Value CodeGen::visit(UniformArrayExp* exp) {
 }
 
 // Visit methods for statements
-void CodeGen::visit(DecStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(DecStmt* stmt) {
+    return {};
 }
 
-void CodeGen::visit(AssignStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(AssignStmt* stmt) {
+    return {};
 }
 
-void CodeGen::visit(CompoundAssignStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(CompoundAssignStmt* stmt) {
+    return {};
 }
 
-void CodeGen::visit(ForStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(ForStmt* stmt) {
+    return {};
 }
 
-void CodeGen::visit(WhileStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(WhileStmt* stmt) {
+    return {};
 }
 
-void CodeGen::visit(PrintStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(PrintStmt* stmt) {
+    return {};
 }
 
-void CodeGen::visit(BreakStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(BreakStmt* stmt) {
+    return {};
 }
 
-void CodeGen::visit(ReturnStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(ReturnStmt* stmt) {
+    return {};
 }
 
-void CodeGen::visit(ExpStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(ExpStmt* stmt) {
+    return {};
 }
 
 // Visit methods for functions and programs
-void CodeGen::visit(Fun* fun) {
-    // Implementation here
+Value CodeGen::visit(Fun* fun) {
+    return {};
 }
 
 void CodeGen::visit(Program* program) {
-    // Implementation here
 }

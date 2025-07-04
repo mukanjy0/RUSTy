@@ -26,16 +26,16 @@ public:
     Value visit(ReferenceExp* exp) override;
     Value visit(ArrayExp* exp) override;
     Value visit(UniformArrayExp* exp) override;
-    void visit(DecStmt* stmt) override;
-    void visit(AssignStmt* stmt) override;
-    void visit(CompoundAssignStmt* stmt) override;
-    void visit(ForStmt* stmt) override;
-    void visit(WhileStmt* stmt) override;
-    void visit(PrintStmt* stmt) override;
-    void visit(BreakStmt* stmt) override;
-    void visit(ReturnStmt* stmt) override;
-    void visit(ExpStmt* stmt) override;
-    void visit(Fun* fun) override;
+    Value visit(DecStmt* stmt) override;
+    Value visit(AssignStmt* stmt) override;
+    Value visit(CompoundAssignStmt* stmt) override;
+    Value visit(ForStmt* stmt) override;
+    Value visit(WhileStmt* stmt) override;
+    Value visit(PrintStmt* stmt) override;
+    Value visit(BreakStmt* stmt) override;
+    Value visit(ReturnStmt* stmt) override;
+    Value visit(ExpStmt* stmt) override;
+    Value visit(Fun* fun) override;
     void visit(Program* program) override;
 };
 

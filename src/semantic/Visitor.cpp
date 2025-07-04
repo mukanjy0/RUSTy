@@ -41,34 +41,34 @@ Value ArrayExp::accept(Visitor* visitor) {
 Value UniformArrayExp::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-void DecStmt::accept(Visitor* visitor) {
+Value DecStmt::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-void AssignStmt::accept(Visitor* visitor) {
+Value AssignStmt::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-void CompoundAssignStmt::accept(Visitor* visitor) {
+Value CompoundAssignStmt::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-void ForStmt::accept(Visitor* visitor) {
+Value ForStmt::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-void WhileStmt::accept(Visitor* visitor) {
+Value WhileStmt::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-void PrintStmt::accept(Visitor* visitor) {
+Value PrintStmt::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-void BreakStmt::accept(Visitor* visitor) {
+Value BreakStmt::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-void ReturnStmt::accept(Visitor* visitor) {
+Value ReturnStmt::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-void ExpStmt::accept(Visitor* visitor) {
+Value ExpStmt::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-void Fun::accept(Visitor* visitor) {
+Value Fun::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
 void Program::accept(Visitor* visitor) {

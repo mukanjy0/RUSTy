@@ -23,16 +23,16 @@ public:
     virtual Value visit(ReferenceExp* exp) = 0;
     virtual Value visit(ArrayExp* exp) = 0;
     virtual Value visit(UniformArrayExp* exp) = 0;
-    virtual void visit(DecStmt* stmt) = 0;
-    virtual void visit(AssignStmt* stmt) = 0;
-    virtual void visit(CompoundAssignStmt* stmt) = 0;
-    virtual void visit(ForStmt* stmt) = 0;
-    virtual void visit(WhileStmt* stmt) = 0;
-    virtual void visit(PrintStmt* stmt) = 0;
-    virtual void visit(BreakStmt* stmt) = 0;
-    virtual void visit(ReturnStmt* stmt) = 0;
-    virtual void visit(ExpStmt* stmt) = 0;
-    virtual void visit(Fun* fun) = 0;
+    virtual Value visit(DecStmt* stmt) = 0;
+    virtual Value visit(AssignStmt* stmt) = 0;
+    virtual Value visit(CompoundAssignStmt* stmt) = 0;
+    virtual Value visit(ForStmt* stmt) = 0;
+    virtual Value visit(WhileStmt* stmt) = 0;
+    virtual Value visit(PrintStmt* stmt) = 0;
+    virtual Value visit(BreakStmt* stmt) = 0;
+    virtual Value visit(ReturnStmt* stmt) = 0;
+    virtual Value visit(ExpStmt* stmt) = 0;
+    virtual Value visit(Fun* fun) = 0;
     virtual void visit(Program* program) = 0;
 };
 

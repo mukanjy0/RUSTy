@@ -12,7 +12,7 @@ class Visitor;
 class CodeGen;
 
 struct Value {
-    enum Type { BOOL, CHAR, I32, STR, ID, UNIT, UNDEFINED};
+    enum Type { UNDEFINED, BOOL, CHAR, I32, STR, ID, UNIT};
 
     Type type {};
     // in case of array has multiple values, otherwise only one
@@ -72,6 +72,7 @@ struct Value {
 class Exp;
 
 class Stmt {
+    FRIENDS
 protected:
     int line;
     int col;
@@ -82,7 +83,7 @@ public:
     Stmt &operator=(Stmt &&) = delete;
     Stmt(int line, int col) : line(line), col(col) {}
     virtual ~Stmt() = 0;
-    virtual void accept(Visitor *visitor) = 0;
+    virtual Value accept(Visitor *visitor) = 0;
     virtual void print(std::ostream &out) = 0;
     friend std::ostream &operator<<(std::ostream &out, Stmt *stmt);
 };
@@ -93,6 +94,7 @@ class Block {
     int line;
     int col;
     std::list<Stmt *> stmts;
+    Value::Type type{};
 public:
     Block(int line, int col, std::list<Stmt *> stmts)
         : line(line), col(col), stmts(std::move(stmts)) {}
@@ -108,9 +110,11 @@ public:
 };
 
 class Exp {
+    FRIENDS
 protected:
     int line;
     int col;
+    Value::Type type{};
 public:
     Exp(int line, int col) : line(line), col(col) {}
     virtual ~Exp() = 0;

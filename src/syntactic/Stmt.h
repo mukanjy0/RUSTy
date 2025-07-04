@@ -23,7 +23,7 @@ public:
     ~DecStmt() override;
 
     void print(std::ostream& out) override;
-    void accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class AssignStmt : public Stmt {
@@ -41,7 +41,7 @@ public:
 
     ~AssignStmt() override;
     void print(std::ostream& out) override;
-    void accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class CompoundAssignStmt : public Stmt {
@@ -56,7 +56,7 @@ public:
 
     ~CompoundAssignStmt() override;
     void print(std::ostream& out) override;
-    void accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class ForStmt : public Stmt {
@@ -78,7 +78,7 @@ public:
         block(block), inclusive(inclusive) {}
     ~ForStmt() override;
     void print(std::ostream& out) override;
-    void accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class WhileStmt : public Stmt {
@@ -91,7 +91,7 @@ public:
         : Stmt(line, col), cond(cond), block(block) {}
     ~WhileStmt() override;
     void print(std::ostream& out) override;
-    void accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class PrintStmt : public Stmt {
@@ -106,37 +106,40 @@ public:
     : Stmt(line, col), strLiteral(std::move(strLiteral)), args(std::move(args)) {}
     ~PrintStmt() override;
     void print(std::ostream& out) override;
-    void accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class BreakStmt : public Stmt {
     FRIENDS
     Exp* exp {};
+    Value::Type type{};
 public:
     BreakStmt(int line, int col) : Stmt(line, col) {}
     BreakStmt(int line, int col, Exp* exp) 
         : Stmt(line, col), exp(exp) {};
     ~BreakStmt() override;
     void print(std::ostream& out) override;
-    void accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class ReturnStmt : public Stmt {
     FRIENDS
     Exp* exp {};
+    Value::Type type{};
 public:
     ReturnStmt(int line, int col) : Stmt(line, col) {}
     ReturnStmt(int line, int col, Exp* exp) 
         : Stmt(line, col), exp(exp) {};
     ~ReturnStmt() override;
     void print(std::ostream& out) override;
-    void accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 class ExpStmt : public Stmt {
     FRIENDS
     Exp* exp {};
     bool returnValue {};
+    Value::Type type{};
 public:
     ExpStmt(int line, int col) : Stmt(line, col) {}
     ExpStmt(int line, int col, Exp* exp) 
@@ -145,7 +148,7 @@ public:
         : Stmt(line, col), exp(exp), returnValue(returnValue) {};
     ~ExpStmt() override;
     void print(std::ostream& out) override;
-    void accept(Visitor* visitor) override;
+    Value accept(Visitor* visitor) override;
 };
 
 #endif

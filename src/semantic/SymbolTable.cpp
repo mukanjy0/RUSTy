@@ -42,3 +42,7 @@ Value* SymbolTable::lookup(const std::string& name) {
     }
     return nullptr;
 }
+
+int SymbolTable::getScopeDepth() const {
+    return scopes_.size();
+}

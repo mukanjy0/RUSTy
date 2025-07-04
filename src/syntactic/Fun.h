@@ -27,7 +27,7 @@ public:
     Fun(int line, int col, Value::Type type, std::list<Param> params, Block *block)
             : line(line), col(col), type(type), params(std::move(params)), block(block) {}
     ~Fun();
-    void accept(Visitor* visitor);
+    Value accept(Visitor* visitor);
     friend std::ostream& operator<<(std::ostream& out, const Fun* fun);
 };
 

@@ -17,9 +17,9 @@ void NameRes::update(const std::string& id, const Value& val, int line, int col)
     }
 }
 
-Value* NameRes::lookup(const std::string& id, int line, int col) const {
-    if (auto* val = table->lookup(id); val) {
-        return val;
+Value NameRes::lookup(const std::string& id, int line, int col) const {
+    if (auto val = table->lookup(id); val) {
+        return *val;
     } throw std::runtime_error("undefined identifier '" + id + "' at " + std::to_string(line) + ':' + std::to_string(col));
 }
 
@@ -49,12 +49,12 @@ Value NameRes::visit(Literal* exp) {
 }
 
 Value NameRes::visit(Variable* exp) {
-    *lookup(exp->name, exp->line, exp->col);
+    lookup(exp->name, exp->line, exp->col);
     return {Value::ID, exp->name};
 }
 
 Value NameRes::visit(FunCall* exp) {
-    if (auto* val = lookup(exp->id, exp->line, exp->col); !val->isFunction()) {
+    if (auto val = lookup(exp->id, exp->line, exp->col); !val.isFunction()) {
         throw std::runtime_error(
             "‘" + exp->id + "’ is not a function at " +
             std::to_string(exp->line) + ":" +
@@ -84,7 +84,7 @@ Value NameRes::visit(LoopExp* exp) {
 }
 
 Value NameRes::visit(SubscriptExp* exp) {
-    *lookup(exp->id, exp->line, exp->col);
+    lookup(exp->id, exp->line, exp->col);
     exp->exp->accept(this);
     return {Value::ID, exp->id};
 }
@@ -114,60 +114,69 @@ Value NameRes::visit(UniformArrayExp* exp) {
     return {};
 }
 
-void NameRes::visit(DecStmt* stmt) {
+Value NameRes::visit(DecStmt* stmt) {
     declare(stmt->id, stmt->var, stmt->line, stmt->col);
     if (stmt->rhs) {
         stmt->rhs->accept(this);
     }
+    return {};
 }
 
-void NameRes::visit(AssignStmt* stmt) {
+Value NameRes::visit(AssignStmt* stmt) {
     Value lhsVal = stmt->lhs->accept(this);
     std::string id = lhsVal.getId();
     update(id, {}, stmt->line, stmt->col);
     stmt->rhs->accept(this);
+    return {};
 }
 
-void NameRes::visit(CompoundAssignStmt* stmt) {
+Value NameRes::visit(CompoundAssignStmt* stmt) {
     Value lhsVal = stmt->lhs->accept(this);
     std::string id = lhsVal.getId();
     update(id, {}, stmt->line, stmt->col);
     stmt->rhs->accept(this);
+    return {};
 }
 
-void NameRes::visit(ForStmt* stmt) {
+Value NameRes::visit(ForStmt* stmt) {
     stmt->start->accept(this);
     stmt->end->accept(this);
     table->pushScope();
     declare(stmt->id, {}, stmt->line, stmt->col);
     stmt->block->accept(this);
     table->popScope();
+    return {};
 }
 
-void NameRes::visit(WhileStmt* stmt) {
+Value NameRes::visit(WhileStmt* stmt) {
     stmt->cond->accept(this);
     stmt->block->accept(this);
+    return {};
 }
 
-void NameRes::visit(PrintStmt* stmt) {
+Value NameRes::visit(PrintStmt* stmt) {
     for (auto exp : stmt->args) {
         exp->accept(this);
     }
+    return {};
 }
 
-void NameRes::visit(BreakStmt* stmt) {
+Value NameRes::visit(BreakStmt* stmt) {
     if (stmt->exp) stmt->exp->accept(this);
+    return {};
 }
 
-void NameRes::visit(ReturnStmt* stmt) {
+Value NameRes::visit(ReturnStmt* stmt) {
     if (stmt->exp) stmt->exp->accept(this);
+    return {};
 }
 
-void NameRes::visit(ExpStmt* stmt) {
+Value NameRes::visit(ExpStmt* stmt) {
     stmt->exp->accept(this);
+    return {};
 }
 
-void NameRes::visit(Fun* fun) {
+Value NameRes::visit(Fun* fun) {
     table->pushScope();
     for (auto& param : fun->params) {
         Value val; val.type=param.type;
@@ -175,9 +184,11 @@ void NameRes::visit(Fun* fun) {
     }
     fun->block->accept(this);
     table->popScope();
+    return {};
 }
 
 void NameRes::visit(Program* program) {
+    table->pushScope();
     for (const auto& [id, fun]: program->funs) {
         Value val{fun->type, true};
         for (const auto& param : fun->params)
@@ -187,4 +198,5 @@ void NameRes::visit(Program* program) {
     for (const auto &fun: program->funs | std::views::values) {
         fun->accept(this);
     }
+    table->popScope();
 }
