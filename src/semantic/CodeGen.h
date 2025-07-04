@@ -3,11 +3,48 @@
 
 #include "Visitor.h"
 
+using namespace std;
+
 class CodeGen : public Visitor {
 private:
-    std::ostream& out;
+    enum L {B, W, D, Q};
+    ostream& out;
 
-    void mov(Value::Type, char lr, char rr);
+    struct Operand {
+        L lvl {L::Q};
+        bool mem {};
+        bool constant {};
+        int offset {}; // for memory
+        int value {}; // for constant
+        string reg {"a"}; // for regs
+
+        operator string() const;
+    };
+
+    char suffix(L lvl);
+    char suffix(Value value);
+    char suffix(Value::Type type);
+    L valueToL(Value value);
+    L typeToL(Value::Type type);
+
+    void mov(Value value, Operand l, Operand r);
+    // arithmetic
+    void add(Value value, Operand l, Operand r);
+    void inc(Value value, Operand o);
+    void sub(Value value, Operand l, Operand r);
+    void dec(Value value, Operand o);
+    void mul(Value value, Operand l, Operand r);
+    void div(Value value, Operand l, Operand r);
+    // stack
+    void push(Value value, Operand o);
+    void pop(Value value, Operand o);
+    // memory
+    void lea(Value value, Operand l, Operand r);
+
+    friend ostream& operator<<(ostream& out, const Operand& op) {
+        out << string(op);
+        return out;
+    }
 
 public:
     CodeGen(SymbolTable* table, std::ostream& out): Visitor(table), out(out){}
