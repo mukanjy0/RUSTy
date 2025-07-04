@@ -77,7 +77,7 @@ public:
     Stmt &operator=(Stmt &&) = delete;
     Stmt(int line, int col) : line(line), col(col) {}
     virtual ~Stmt() = 0;
-    virtual void accept(Visitor *visitor) = 0;
+    virtual Value accept(Visitor *visitor) = 0;
     virtual void print(std::ostream &out) = 0;
     friend std::ostream &operator<<(std::ostream &out, Stmt *stmt);
 };
