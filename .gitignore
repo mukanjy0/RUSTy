@@ -7,3 +7,4 @@ cmake-build-debug/
 CMakeLists.txt
 .idea/
 .venv
+/compiler-backend/__pycache__
