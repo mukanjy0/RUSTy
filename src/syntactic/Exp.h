@@ -6,6 +6,7 @@
 #include <iostream>
 #include <string>
 #include <list>
+#include <utility>
 
 class Visitor;
 class CodeGen;
@@ -35,7 +36,7 @@ struct Value {
 
     Value(Type type, std::string stringValue,
           bool ref=false, bool mut=false, bool fun=false)
-        : type(type), stringValues({stringValue}),
+        : type(type), stringValues({std::move(stringValue)}),
         ref(ref), mut(mut) {}
 
     Value(Type type, int numericValue,
