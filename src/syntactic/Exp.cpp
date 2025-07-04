@@ -18,6 +18,12 @@ bool Value::isFunction() {
 void Value::addType(Type type) {
     types.push_back(type);
 }
+
+std::string Value::getId() const {
+    if (type == ID && !stringValues.empty()) {
+        return stringValues.front();
+    } return {};
+}
 std::ostream& operator<<(std::ostream& out, const Value::Type& type) {
     switch(type) {
         case Value::BOOL: out << "bool"; break;

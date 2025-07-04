@@ -61,6 +61,7 @@ struct Value {
     bool isArray();
     bool isFunction();
     void addType(Type type);
+    std::string getId() const;
 
     static Type stringToType(std::string type);
     friend std::ostream& operator<<(std::ostream& out, const Value::Type& type);

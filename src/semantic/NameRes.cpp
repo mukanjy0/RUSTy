@@ -49,8 +49,11 @@ Value NameRes::visit(Literal* exp) {
 }
 
 Value NameRes::visit(Variable* exp) {
-    lookup(exp->name, exp->line, exp->col);
-    return {};
+    Value val = *lookup(exp->name, exp->line, exp->col);
+    val.stringValues.clear();
+    val.stringValues.push_back(exp->name);
+    val.type = Value::ID;
+    return val;
 }
 
 Value NameRes::visit(FunCall* exp) {
@@ -84,9 +87,12 @@ Value NameRes::visit(LoopExp* exp) {
 }
 
 Value NameRes::visit(SubscriptExp* exp) {
-    lookup(exp->id, exp->line, exp->col);
+    Value val = *lookup(exp->id, exp->line, exp->col);
     exp->exp->accept(this);
-    return {};
+    val.stringValues.clear();
+    val.stringValues.push_back(exp->id);
+    val.type = Value::ID;
+    return val;
 }
 
 Value NameRes::visit(SliceExp* exp) {
@@ -122,12 +128,16 @@ void NameRes::visit(DecStmt* stmt) {
 }
 
 void NameRes::visit(AssignStmt* stmt) {
-    stmt->lhs->accept(this);
+    Value lhsVal = stmt->lhs->accept(this);
+    std::string id = lhsVal.getId();
+    update(id, lhsVal, stmt->line, stmt->col);
     stmt->rhs->accept(this);
 }
 
 void NameRes::visit(CompoundAssignStmt* stmt) {
-    stmt->lhs->accept(this);
+    Value lhsVal = stmt->lhs->accept(this);
+    std::string id = lhsVal.getId();
+    update(id, lhsVal, stmt->line, stmt->col);
     stmt->rhs->accept(this);
 }
 

@@ -1,81 +1,77 @@
-// fn fun(num : i32, num2 : ()) 
+// rust.rs — casos para NameRes sin bloques arbitrarios
 
-fn fun(num : i32) 
-{
-// -> i32 {
-    let num : char = 'a';
-    5
-    // 1 + 5;
-    // return 6
+// 1. Función simple y llamada válida
+fn foo(a: i32, b: i32) -> i32 {
+    let x: i32 = a + b;
+    return x;
 }
 
-// static MYGLOBAL : i32 = 80;
-// const MYGLOBAL2 : i32 AAAAA
-
 fn main() {
-    // Statements here are executed when the compiled binary is called.
-    let mut i : i32 = fun(8);
-    let nv : i32 = fun(84);
-    // const g : i32 = 1 * 8;
-    println!("{}", i);
+    foo(1, 2);
+    return ();
+}
 
-    let s; // does not have size
-    s = "hello"; // does not have size
-    // | h | e | l | l | o |
-    let crazy : [&str ; 2] = ["aa", "abc"];
-    // let ss : &str = &s[..(('a' as usize) - 93)]; // &s[0..1] &s[1..] &s[..3] &s[..]
-    let ss : &str = &s[..4]; // &s[0..1] &s[1..] &s[..3] &s[..]
-    let s2 : &str;
-    s2 = &ss[..]; // AHHHHHH
-    // | h | e | l | l |
-    println!("{s2}");
-    let mut xs: [i32; 5];
-    xs = [10; 5];
-    let mut xp : &i32 = &xs[3];
-    // let mut xp : &i32 = &mut xs[3];
-    xp = &i;
-    // println!("this should be 4: {}", xp);
-    // &xp = xs[4]
-    xs[3] = 7;
-    // xs[3] = 5;
-    println!("this should be 5: {}", xs[3]);
-    let mut cs: [char; 2] = ['a' ; 2];
-    let mut is: [i32; 2] = [i + 8 ; 2];
-    let mut ys;
-    let empty = ();
-    // let empty : () = ();
-    ys = [0, 0, 0, 0];
-    println!("{}", ys[3]);
-    // println!("{}", xs[(xs[0] + 1)]);
-    // println!("{}", xs[(xs[0] + 1) as usize]);
-    xs[0] = 2;
-    println!("{}", xs[0]);
-    let c = loop {
-        break 0;
-        s = "hi";
-    };
+// 2. Llamada a función no declarada
+fn test_undef_call()  {
+    bar(1, 2);      // ERROR NameRes: 'bar' no está declarado
+    return ();
+}
 
-    println!("{}", c);
+// 3. Redeclaración en el mismo scope
+fn test_redecl()  {
+    let x: i32 = 1;
+    let x: i32 = 2; // ERROR NameRes: redeclaration of 'x' in same scope
+    return ();
+}
 
-    i < 6;
+// 4. Uso antes de declarar
+fn test_use_before_decl()  {
+    let y: i32 = x + 1;  // ERROR NameRes: 'x' no está declarado
+    let x: i32 = 3;
+    return ();
+}
 
-    // if if i > 6 { 0 } else { 1 } > 0 { println!("hello\n"); } else { println!("goodbye\n"); }
-    if i < 6 { println!("hello\n"); } else { println!("goodbye\n"); }
-    let fifi = 4;
+// 5. Parámetros disponibles en el scope de función
+fn test_params(a: i32, b: i32)  {
+    let s: i32 = a + b;  // OK: 'a' y 'b' existen como parámetros
+    return ();
+}
 
-    for j in i..=5 {
-        println!("{}", j);
-        // i + = j;
-    } 
+// 6. Asignación simple (NameRes solo enlaza nombre)
+fn test_assign_mut()  {
+    let mut m: i32 = 10;
+    m = 20;              // NameRes: 'm' resuelto; TypeChecker revisará mutabilidad
+    return ();
+}
 
-    if i > 4 {
-        return
+// 7. Asignación a inmutable (NameRes enlaza, TypeChecker falla luego)
+fn test_assign_immut()  {
+    let n: i32 = 5;
+    n = 6;               // NameRes: 'n' resuelto; TypeChecker dará “immutable assignment”
+    return ();
+}
+
+// 8. For introduce un scope para 'i'
+fn test_for_loop()  {
+    let arr: [i32; 3] = [1, 2, 3];
+    for i in arr ..= 3 {
+        let t: i32 = i + 1;  // OK
     }
-    // return if i > 5 { let jaja = 8; } else { let jojo = 9; }
-    // return TODO
-    println!("{}", (if i > 6 {"Hello World!"} else {"Goodbye world!"}));
+    let z: i32 = i;          // ERROR NameRes: 'i' no está declarado en este scope
+    return ();
+}
 
-    // Print text to the console.
-    // let mut ch = '\n';
-    return
+// 9. Subíndice en array
+fn test_subscript()  {
+    let arr: [i32; 3] = [10, 20, 30];
+    let v0: i32 = arr[0];    // OK
+    let v1: i32 = arr[x];    // ERROR NameRes: 'x' no está declarado
+    return ();
+}
+
+// 10. Printstmt (NameRes solo resuelve 'msg')
+fn test_println()  {
+    let msg: &str = "hello";
+    println!("{msg}", 1, 2);     // NameRes: enlaza 'msg'; aridad/tipos van en TypeChecker
+    return ();
 }
