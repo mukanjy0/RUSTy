@@ -5,6 +5,7 @@ Value::Type Value::stringToType(std::string type) {
     if (type == "bool") return BOOL;
     else if (type == "char") return CHAR;
     else if (type == "i32") return I32;
+    else if (type == "i64") return I64;
     else if (type == "str") return STR;
     else if (type == "()") return UNIT;
     throw std::runtime_error("invalid type: " + type);
@@ -17,6 +18,9 @@ bool Value::isFunction() {
 }
 void Value::addType(Type type) {
     types.push_back(type);
+}
+Value::operator int() {
+    return numericValues.front();
 }
 std::ostream& operator<<(std::ostream& out, const Value::Type& type) {
     switch(type) {
@@ -49,6 +53,7 @@ std::ostream& operator<<(std::ostream& out, const Value& var) {
             }
             break;
         case Value::I32:
+        case Value::I64:
             for (auto el : var.numericValues) {
                 out << el;
                 if (++i < var.size) out << ", ";

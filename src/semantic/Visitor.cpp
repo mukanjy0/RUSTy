@@ -71,7 +71,7 @@ Value ExpStmt::accept(Visitor* visitor) {
 Value Fun::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
-Value Program::accept(Visitor* visitor) {
+void Program::accept(Visitor* visitor) {
     return visitor->visit(this);
 }
 

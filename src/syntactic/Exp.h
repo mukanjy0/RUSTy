@@ -11,7 +11,7 @@ class Visitor;
 class CodeGen;
 
 struct Value {
-    enum Type { BOOL, CHAR, I32, STR, ID, UNIT, UNDEFINED};
+    enum Type { BOOL, CHAR, I32, I64, STR, ID, UNIT, UNDEFINED};
 
     Type type {};
     // in case of array has multiple values, otherwise only one
@@ -32,6 +32,7 @@ struct Value {
     int left {}, right {};
 
     Value() : type(UNDEFINED) {}
+    Value(Type type) : type(type) {}
 
     Value(Type type, std::string stringValue,
           bool ref=false, bool mut=false, bool fun=false)
@@ -58,6 +59,8 @@ struct Value {
     bool isArray();
     bool isFunction();
     void addType(Type type);
+
+    operator int();
 
     static Type stringToType(std::string type);
     friend std::ostream& operator<<(std::ostream& out, const Value::Type& type);
@@ -87,6 +90,7 @@ class Block {
 
     int line;
     int col;
+    Value::Type type {};
     std::list<Stmt *> stmts;
 public:
     Block(int line, int col, std::list<Stmt *> stmts)
@@ -203,9 +207,11 @@ class IfExp : public Exp {
 public:
     class IfBranch {
         friend class IfExp;
+        FRIENDS
 
         Exp* cond;
         Block* block;
+        Value::Type type {};
         IfBranch(Exp *cond, Block *block) : cond(cond), block(block) {}
 
     public:
@@ -250,6 +256,7 @@ class LoopExp : public Exp {
     FRIENDS
 
     Block* block;
+    Value::Type type {};
 public:
     LoopExp(int line, int col, Block *block) 
         : Exp(line, col), block(block) {}

@@ -30,7 +30,7 @@ public:
     Value visit(ReturnStmt* stmt) override;
     Value visit(ExpStmt* stmt) override;
     Value visit(Fun* fun) override;
-    Value visit(Program* program) override;
+    void visit(Program* program) override;
 };
 
 #endif

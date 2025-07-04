@@ -35,7 +35,7 @@ public:
     virtual Value visit(ReturnStmt* stmt) = 0;
     virtual Value visit(ExpStmt* stmt) = 0;
     virtual Value visit(Fun* fun) = 0;
-    virtual Value visit(Program* program) = 0;
+    virtual void visit(Program* program) = 0;
 };
 
 #endif

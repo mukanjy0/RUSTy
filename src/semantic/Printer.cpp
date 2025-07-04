@@ -118,8 +118,7 @@ Value Printer::visit(Fun* fun) {
     return {};
 }
 
-Value Printer::visit(Program* program) {
+void Printer::visit(Program* program) {
     std::cout << program;
-    return {};
 }
 

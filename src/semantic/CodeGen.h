@@ -2,74 +2,132 @@
 #define RUSTY_GENCODE_H
 
 #include "Visitor.h"
+#include <map>
+#include <stack>
 
 using namespace std;
 
+enum L {B, W, D, Q};
+enum C {NONE, EQ, NE, GT, LT, GE, LE};
+
+class Operand {
+public:
+    L lvl {L::Q};
+    virtual ~Operand() = 0;
+    virtual void print(std::ostream &out) = 0;
+    friend ostream& operator<<(ostream& out, Operand* op);
+};
+
+class Reg : public Operand {
+    friend class CodeGen;
+
+    string reg {"a"};
+    Reg() {}
+    Reg(string reg) : reg(reg) {}
+public:
+    ~Reg();
+    void print(std::ostream &out) override;
+};
+
+class Const : public Operand {
+    friend class CodeGen;
+
+    Value value {};
+    Const(Value value) : value(value) {
+        switch(value.type) {
+            case Value::CHAR:
+                value.numericValues.push_back(
+                    value.stringValues.front()[0]
+                );
+            case Value::BOOL:
+                lvl = B;
+                break;
+            case Value::I32:
+                lvl = D;
+                break;
+            default: lvl = Q;
+        }
+    }
+public:
+    ~Const();
+    void print(std::ostream &out) override;
+};
+
+class Mem : public Operand {
+    friend class CodeGen;
+
+    Reg* reg;
+    int offset {};
+    string label {};
+    Mem(Reg* reg, int offset) 
+    : reg(reg), offset(offset) {}
+    Mem(Reg* reg, string label) 
+    : reg(reg), label(label) {}
+    Mem(Reg* reg, int offset, string label) 
+    : reg(reg), offset(offset), label(label) {}
+public:
+    ~Mem();
+    void print(std::ostream &out) override;
+};
+
 class CodeGen : public Visitor {
 private:
-    enum L {B, W, D, Q};
-    enum C {NONE, EQ, NE, GT, LT};
     ostream& out;
 
-    struct Operand {
-        string reg {"a"}; // for regs
-        L lvl {L::Q};
-        int value {}; // for constant
-        int offset {}; // for memory
-        bool mem {};
-        bool constant {};
-        string label {};
-
-        operator string() const;
-    };
-
-    char suffix(L lvl);
-    char suffix(Operand o);
-    char suffix(Value value);
-    char suffix(Value::Type type);
     L valueToL(Value value);
     L typeToL(Value::Type type);
 
-    void mov(Operand l, Operand r);
-    void movz(Operand l, Operand r);
+    void mov();
+    void movz();
     // arithmetic
-    void add(Operand l, Operand r);
-    void inc(Operand o);
-    void sub(Operand l, Operand r);
-    void dec(Operand o);
-    void mul(Operand l, Operand r);
-    void div(Operand l, Operand r);
+    void add();
+    void inc();
+    void sub();
+    void dec();
+    void mul();
+    void div();
     // stack
-    void push(Operand o);
-    void pop(Operand o);
+    void push();
+    void pop();
     // memory
-    void lea(Operand l, Operand r);
+    void lea();
     // conditional
-    void cmp(Operand l, Operand r);
-    void jmp(Operand r, C=NONE);
-    void set(Operand r, C=NONE);
-    void cmov(Operand l, Operand r, C=NONE);
+    void cmp();
+    void jmp(C=NONE);
+    void jmp(string label, C=NONE);
+    void set(C=NONE);
+    void cmov(C=NONE);
+    void call(string label);
+    void enter();
+    void leave();
+    void ret();
 
-    friend ostream& operator<<(ostream& out, C cond) {
-        switch (cond) {
-            case EQ: out << "e"; break;
-            case NE: out << "ne"; break;
-            case GT: out << "g"; break;
-            case LT: out << "l"; break;
-            default: break;
-        }
-        return out;
-    }
-    friend ostream& operator<<(ostream& out, const Operand& op) {
-        out << string(op);
-        return out;
-    }
+    string LCLabel();
+    void LBLabel();
+    void LELabel();
+    void LFBLabel();
+    void LFELabel();
+    string end(string label);
 
-    int count {};
+    int lb {};
+    int lc {};
+    int lf {};
+    stack<int> lbs;
+    stack<int> bp {};
+    stack<string> labels {};
+    int offset {};
+    int prevOff {};
+    bool init {};
+    Operand* l;
+    Operand* r;
+    Block* cur;
+    map<Block*, int> toAllocate;
 
 public:
     explicit CodeGen(std::ostream& out): Visitor(), out(out){}
     ~CodeGen() override;
+    static int typeLen(Value::Type type);
+    static int typeLen(L lvl);
     Value visit(Block* block) override;
     Value visit(BinaryExp* exp) override;
     Value visit(UnaryExp* exp) override;
@@ -93,7 +151,7 @@ public:
     Value visit(ReturnStmt* stmt) override;
     Value visit(ExpStmt* stmt) override;
     Value visit(Fun* fun) override;
-    Value visit(Program* program) override;
+    void visit(Program* program) override;
 };
 
 #endif //RUSTY_GENCODE_H

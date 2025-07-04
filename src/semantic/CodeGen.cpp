@@ -1,113 +1,151 @@
 #include "CodeGen.h"
 
-CodeGen::Operand::operator string() const {
-    string res {};
-    if (mem) res += to_string(offset) + "(";
-    if (constant) {
-        if (!mem) res += "$";
-        res += to_string(value);
-    }
-    else {
-        res += "%";
-        switch (lvl) {
-            case B:
-                res += reg + "l";
-                break;
-            case W:
-                res += reg;
-                if (reg.length() == 1) res += "x";
-            case D:
-                res += "e" + reg;
-                if (reg.length() == 1) res += "x";
-            case Q:
-                res += "r" + reg;
-                if (reg.length() == 1) res += "x";
-        }
-    }
-    if (mem) res += ")";
-    return res;
+Operand::~Operand() = default;
+std::ostream& operator<<(std::ostream& out, Stmt* stmt) {
+    stmt->print(out);
+    return out;
 }
 
-char CodeGen::suffix(L lvl) {
+Reg::~Reg() {}
+void Reg::print(ostream& out) {
+    out << "%";
     switch (lvl) {
-        case B: return 'b';
-        case W: return 'w';
-        case D: return 'l';
-        case Q: return 'q';
+        case B:
+            out << reg + "l";
+            break;
+        case W:
+            out << reg;
+            if (reg.length() == 1) out << "x";
+        case D:
+            out << "e" + reg;
+            if (reg.length() == 1) out << "x";
+        case Q:
+            out << "r" + reg;
+            if (reg.length() == 1) out << "x";
     }
 }
-char CodeGen::suffix(CodeGen::Operand o) {
-    return suffix(o.lvl);
-}
-char CodeGen::suffix(Value value) {
-    return suffix(valueToL(value));
-}
-char CodeGen::suffix(Value::Type type) {
-    return suffix(typeToL(type));
+
+Const::~Const() {}
+void Const::print(ostream& out) {
+    out << "$";
+    out << value.numericValues.front();
 }
 
-CodeGen::L CodeGen::typeToL(Value::Type type) {
+Mem::~Mem() {
+    delete reg;
+}
+void Mem::print(ostream& out) {
+    if (offset) out << to_string(offset);
+    else if (!label.empty()) out << label;
+    out << "(";
+    out << reg;
+    out << ")";
+}
+
+ostream& operator<<(ostream& out, L lvl) {
+    switch (lvl) {
+        case B: out << 'b';
+        case W: out << 'w';
+        case D: out << 'l';
+        case Q: out << 'q';
+    }
+    return out;
+}
+
+ostream& operator<<(ostream& out, C cond) {
+    switch (cond) {
+        case EQ: out << "e"; break;
+        case NE: out << "ne"; break;
+        case GT: out << "g"; break;
+        case LT: out << "l"; break;
+        case GE: out << "ge"; break;
+        case LE: out << "le"; break;
+        default: break;
+    }
+    return out;
+}
+
+static int typeLen(L lvl) {
+    switch (lvl) {
+        case B: return 1;
+        case W: return 2;
+        case D: return 4;
+        case Q: return 8;
+    }
+}
+
+static int typeLen(Value::Type type) {
+    switch(type) {
+        case Value::BOOL: 
+        case Value::CHAR: return 1;
+        case Value::I32: return 4;
+        default: return 8;
+    }
+}
+
+L CodeGen::typeToL(Value::Type type) {
     switch(type) {
         case Value::CHAR: 
         case Value::BOOL: return B;
         case Value::I32: 
-        case Value::STR: return D; // it will always be a pointer
-        default: return D;
+        case Value::UNIT: return D;
+        case Value::STR: return Q; // it will always be a pointer
+        default: return Q;
     }
 }
 
-CodeGen::L CodeGen::valueToL(Value value) {
-    if (value.ref) return D;
+L CodeGen::valueToL(Value value) {
+    if (value.ref) return Q;
 
     switch(value.type) {
         case Value::CHAR: 
         case Value::BOOL: return B;
         case Value::I32: 
-        case Value::STR: return D; // it will always be a pointer
-        default: return D;
+        case Value::UNIT: return D;
+        case Value::STR: return Q; // it will always be a pointer
+        default: return Q;
     }
 }
 
-void CodeGen::mov(Operand l, Operand r) {
-    out << "mov" << suffix(l) << ' ' << l << ", " << r << '\n';
+void CodeGen::mov() {
+    out << "mov" << l->lvl << ' ' << l << ", " << r << '\n';
 }
-void CodeGen::movz(Operand l, Operand r) {
-    out << "movz" << suffix(l) << suffix(r) << ' ' << l << ", " << r << '\n';
+void CodeGen::movz() {
+    out << "movz" << l->lvl << r->lvl << ' ' << l << ", " << r << '\n';
 }
-void CodeGen::add(Operand l, Operand r) {
-    out << "add" << suffix(l) << ' ' << l << ", " << r << '\n';
+void CodeGen::add() {
+    out << "add" << l->lvl << ' ' << l << ", " << r << '\n';
 }
-void CodeGen::inc(Operand r) {
-    out << "inc" << suffix(r) << ' ' << r << '\n';
+void CodeGen::inc() {
+    out << "inc" << r->lvl << ' ' << r << '\n';
 }
-void CodeGen::sub(Operand l, Operand r) {
-    out << "sub" << suffix(l) << ' ' << l << ", " << r << '\n';
+void CodeGen::sub() {
+    out << "sub" << l->lvl << ' ' << l << ", " << r << '\n';
 }
-void CodeGen::dec(Operand r) {
-    out << "dec" << suffix(r) << ' ' << r << '\n';
+void CodeGen::dec() {
+    out << "dec" << r->lvl << ' ' << r << '\n';
 }
-void CodeGen::mul(Operand l, Operand r) {
-    out << "imul" << suffix(l) << ' ' << l << ", " << r << '\n';
+void CodeGen::mul() {
+    out << "imul" << l->lvl << ' ' << l << ", " << r << '\n';
 }
-void CodeGen::div(Operand l, Operand r) {
-    out << "idiv" << suffix(l) << ' ' << l << ", " << r << '\n';
+void CodeGen::div() {
+    out << "idiv" << l->lvl << ' ' << l << ", " << r << '\n';
 }
-void CodeGen::push(Operand r) {
-    out << "push" << suffix(r) << ' ' << r << '\n';
+void CodeGen::push() {
+    out << "push" << r->lvl << ' ' << r << '\n';
+    offset += typeLen(r->lvl);
 }
-void CodeGen::pop(Operand r) {
-    out << "pop" << suffix(r) << ' ' << r << '\n';
+void CodeGen::pop() {
+    out << "pop" << r->lvl << ' ' << r << '\n';
+    offset -= typeLen(r->lvl);
 }
-void CodeGen::lea(Operand l, Operand r) {
-    if (!l.mem) {
-        throw runtime_error("expected <mem> left operand for lea");
-    }
-    out << "lea" << suffix(l) << ' ' << l << ", " << r << '\n';
+void CodeGen::lea() {
+    out << "lea" << l->lvl << ' ' << l << ", " << r << '\n';
 }
-void CodeGen::cmp(Operand l, Operand r) {
-    out << "cmp" << suffix(l) << ' ' << r << '\n';
+void CodeGen::cmp() {
+    out << "cmp" << l->lvl << ' ' << r << '\n';
 }
-void CodeGen::jmp(Operand r, C cond) {
+void CodeGen::jmp(C cond) {
     if (cond!=NONE) {
         out << "j" << cond;
     }
@@ -116,11 +154,80 @@ void CodeGen::jmp(Operand r, C cond) {
     }
     out << ' ' << r << '\n';
 }
-void CodeGen::set(Operand r, C cond) {
+void CodeGen::jmp(string label, C cond) {
+    if (cond!=NONE) {
+        out << "j" << cond;
+    }
+    else {
+        out << "jmp";
+    }
+    out << ' ' << label << '\n';
+}
+void CodeGen::set(C cond) {
     out << "set" << cond << ' ' << r << '\n';
 }
-void CodeGen::cmov(Operand l, Operand r, C cond) {
+void CodeGen::cmov(C cond) {
     out << "cmov" << cond << ' ' << l << ' ' << r << '\n';
+}
+void CodeGen::call(string label) {
+    out << "call " << label << "\n";
+    offset += typeLen(Q);
+}
+void CodeGen::enter() {
+    r = new Reg("bp");
+    push();
+
+    l = new Reg("sp");
+    r = new Reg("bp");
+    mov();
+
+    bp.push(offset);
+}
+void CodeGen::leave() {
+    out << "leave\n";
+    offset -= typeLen(Q);
+
+    bp.pop();
+}
+void CodeGen::ret() {
+    out << "ret\n";
+    offset -= typeLen(Q);
+}
+string CodeGen::LCLabel() {
+    string label = ".LC" + to_string(++lc);
+    out << label << '\n';
+    return label;
+}
+void CodeGen::LBLabel() {
+    string label = ".LB" + to_string(++lb);
+    out << label << '\n';
+    lbs.push(lb);
+    labels.push(label);
+}
+void CodeGen::LELabel() {
+    string label = ".LE" + to_string(lbs.top());
+    out << label << '\n';
+    lbs.pop();
+    labels.pop();
+}
+void CodeGen::LFBLabel() {
+    string label = ".LFB" + to_string(++lf);
+    out << label << '\n';
+    labels.push(label);
+}
+void CodeGen::LFELabel() {
+    string label = ".LFE" + to_string(lf);
+    out << label << '\n';
+    labels.pop();
+}
+string end(string label) {
+    if (label[1] == 'F') {
+        label[2] = 'E';
+    }
+    else {
+        label[1] = 'E';
+    }
+    return label;
 }
 
 // Destructor
@@ -128,204 +235,465 @@ CodeGen::~CodeGen() = default;
 
 // Visit methods for expressions
 Value CodeGen::visit(Block* block) {
-    table->pushScope();
-    Value val;
-    for(auto stmt : block->stmts) {
-        val = stmt->accept(this);
+    if (init) {
+        table->pushScope();
+        Value val;
+        for(auto stmt : block->stmts) {
+            val = stmt->accept(this);
+        }
+        table->popScope();
     }
-    table->popScope();
+    else {
+        cur = block;
+        for(auto stmt : block->stmts) {
+            stmt->accept(this);
+        }
+    }
     return {};
 }
 
 Value CodeGen::visit(BinaryExp* exp) {
-    exp->lhs->accept(this);
-    push({});
-    exp->rhs->accept(this);
-    mov({}, {"c"});
-    pop({});
+    if (init) {
+        exp->lhs->accept(this);
 
-    switch (exp->op) {
-        case BinaryExp::LAND:
-            out << " andq %rcx, %rax\n";
-            break;
-        case BinaryExp::LOR:
-            out << " orq %rcx, %rax\n";
-            break;
-        case BinaryExp::GT:
-            out << " cmpq %rcx, %rax\n"
-                 << " movl $0, %eax\n"
-                 << " setg %al\n"
-                 << " movzbq %al, %rax\n";
-            break;
-        case BinaryExp::LT:
-            out << " cmpq %rcx, %rax\n"
-                 << " movl $0, %eax\n"
-                 << " setl %al\n"
-                 << " movzbq %al, %rax\n";
-            break;
-        case BinaryExp::GE:
-            out << " cmpq %rcx, %rax\n"
-                 << " movl $0, %eax\n"
-                 << " setge %al\n"
-                 << " movzbq %al, %rax\n";
-            break;
-        case BinaryExp::LE:
-            out << " cmpq %rcx, %rax\n"
-                 << " movl $0, %eax\n"
-                 << " setle %al\n"
-                 << " movzbq %al, %rax\n";
-            break;
-        case BinaryExp::EQ:
-            out << " cmpq %rcx, %rax\n"
-                 << " movl $0, %eax\n"
-                 << " sete %al\n"
-                 << " movzbq %al, %rax\n";
-            break;
-        case BinaryExp::NEQ:
-            out << " cmpq %rcx, %rax\n"
-                 << " movl $0, %eax\n"
-                 << " setne %al\n"
-                 << " movzbq %al, %rax\n";
-            break;
-        case BinaryExp::PLUS:
-            out << " addq %rcx, %rax\n";
-            break;
-        case BinaryExp::MINUS:
-            out << " subq %rcx, %rax\n";
-            break;
-        case BinaryExp::TIMES:
-            out << " imulq %rcx, %rax\n";
-            break;
-        case BinaryExp::DIV:
-            out  << " cqto\n"
-                 << " idivq %rcx\n";
-            break;
-        default:
-            throw std::runtime_error("Invalid binary operation");
+        r = new Reg();
+        push();
+
+        exp->rhs->accept(this);
+
+        l = new Reg();
+        r = new Reg("c");
+        mov();
+
+        r = new Reg();
+        pop();
+
+        switch (exp->op) {
+            case BinaryExp::LAND:
+                out << " andq %rcx, %rax\n";
+                break;
+            case BinaryExp::LOR:
+                out << " orq %rcx, %rax\n";
+                break;
+            case BinaryExp::GT:
+                out << " cmpq %rcx, %rax\n"
+                    << " movl $0, %eax\n"
+                    << " setg %al\n"
+                    << " movzbq %al, %rax\n";
+                break;
+            case BinaryExp::LT:
+                out << " cmpq %rcx, %rax\n"
+                    << " movl $0, %eax\n"
+                    << " setl %al\n"
+                    << " movzbq %al, %rax\n";
+                break;
+            case BinaryExp::GE:
+                out << " cmpq %rcx, %rax\n"
+                    << " movl $0, %eax\n"
+                    << " setge %al\n"
+                    << " movzbq %al, %rax\n";
+                break;
+            case BinaryExp::LE:
+                out << " cmpq %rcx, %rax\n"
+                    << " movl $0, %eax\n"
+                    << " setle %al\n"
+                    << " movzbq %al, %rax\n";
+                break;
+            case BinaryExp::EQ:
+                out << " cmpq %rcx, %rax\n"
+                    << " movl $0, %eax\n"
+                    << " sete %al\n"
+                    << " movzbq %al, %rax\n";
+                break;
+            case BinaryExp::NEQ:
+                out << " cmpq %rcx, %rax\n"
+                    << " movl $0, %eax\n"
+                    << " setne %al\n"
+                    << " movzbq %al, %rax\n";
+                break;
+            case BinaryExp::PLUS:
+                out << " addq %rcx, %rax\n";
+                break;
+            case BinaryExp::MINUS:
+                out << " subq %rcx, %rax\n";
+                break;
+            case BinaryExp::TIMES:
+                out << " imulq %rcx, %rax\n";
+                break;
+            case BinaryExp::DIV:
+                out  << " cqto\n"
+                    << " idivq %rcx\n";
+                break;
+            default:
+                throw std::runtime_error("Invalid binary operation");
+        }
+    }
+    else {
+        exp->lhs->accept(this);
+        exp->rhs->accept(this);
     }
     return {};
 
 }
 
 Value CodeGen::visit(UnaryExp* exp) {
-    exp->exp->accept(this);
-    mov({}, {"c"});
+    if (init) {
+        exp->exp->accept(this);
 
-    switch (exp->op) {
-        case UnaryExp::LNOT:
-            out << " notq %rcx\n";
-            break;
-        default:
-            throw std::runtime_error("Invalid unary operation");
+        l = new Reg();
+        r = new Reg("c");
+        mov();
+
+        switch (exp->op) {
+            case UnaryExp::LNOT:
+                out << " notq %rcx\n";
+                break;
+            default:
+                throw std::runtime_error("Invalid unary operation");
+        }
+
+        l = new Reg("c");
+        r = new Reg();
+        mov();
     }
-
-    mov({"c"}, {});
+    else {
+        exp->exp->accept(this);
+    }
     return {};
 }
 
 Value CodeGen::visit(Literal* exp) {
-    left.value = exp->value;
-    left.constant = true;
-    out << " movq $" << exp->value << ", %rax\n";
+    if (init) {
+        out << " movq $" << exp->value << ", %rax\n";
+    }
+    else {
+        if (exp->value.type == Value::STR) {
+            string label = ".LC" + to_string(++lc);
+            out << label << '\n';
+            out << ".string \"" << exp->value.stringValues.front() << "\"\n"; 
+
+            exp->value.type = Value::ID;
+            exp->value.stringValues.front() = label;
+        }
+    }
     return {};
 }
 
 Value CodeGen::visit(Variable* exp) {
-    // Implementation here
+    if (init) {
+    }
     return {};
 }
 
 Value CodeGen::visit(FunCall* exp) {
-    // Implementation here
+    if (init) {
+        stack<Exp*> s;
+        for (auto arg : exp->args) {
+            s.push(arg);
+        }
+
+        while (!s.empty()) {
+            auto arg = s.top();
+            s.pop();
+
+            Value value = arg->accept(this);
+            offset += typeLen(value.type);
+
+            r = new Reg();
+            r->lvl = valueToL(value);
+            push();
+        }
+
+        prevOff = offset;
+        call(exp->id);
+    }
+    else {
+        for (auto arg : exp->args) {
+            arg->accept(this);
+        }
+    }
     return {};
 }
 
 Value CodeGen::visit(IfExp* exp) {
-    // Implementation here
+    if (init) {
+    }
+    else {
+        exp->ifBranch->block->accept(this);
+        for (auto branch : exp->elseIfBranches) {
+            branch->block->accept(this);
+        }
+        if (exp->elseBranch) exp->elseBranch->block->accept(this);
+    }
     return {};
 }
 
 Value CodeGen::visit(LoopExp* exp) {
-    // Implementation here
+    if (init) {
+    }
+    else {
+        exp->block->accept(this);
+    }
     return {};
 }
 
 Value CodeGen::visit(SubscriptExp* exp) {
-    // Implementation here
+    if (init) {
+    }
     return {};
 }
 
 Value CodeGen::visit(SliceExp* exp) {
-    // Implementation here
+    if (init) {
+    }
     return {};
 }
 
 Value CodeGen::visit(ReferenceExp* exp) {
-    // Implementation here
+    if (init) {
+    }
+    else {
+        exp->exp->accept(this);
+    }
     return {};
 }
 
 Value CodeGen::visit(ArrayExp* exp) {
-    std::cout << exp;
+    if (init) {
+
+    }
+    else {
+        for (auto el : exp->elements) {
+            el->accept(this);
+        }
+    }
     return {};
 }
 
 Value CodeGen::visit(UniformArrayExp* exp) {
-    std::cout << exp;
+    if (init) {
+
+    }
+    else {
+        exp->value->accept(this);
+    }
     return {};
 }
 
 // Visit methods for statements
-void CodeGen::visit(DecStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(DecStmt* stmt) {
+    if (init) {
+
+    }
+    else {
+        toAllocate[cur] += typeLen(stmt->var.type);
+        if (stmt->var.type == Value::STR) {
+            stmt->rhs->accept(this);
+        }
+    }
+    return {};
 }
 
-void CodeGen::visit(AssignStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(AssignStmt* stmt) {
+    if (init) {
+    }
+    else {
+        stmt->rhs->accept(this);
+    }
+    return {};
 }
 
-void CodeGen::visit(CompoundAssignStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(CompoundAssignStmt* stmt) {
+    if (init) {
+    }
+    return {};
 }
 
-void CodeGen::visit(ForStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(ForStmt* stmt) {
+    if (init) {
+        table->pushScope();
+
+        auto value = stmt->start->accept(this);
+
+        auto it = new Reg();
+        it->lvl = valueToL(value);
+        r = it;
+        push();
+        table->declare(stmt->id, Value(Value::ID, offset));
+
+        LBLabel();
+        l = it;
+        r = new Reg("c");
+        r->lvl = l->lvl;
+        mov();
+
+        value = stmt->end->accept(this);
+        l = new Reg();
+        l->lvl = valueToL(value);
+        r = new Reg("c");
+        jmp(end(labels.top()), 
+            stmt->inclusive ? GT : GE);
+
+        stmt->block->accept(this);
+
+        Reg* reg = new Reg("bp");
+        r = new Mem(reg, bp.top() - int(*(table->lookup(stmt->id))));
+        inc();
+        jmp(labels.top());
+
+        LELabel();
+        r = it;
+        pop();
+
+        table->popScope();
+        return Value(Value::UNIT, 0);
+    }
+    else {
+        stmt->block->accept(this);
+        return {};
+    }
 }
 
-void CodeGen::visit(WhileStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(WhileStmt* stmt) {
+    if (init) {
+        LBLabel();
+
+        auto value = stmt->cond->accept(this);
+        l = new Const(Value(Value::I64, 0));
+        r = new Reg();
+        cmp();
+
+        jmp(end(labels.top()), EQ);
+
+        stmt->block->accept(this);
+
+        jmp(labels.top());
+
+        LELabel();
+        return Value(Value::UNIT, 0);
+    }
+    else {
+        stmt->block->accept(this);
+        return {};
+    }
 }
 
-void CodeGen::visit(PrintStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(PrintStmt* stmt) {
+    list<string> regs = {"si", "si", "d", "c"};
+    string print = "printf@PLT";
+    if (init) {
+        Reg* reg = new Reg("ip");
+        l = new Mem(reg, stmt->strLiteral);
+        r = new Reg("di");
+        lea();
+
+        auto it2 = regs.begin();
+        for (auto it = stmt->args.begin(); it != stmt->args.end(); ++it, ++it2) {
+            Value value = (*it)->accept(this);
+            l = new Reg();
+            l->lvl = valueToL(value);
+            r = new Reg(*it2);
+            movz();
+        }
+
+        l = new Const(Value(Value::I64, stmt->args.size()));
+        r = new Reg();
+        mov();
+
+        call(print);
+
+        return Value (Value::UNIT, 0);
+    }
+    else {
+        string s = LCLabel();
+        out << ".string \"" << stmt->strLiteral << "\"\n"; 
+        stmt->strLiteral = s;
+        return {};
+    }
 }
 
-void CodeGen::visit(BreakStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(BreakStmt* stmt) {
+    if (init) {
+        Value value (Value::UNIT, 0);
+        if (stmt->exp) {
+            value = stmt->exp->accept(this);
+        }
+        jmp(end(labels.top()));
+        return value;
+    }
+    else {
+        if (stmt->exp) stmt->exp->accept(this);
+        return {};
+    }
 }
 
-void CodeGen::visit(ReturnStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(ReturnStmt* stmt) {
+    if (init) {
+        if (stmt->exp) {
+            return stmt->exp->accept(this);
+        }
+        else {
+            Value value = Value(Value::UNIT, 0);
+            l = new Const(value);
+            r = new Reg("a");
+            r->lvl = l->lvl;
+            mov();
+            return value;
+        }
+    }
+    else {
+        stmt->exp->accept(this);
+        return {};
+    }
 }
 
-void CodeGen::visit(ExpStmt* stmt) {
-    // Implementation here
+Value CodeGen::visit(ExpStmt* stmt) {
+    if (init) {
+        if (stmt->returnValue) {
+            return stmt->exp->accept(this);
+        }
+        else {
+            return Value(Value::UNIT, 0);
+        }
+    }
+    else {
+        return stmt->exp->accept(this);
+    }
 }
 
 // Visit methods for functions and programs
-void CodeGen::visit(Fun* fun) {
-    push({"bp"});
-    mov({"sp"}, {"bp"});
-    int len = fun->params.size();
-    for (auto param : fun->params) {
-        value.addType(param.type);
+Value CodeGen::visit(Fun* fun) {
+    if (init) {
+        table->pushScope();
+
+        // l = new Const(Value(Value::I64, curOffset));
+        // r = new Reg("sp");
+        // sub();
+
+        int len = {};
+
+        for (auto param : fun->params) {
+            len += typeLen(param.type);
+            offset += typeLen(param.type);
+
+            table->declare(param.id, Value(Value::ID, prevOff - len));
+        }
+
+        fun->block->accept(this);
+
+        table->popScope();
+
+        return Value(fun->type);
     }
-    pop({"bp"});
+    else {
+        fun->block->accept(this);
+        return {};
+    }
 }
 
 void CodeGen::visit(Program* program) {
     table->pushScope();
-    table->popScope();
+
     for (auto [id, fun] : program->funs) {
         Value value (Value::ID, id);
         value.fun = true;
@@ -336,12 +704,27 @@ void CodeGen::visit(Program* program) {
 
         table->declare(id, value);
 
+        init = false;
+        out << ".section .rodata\n";
+        fun->accept(this);
+
+        // prologue
+        init = true;
         out << ".text\n";
         out << ".globl " << id << '\n';
         out << ".type " << id << ", @function";
         out << id << ":\n";
+        out << ".LFB" << ++lf << ":\n";
+        enter();
+
         fun->accept(this);
+
+        // epilogue
+        out << ".LFE" << ++lf << ":\n";
+        leave();
+        ret();
     }
+
     table->popScope();
     out << ".section .note.GNU-stack,\"\",@progbits"<<endl;
 }

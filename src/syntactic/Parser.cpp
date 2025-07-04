@@ -577,7 +577,7 @@ Exp* Parser::parseFactorExp() {
     else if (check(Token::STRING)) {
         std::string value = currentToken().content;
         match(Token::STRING);
-        return new Literal(line, col, Value(Value::STR, value));
+        return new Literal(line, col, Value(Value::STR, value, true));
     }
     else if (check(Token::ID)) {
         std::string id = currentToken().content;
