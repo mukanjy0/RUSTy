@@ -425,7 +425,14 @@ Value CodeGen::visit(Literal* exp) {
 
 Value CodeGen::visit(Variable* exp) {
     if (init) {
+        Value value = *(table->lookup(exp->name));
 
+        Reg* reg = new Reg("bp");
+        l = new Mem(reg, bp.top() - int(value));
+        r = new Reg();
+        lea();
+
+        return value;
     }
     return {};
 }
