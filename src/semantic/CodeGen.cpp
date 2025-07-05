@@ -210,6 +210,19 @@ void CodeGen::LELabel() {
     lbs.pop();
     labels.pop();
 }
+void CodeGen::LILabel() {
+    string label = ".LI" + to_string(++li);
+    out << label << '\n';
+    lis.push(li);
+}
+void CodeGen::LIELabel() {
+    string label = ".LIE" + to_string(lis.top());
+    out << label << '\n';
+    lis.pop();
+}
+string CodeGen::endI(string label) {
+    return ".LIE" + label.substr(3);
+}
 void CodeGen::LFBLabel() {
     string label = ".LFB" + to_string(++lf);
     out << label << '\n';
@@ -381,6 +394,7 @@ Value CodeGen::visit(Literal* exp) {
 
 Value CodeGen::visit(Variable* exp) {
     if (init) {
+
     }
     return {};
 }
@@ -417,6 +431,52 @@ Value CodeGen::visit(FunCall* exp) {
 
 Value CodeGen::visit(IfExp* exp) {
     if (init) {
+        int id = ++li;
+        string endLabel = ".LIE" + to_string(id);
+
+        exp->ifBranch->cond->accept(this);
+        l = new Const(Value(Value::I64, 0));
+        r = new Reg();
+        cmp();
+
+        string nextLabel = endLabel;
+        if (!exp->elseIfBranches.empty() || exp->elseBranch) {
+            nextLabel = ".LI" + to_string(++li);
+        }
+        jmp(nextLabel, EQ);
+
+        exp->ifBranch->block->accept(this);
+        jmp(endLabel);
+
+        if (!exp->elseIfBranches.empty() || exp->elseBranch) {
+            out << nextLabel << '\n';
+            auto it = exp->elseIfBranches.begin();
+            while (it != exp->elseIfBranches.end()) {
+                IfExp::IfBranch* br = *it;
+                ++it;
+                string afterLabel = (it != exp->elseIfBranches.end() || exp->elseBranch)
+                        ? ".LI" + to_string(++li)
+                        : endLabel;
+
+                br->cond->accept(this);
+                l = new Const(Value(Value::I64, 0));
+                r = new Reg();
+                cmp();
+                jmp(afterLabel, EQ);
+
+                br->block->accept(this);
+                jmp(endLabel);
+
+                out << afterLabel << '\n';
+            }
+
+            if (exp->elseBranch) {
+                exp->elseBranch->block->accept(this);
+            }
+        }
+
+        out << endLabel << '\n';
+        return {exp->type};
     }
     else {
         exp->ifBranch->block->accept(this);

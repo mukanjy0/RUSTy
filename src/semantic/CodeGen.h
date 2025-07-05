@@ -105,6 +105,9 @@ private:
     string LCLabel();
     void LBLabel();
     void LELabel();
+    void LILabel();
+    void LIELabel();
+    string endI(string label);
     void LFBLabel();
     void LFELabel();
     string end(string label);
@@ -112,7 +115,9 @@ private:
     int lb {};
     int lc {};
     int lf {};
+    int li {};
     stack<int> lbs;
+    stack<int> lis;
     stack<int> bp {};
     stack<string> labels {};
     int offset {};
