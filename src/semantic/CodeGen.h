@@ -124,7 +124,8 @@ private:
     map<Block*, int> toAllocate;
 
 public:
-    explicit CodeGen(std::ostream& out): Visitor(), out(out){}
+    CodeGen(SymbolTable* table, std::ostream& out): Visitor(table), out(out){}
+    explicit CodeGen(std::ostream& out): Visitor(nullptr), out(out){}
     ~CodeGen() override;
     static int typeLen(Value::Type type);
     static int typeLen(L lvl);

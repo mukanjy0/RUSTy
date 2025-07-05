@@ -33,8 +33,7 @@ struct Value {
     // for slice expression
     int left {}, right {};
 
-    Value() : type(UNDEFINED) {}
-    Value(Type type) : type(type) {}
+    Value() : type(UNDEFINED), initialized(false) {}
 
     Value(Type type, std::string stringValue,
           bool ref=false, bool mut=false, bool fun=false)

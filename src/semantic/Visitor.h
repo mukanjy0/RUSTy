@@ -11,6 +11,9 @@ public:
     Visitor() {
         table = new SymbolTable();
     }
+    explicit Visitor(SymbolTable* table) {
+        if (table) this->table = table; else this->table = new SymbolTable();
+    }
     virtual ~Visitor() = 0;
     virtual Value visit(Block* block) = 0;
     virtual Value visit(BinaryExp* exp) = 0;

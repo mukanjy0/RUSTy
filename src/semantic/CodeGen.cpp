@@ -1,8 +1,8 @@
 #include "CodeGen.h"
 
 Operand::~Operand() = default;
-std::ostream& operator<<(std::ostream& out, Stmt* stmt) {
-    stmt->print(out);
+std::ostream& operator<<(std::ostream& out, Operand* op) {
+    op->print(out);
     return out;
 }
 
@@ -65,7 +65,7 @@ ostream& operator<<(ostream& out, C cond) {
     return out;
 }
 
-static int typeLen(L lvl) {
+int CodeGen::typeLen(L lvl) {
     switch (lvl) {
         case B: return 1;
         case W: return 2;
@@ -74,7 +74,7 @@ static int typeLen(L lvl) {
     }
 }
 
-static int typeLen(Value::Type type) {
+int CodeGen::typeLen(Value::Type type) {
     switch(type) {
         case Value::BOOL:
         case Value::CHAR: return 1;
@@ -220,7 +220,7 @@ void CodeGen::LFELabel() {
     out << label << '\n';
     labels.pop();
 }
-string end(string label) {
+string CodeGen::end(string label) {
     if (label[1] == 'F') {
         label[2] = 'E';
     }
@@ -596,7 +596,7 @@ Value CodeGen::visit(PrintStmt* stmt) {
             movz();
         }
 
-        l = new Const(Value(Value::I64, stmt->args.size()));
+        //l = new Const(Value(Value::I64, stmt->args.size()));
         r = new Reg();
         mov();
 
@@ -683,7 +683,7 @@ Value CodeGen::visit(Fun* fun) {
 
         table->popScope();
 
-        return Value(fun->type);
+        //return Value(fun->type);
     }
     else {
         fun->block->accept(this);
