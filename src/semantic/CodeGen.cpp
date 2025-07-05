@@ -154,7 +154,9 @@ void CodeGen::mul() {
     out << "imul" << l->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::div() {
-    out << "idiv" << l->lvl << ' ' << l << ", " << r << '\n';
+    out << "mov rax, " << l << '\n';
+    out << "cqto\n"; // sign extend rax to rdx
+    out << "idiv" << ' ' << r << '\n';
 }
 void CodeGen::push() {
     out << "push" << r->lvl << ' ' << r << '\n';
@@ -314,59 +316,58 @@ Value CodeGen::visit(BinaryExp* exp) {
 
         switch (exp->op) {
             case BinaryExp::LAND:
-                out << " andq %rcx, %rax\n";
+                out << "and" << l->lvl << ' ' << l << ", " << r << '\n';
                 break;
             case BinaryExp::LOR:
-                out << " orq %rcx, %rax\n";
+                out << "or" << l->lvl << ' ' << l << ", " << r << '\n';
                 break;
             case BinaryExp::GT:
-                out << " cmpq %rcx, %rax\n"
-                    << " movl $0, %eax\n"
+                cmp();
+                out << " movl $0, %eax\n"
                     << " setg %al\n"
                     << " movzbq %al, %rax\n";
                 break;
             case BinaryExp::LT:
-                out << " cmpq %rcx, %rax\n"
-                    << " movl $0, %eax\n"
+                cmp();
+                out << " movl $0, %eax\n"
                     << " setl %al\n"
                     << " movzbq %al, %rax\n";
                 break;
             case BinaryExp::GE:
-                out << " cmpq %rcx, %rax\n"
-                    << " movl $0, %eax\n"
+                cmp();
+                out << " movl $0, %eax\n"
                     << " setge %al\n"
                     << " movzbq %al, %rax\n";
                 break;
             case BinaryExp::LE:
-                out << " cmpq %rcx, %rax\n"
-                    << " movl $0, %eax\n"
+                cmp();
+                out << " movl $0, %eax\n"
                     << " setle %al\n"
                     << " movzbq %al, %rax\n";
                 break;
             case BinaryExp::EQ:
-                out << " cmpq %rcx, %rax\n"
-                    << " movl $0, %eax\n"
+                cmp();
+                out << " movl $0, %eax\n"
                     << " sete %al\n"
                     << " movzbq %al, %rax\n";
                 break;
             case BinaryExp::NEQ:
-                out << " cmpq %rcx, %rax\n"
-                    << " movl $0, %eax\n"
+                cmp();
+                out << " movl $0, %eax\n"
                     << " setne %al\n"
                     << " movzbq %al, %rax\n";
                 break;
             case BinaryExp::PLUS:
-                out << " addq %rcx, %rax\n";
+                add();
                 break;
             case BinaryExp::MINUS:
-                out << " subq %rcx, %rax\n";
+                sub();
                 break;
             case BinaryExp::TIMES:
-                out << " imulq %rcx, %rax\n";
+                mul();
                 break;
             case BinaryExp::DIV:
-                out  << " cqto\n"
-                    << " idivq %rcx\n";
+                div();
                 break;
             default:
                 throw std::runtime_error("Invalid binary operation");
@@ -408,7 +409,9 @@ Value CodeGen::visit(UnaryExp* exp) {
 
 Value CodeGen::visit(Literal* exp) {
     if (init) {
-        out << " movq $" << exp->value << ", %rax\n";
+        l = new Const(exp->value);
+        r = new Reg();
+        mov();
     }
     else {
         if (exp->value.type == Value::STR) {
