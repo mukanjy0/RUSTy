@@ -28,6 +28,18 @@ void TypeCheck::assertType(Value::Type from, Value::Type to, int line, int col) 
     }
 }
 
+std::string TypeCheck::typeToFormat(Value::Type type) {
+    switch (type) {
+        case Value::CHAR: return "%c";
+        case Value::BOOL:
+        case Value::I32:  return "%d";
+        case Value::I64:  return "%ld";
+        case Value::STR:  return "%s";
+        default:          return "%d";
+    }
+}
+
+
 TypeCheck::~TypeCheck() = default;
 
 // Visit methods for expressions
@@ -286,6 +298,44 @@ Value TypeCheck::visit(WhileStmt* stmt) {
 
 Value TypeCheck::visit(PrintStmt* stmt) {
     for (auto exp : stmt->args) exp->accept(this);
+
+    std::string parsed;
+    size_t pos = 0;
+    auto it = stmt->args.begin();
+
+    const std::string& input = stmt->strLiteral;
+    while (true) {
+        size_t open = input.find('{', pos);
+        if (open == std::string::npos) {
+            parsed += input.substr(pos);
+            break;
+        }
+
+        parsed += input.substr(pos, open - pos);
+
+        if (open + 1 >= input.size() || input[open + 1] != '}') {
+            throw std::runtime_error(
+                "unsupported format string at " + std::to_string(stmt->line) + ":" + std::to_string(stmt->col));
+        }
+
+        if (it == stmt->args.end()) {
+            throw std::runtime_error(
+                "not enough arguments for print at " + std::to_string(stmt->line) + ":" + std::to_string(stmt->col));
+        }
+
+        Value v = (*it)->accept(this);
+        parsed += typeToFormat(v.type);
+
+        ++it;
+        pos = open + 2;
+    }
+
+    if (it != stmt->args.end()) {
+        throw std::runtime_error(
+            "too many arguments for print at " + std::to_string(stmt->line) + ":" + std::to_string(stmt->col));
+    }
+
+    stmt->strLiteral = parsed;
     return {Value::UNIT};
 }
 
