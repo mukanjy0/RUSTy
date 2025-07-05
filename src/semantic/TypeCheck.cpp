@@ -85,8 +85,7 @@ Value TypeCheck::visit(UnaryExp* exp) {
 }
 
 Value TypeCheck::visit(Literal* exp) {
-    exp->type = exp->value.type;
-    return {exp->type};
+    return exp->value;
 }
 
 Value TypeCheck::visit(Variable* exp) {
@@ -145,7 +144,7 @@ Value TypeCheck::visit(SubscriptExp* exp) {
                                  std::to_string(exp->line) + ':' +
                                  std::to_string(exp->col));
     exp->type = coll.type;
-    return {exp->type};
+    return lookup(exp->id);
 }
 
 Value TypeCheck::visit(SliceExp* exp) {
@@ -187,7 +186,7 @@ Value TypeCheck::visit(UniformArrayExp* exp) {
     Exp* size = exp->size;
     assertType(s.type, Value::I32, size->line, size->col);
     exp->type = v.type;
-    return {v.type};
+    return v;
 }
 
 // Visit methods for statements
@@ -198,22 +197,22 @@ Value TypeCheck::visit(DecStmt* stmt) {
         assertType(rhs.type, stmt->var.type, stmt->line, stmt->col);
     }
     declare(stmt->id, stmt->var);
-    return {Value::UNIT};
+    return stmt->var;
 }
 
 Value TypeCheck::visit(AssignStmt* stmt) {
-    Value lhsVal = stmt->lhs->accept(this);
-    assertMut(lhsVal, stmt->line, stmt->col);
+    Value lhs = stmt->lhs->accept(this);
     Value rhs = stmt->rhs->accept(this);
-    assertType(rhs.type, lhsVal.type, stmt->line, stmt->col);
+    assertMut(lhs, stmt->line, stmt->col);
+    assertType(rhs.type, lhs.type, stmt->line, stmt->col);
     return {Value::UNIT};
 }
 
 Value TypeCheck::visit(CompoundAssignStmt* stmt) {
-    Value lhsVal = stmt->lhs->accept(this);
-    assertMut(lhsVal, stmt->line, stmt->col);
+    Value lhs = stmt->lhs->accept(this);
     Value rhs = stmt->rhs->accept(this);
-    assertType(lhsVal.type, Value::I32, stmt->line, stmt->col);
+    assertMut(lhs, stmt->line, stmt->col);
+    assertType(lhs.type, Value::I32, stmt->line, stmt->col);
     assertType(rhs.type, Value::I32, stmt->line, stmt->col);
     return {Value::UNIT};
 }
