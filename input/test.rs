@@ -1,8 +1,8 @@
-// fn fun(num : i32, num2 : ()) 
+// fn fun(num : i32, num2 : ())
 
-fn fun(num : i32) 
+fn fun(num : i32)
 {
-// -> i32 {
+    // -> i32 {
     let num : char = 'a';
     5
     // 1 + 5;
@@ -52,7 +52,7 @@ fn main() {
     println!("{}", xs[0]);
     let c = loop {
         break 0;
-        s = "hi";
+        //s = "hi";
     };
 
     println!("{}", c);
@@ -66,7 +66,7 @@ fn main() {
     for j in i..=5 {
         println!("{}", j);
         // i + = j;
-    } 
+    }
 
     if i > 4 {
         return

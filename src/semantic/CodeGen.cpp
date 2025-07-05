@@ -76,7 +76,7 @@ static int typeLen(L lvl) {
 
 static int typeLen(Value::Type type) {
     switch(type) {
-        case Value::BOOL: 
+        case Value::BOOL:
         case Value::CHAR: return 1;
         case Value::I32: return 4;
         default: return 8;

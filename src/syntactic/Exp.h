@@ -6,12 +6,13 @@
 #include <iostream>
 #include <string>
 #include <list>
+#include <utility>
 
 class Visitor;
 class CodeGen;
 
 struct Value {
-    enum Type { BOOL, CHAR, I32, I64, STR, ID, UNIT, UNDEFINED};
+    enum Type { UNDEFINED, BOOL, CHAR, I32, I64, STR, ID, UNIT};
 
     Type type {};
     // in case of array has multiple values, otherwise only one
@@ -24,6 +25,7 @@ struct Value {
     bool fun {};
     bool ref {};
     bool mut {};
+    bool initialized {};
     // by default size = 0, otherwise, it's an array
     int size {};
     // for subscript expression
@@ -36,29 +38,33 @@ struct Value {
 
     Value(Type type, std::string stringValue,
           bool ref=false, bool mut=false, bool fun=false)
-        : type(type), stringValues({stringValue}),
-        ref(ref), mut(mut) {}
+        : type(type), stringValues({std::move(stringValue)}),
+        ref(ref), mut(mut), initialized(true) {}
 
     Value(Type type, int numericValue,
           bool ref=false, bool mut=false, bool fun=false)
         : type(type), numericValues({numericValue}),
-        ref(ref), mut(mut) {}
+        ref(ref), mut(mut), initialized(true) {}
 
     Value(Type type, std::list<std::string> stringValues,
         bool ref=false, bool mut=false, bool fun=false)
         : type(type), stringValues(std::move(stringValues)),
-        ref(ref), mut(mut) {}
+        ref(ref), mut(mut), initialized(true) {}
 
     Value(Type type, std::list<int> numericValues,
         bool ref=false, bool mut=false, bool fun=false)
         : type(type), numericValues(std::move(numericValues)),
-        ref(ref), mut(mut) {}
+        ref(ref), mut(mut), initialized(true) {}
+
+    Value(Type type, bool fun=false)
+        : type(type), fun(fun), initialized(true) {}
 
     ~Value() = default;
 
     bool isArray();
     bool isFunction();
     void addType(Type type);
+    std::string getId() const;
 
     operator int();
 
@@ -70,6 +76,7 @@ struct Value {
 class Exp;
 
 class Stmt {
+    FRIENDS
 protected:
     int line;
     int col;
@@ -107,9 +114,11 @@ public:
 };
 
 class Exp {
+    FRIENDS
 protected:
     int line;
     int col;
+    Value::Type type{};
 public:
     Exp(int line, int col) : line(line), col(col) {}
     virtual ~Exp() = 0;
@@ -315,7 +324,7 @@ public:
 };
 
 class ArrayExp : public Exp {
-    friend class CodeGen;
+    FRIENDS
 
     std::list<Exp*> elements;
 public:
@@ -328,7 +337,7 @@ public:
 };
 
 class UniformArrayExp : public Exp {
-    friend class CodeGen;
+    FRIENDS
 
     Exp *value;
     Exp *size;

@@ -112,6 +112,7 @@ public:
 class BreakStmt : public Stmt {
     FRIENDS
     Exp* exp {};
+    Value::Type type{};
 public:
     BreakStmt(int line, int col) : Stmt(line, col) {}
     BreakStmt(int line, int col, Exp* exp) 
@@ -124,6 +125,7 @@ public:
 class ReturnStmt : public Stmt {
     FRIENDS
     Exp* exp {};
+    Value::Type type{};
 public:
     ReturnStmt(int line, int col) : Stmt(line, col) {}
     ReturnStmt(int line, int col, Exp* exp) 
@@ -137,6 +139,7 @@ class ExpStmt : public Stmt {
     FRIENDS
     Exp* exp {};
     bool returnValue {};
+    Value::Type type{};
 public:
     ExpStmt(int line, int col) : Stmt(line, col) {}
     ExpStmt(int line, int col, Exp* exp) 
