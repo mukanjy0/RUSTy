@@ -430,6 +430,11 @@ Value CodeGen::visit(IfExp* exp) {
 
 Value CodeGen::visit(LoopExp* exp) {
     if (init) {
+        LBLabel();
+        exp->block->accept(this);
+        jmp(labels.top());
+        LELabel();
+        return {exp->type};
     }
     else {
         exp->block->accept(this);
