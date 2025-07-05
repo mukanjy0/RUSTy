@@ -45,6 +45,7 @@ private:
 
     Value::Type currentReturnType{Value::UNDEFINED};
     int scopeDepth{};
+    bool lhsContext{false};
 };
 
 #endif //TYPECHECK_H

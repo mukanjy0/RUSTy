@@ -52,7 +52,7 @@ fn main() {
     println!("{}", xs[0]);
     let c = loop {
         break 0;
-        s = "hi";
+        //s = "hi";
     };
 
     println!("{}", c);

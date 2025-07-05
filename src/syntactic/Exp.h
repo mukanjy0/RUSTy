@@ -25,6 +25,7 @@ struct Value {
     bool fun {};
     bool ref {};
     bool mut {};
+    bool initialized {};
     // by default size = 0, otherwise, it's an array
     int size {};
     // for subscript expression
@@ -32,30 +33,30 @@ struct Value {
     // for slice expression
     int left {}, right {};
 
-    Value() : type(UNDEFINED) {}
+    Value() : type(UNDEFINED), initialized(false) {}
 
     Value(Type type, std::string stringValue,
           bool ref=false, bool mut=false, bool fun=false)
         : type(type), stringValues({std::move(stringValue)}),
-        ref(ref), mut(mut) {}
+        ref(ref), mut(mut), initialized(true) {}
 
     Value(Type type, int numericValue,
           bool ref=false, bool mut=false, bool fun=false)
         : type(type), numericValues({numericValue}),
-        ref(ref), mut(mut) {}
+        ref(ref), mut(mut), initialized(true) {}
 
     Value(Type type, std::list<std::string> stringValues,
         bool ref=false, bool mut=false, bool fun=false)
         : type(type), stringValues(std::move(stringValues)),
-        ref(ref), mut(mut) {}
+        ref(ref), mut(mut), initialized(true) {}
 
     Value(Type type, std::list<int> numericValues,
         bool ref=false, bool mut=false, bool fun=false)
         : type(type), numericValues(std::move(numericValues)),
-        ref(ref), mut(mut) {}
+        ref(ref), mut(mut), initialized(true) {}
 
     Value(Type type, bool fun=false)
-        : type(type), fun(fun) {}
+        : type(type), fun(fun), initialized(true) {}
 
     ~Value() = default;
 

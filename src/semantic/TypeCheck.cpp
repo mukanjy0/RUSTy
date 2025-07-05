@@ -46,6 +46,7 @@ Value TypeCheck::visit(BinaryExp* exp) {
     Value lhs = exp->lhs->accept(this);
     Value rhs = exp->rhs->accept(this);
     switch (exp->op) {
+        case BinaryExp::LAND:
         case BinaryExp::LOR:
             assertType(lhs.type, Value::BOOL, exp->line, exp->col);
             assertType(rhs.type, Value::BOOL, exp->line, exp->col);
@@ -53,9 +54,14 @@ Value TypeCheck::visit(BinaryExp* exp) {
             break;
         case BinaryExp::GT: case BinaryExp::LT:
         case BinaryExp::GE: case BinaryExp::LE:
-        case BinaryExp::EQ: case BinaryExp::NEQ:
             assertType(lhs.type, Value::I32, exp->line, exp->col);
             assertType(rhs.type, Value::I32, exp->line, exp->col);
+            exp->type = Value::BOOL;
+            break;
+        case BinaryExp::EQ: case BinaryExp::NEQ:
+            assertType(lhs.type, rhs.type, exp->line, exp->col);
+            if (lhs.type != Value::I32 && lhs.type != Value::BOOL)
+                throw std::runtime_error("Invalid binary operation");
             exp->type = Value::BOOL;
             break;
         case BinaryExp::PLUS: case BinaryExp::MINUS:
@@ -90,6 +96,10 @@ Value TypeCheck::visit(Literal* exp) {
 
 Value TypeCheck::visit(Variable* exp) {
     Value v = lookup(exp->name);
+    if (!lhsContext && !v.initialized)
+        throw std::runtime_error("use of uninitialized variable at " +
+                                 std::to_string(exp->line) + ':' +
+                                 std::to_string(exp->col));
     exp->type = v.type;
     return v;
 }
@@ -177,7 +187,9 @@ Value TypeCheck::visit(ArrayExp* exp) {
         else assertType(v.type, elType, el->line, el->col);
     }
     exp->type = elType;
-    return {elType};
+    Value val{elType};
+    val.size = exp->elements.size();
+    return val;
 }
 
 Value TypeCheck::visit(UniformArrayExp* exp) {
@@ -186,7 +198,9 @@ Value TypeCheck::visit(UniformArrayExp* exp) {
     Exp* size = exp->size;
     assertType(s.type, Value::I32, size->line, size->col);
     exp->type = v.type;
-    return v;
+    Value val{v.type};
+    val.size = s.numericValues.front();
+    return val;
 }
 
 // Visit methods for statements
@@ -194,17 +208,38 @@ Value TypeCheck::visit(DecStmt* stmt) {
     Value rhs{stmt->var.type};
     if (stmt->rhs) {
         rhs = stmt->rhs->accept(this);
+        if (stmt->var.type == Value::UNDEFINED)
+            stmt->var.type = rhs.type;
         assertType(rhs.type, stmt->var.type, stmt->line, stmt->col);
+        stmt->var.initialized = true;
+    } else {
+        stmt->var.initialized = false;
     }
     declare(stmt->id, stmt->var);
     return stmt->var;
 }
 
 Value TypeCheck::visit(AssignStmt* stmt) {
+    lhsContext = true;
     Value lhs = stmt->lhs->accept(this);
+    lhsContext = false;
     Value rhs = stmt->rhs->accept(this);
-    assertMut(lhs, stmt->line, stmt->col);
-    assertType(rhs.type, lhs.type, stmt->line, stmt->col);
+    if (auto var = dynamic_cast<Variable*>(stmt->lhs)) {
+        Value* entry = table->lookup(var->name);
+        if (!entry->initialized) {
+            if (entry->type == Value::UNDEFINED)
+                entry->type = rhs.type;
+            if (rhs.size > 0)
+                entry->size = rhs.size;
+            entry->initialized = true;
+        } else {
+            assertMut(*entry, stmt->line, stmt->col);
+            assertType(rhs.type, entry->type, stmt->line, stmt->col);
+        }
+    } else {
+        assertMut(lhs, stmt->line, stmt->col);
+        assertType(rhs.type, lhs.type, stmt->line, stmt->col);
+    }
     return {Value::UNIT};
 }
 
@@ -272,11 +307,13 @@ Value TypeCheck::visit(ExpStmt* stmt) {
 Value TypeCheck::visit(Fun* fun) {
     scopeDepth = getScopeDepth();
     table->pushScope();
-    currentReturnType = fun->type;
+    currentReturnType = fun->type != Value::UNDEFINED ? fun->type : Value::UNIT;
     for (const auto& p : fun->params) {
         declare(p.id, Value{p.type});
     }
-    fun->block->accept(this);
+    Value r = fun->block->accept(this);
+    if (fun->type == Value::UNDEFINED)
+        fun->type = r.type;
     table->popScope();
     return {Value::UNIT};
 }
@@ -284,14 +321,15 @@ Value TypeCheck::visit(Fun* fun) {
 void TypeCheck::visit(Program* program) {
     table->pushScope();
     for (const auto& [id, fun]: program->funs) {
-        fun->type = fun->type != Value::UNDEFINED ? fun->type : Value::UNIT;
         Value val{fun->type, true};
         for (const auto& param : fun->params)
             val.addType(param.type);
         declare(id, val);
     }
-    for (const auto &fun: program->funs | std::views::values) {
+    for (const auto &[id, fun]: program->funs) {
         fun->accept(this);
+        Value* entry = table->lookup(id);
+        if (entry) entry->type = fun->type != Value::UNDEFINED ? fun->type : Value::UNIT;
     }
     table->popScope();
 }

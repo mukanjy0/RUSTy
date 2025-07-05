@@ -123,17 +123,13 @@ Value NameRes::visit(DecStmt* stmt) {
 }
 
 Value NameRes::visit(AssignStmt* stmt) {
-    Value lhsVal = stmt->lhs->accept(this);
-    std::string id = lhsVal.getId();
-    update(id, {}, stmt->line, stmt->col);
+    stmt->lhs->accept(this);
     stmt->rhs->accept(this);
     return {};
 }
 
 Value NameRes::visit(CompoundAssignStmt* stmt) {
-    Value lhsVal = stmt->lhs->accept(this);
-    std::string id = lhsVal.getId();
-    update(id, {}, stmt->line, stmt->col);
+    stmt->lhs->accept(this);
     stmt->rhs->accept(this);
     return {};
 }
