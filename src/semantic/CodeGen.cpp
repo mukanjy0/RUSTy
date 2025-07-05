@@ -84,6 +84,30 @@ int CodeGen::typeLen(Value::Type type) {
     }
 }
 
+
+int CodeGen::typeLen(Value value) {
+    if (value.ref) return 8;
+    if (value.size) {
+        switch(value.type) {
+            case Value::BOOL:
+            case Value::CHAR: return value.size + 8;
+            case Value::I32: return 4 * value.size + 8;
+            default: return 8 * value.size + 8;
+        }
+    }
+    else if (value.right) {
+        return 2 * 8;
+    }
+    else {
+        switch(value.type) {
+            case Value::BOOL:
+            case Value::CHAR: return 1;
+            case Value::I32: return 4;
+            default: return 8;
+        }
+    }
+}
+
 L CodeGen::typeToL(Value::Type type) {
     switch(type) {
         case Value::CHAR: 
@@ -144,7 +168,7 @@ void CodeGen::lea() {
     out << "lea" << l->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::cmp() {
-    out << "cmp" << l->lvl << ' ' << r << '\n';
+    out << "cmp" << l->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::jmp(C cond) {
     if (cond!=NONE) {
@@ -229,6 +253,9 @@ string CodeGen::end(string label) {
         label[1] = 'E';
     }
     return label;
+}
+int CodeGen::getOffset(string label) {
+    return bp.top() - int(*(table->lookup(label)));
 }
 
 // Destructor
@@ -443,6 +470,7 @@ Value CodeGen::visit(LoopExp* exp) {
 
 Value CodeGen::visit(SubscriptExp* exp) {
     if (init) {
+
     }
     return {};
 }
@@ -476,6 +504,25 @@ Value CodeGen::visit(ArrayExp* exp) {
 
 Value CodeGen::visit(UniformArrayExp* exp) {
     if (init) {
+        auto value = exp->value->accept(this);
+
+        r = new Reg();
+        push();
+
+        auto size = exp->size->accept(this);
+
+        r = new Reg("c");
+        pop();
+
+        // a  -> size, c -> value
+
+        l = new Const(Value(Value::I64, 0));
+        r = new Reg("d");
+        mov();
+
+        LBLabel();
+
+        LELabel();
 
     }
     else {
@@ -487,19 +534,38 @@ Value CodeGen::visit(UniformArrayExp* exp) {
 // Visit methods for statements
 Value CodeGen::visit(DecStmt* stmt) {
     if (init) {
+        auto value = stmt->var;
         Block* b = cur.top();
-        allocated[b] += typeLen(stmt->var.type);
-        int off = toAllocate[b] - allocated[b];
-        table->declare(stmt->id, Value(stmt->var.type, off));
+
+        int off = allocated[b] - toAllocate[b];
+        table->declare(stmt->id, Value(value.type, off));
 
         if (stmt->rhs) {
             auto rhs = stmt->rhs->accept(this);
 
-            l = new Reg();
-            auto reg = new Reg("bp");
-            r = new Mem(reg, off);
-            mov();
+            if (value.size) {
+                off += 8; // pointer size
+
+                for (int i=0; i<value.size; ++i) {
+                    r = new Reg();
+                    pop();
+
+                    l = new Reg();
+                    auto reg = new Reg("bp");
+                    r = new Mem(reg, off);
+                    mov();
+
+                    off += typeLen(value.type);
+                }
+            }
+            else {
+                l = new Reg();
+                auto reg = new Reg("bp");
+                r = new Mem(reg, off);
+                mov();
+            }
         }
+        allocated[b] += typeLen(value);
         return Value(Value::UNIT, 0);
     }
     else {
@@ -546,29 +612,29 @@ Value CodeGen::visit(ForStmt* stmt) {
 
         auto value = stmt->start->accept(this);
 
-        auto it = new Reg();
-        it->lvl = valueToL(value);
-        r = it;
+        r = new Reg();
+        r->lvl = valueToL(value);
         push();
         table->declare(stmt->id, Value(Value::ID, offset));
+        int off = getOffset(stmt->id);
+
+        Reg* reg = new Reg("bp");
+        auto it = new Mem(reg, off);
 
         LBLabel();
-        l = it;
-        r = new Reg("c");
-        r->lvl = l->lvl;
-        mov();
-
         value = stmt->end->accept(this);
+
         l = new Reg();
         l->lvl = valueToL(value);
-        r = new Reg("c");
+        r = it;
+        cmp();
+
         jmp(end(labels.top()), 
-            stmt->inclusive ? GT : GE);
+            stmt->inclusive ? LE : LT);
 
         stmt->block->accept(this);
 
-        Reg* reg = new Reg("bp");
-        r = new Mem(reg, bp.top() - int(*(table->lookup(stmt->id))));
+        r = it;
         inc();
         jmp(labels.top());
 

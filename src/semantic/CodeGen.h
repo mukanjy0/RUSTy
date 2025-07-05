@@ -108,6 +108,7 @@ private:
     void LFBLabel();
     void LFELabel();
     string end(string label);
+    int getOffset(string label);
 
     int lb {};
     int lc {};
@@ -128,8 +129,9 @@ public:
     CodeGen(SymbolTable* table, std::ostream& out): Visitor(table), out(out){}
     explicit CodeGen(std::ostream& out): Visitor(nullptr), out(out){}
     ~CodeGen() override;
-    static int typeLen(Value::Type type);
     static int typeLen(L lvl);
+    static int typeLen(Value value);
+    static int typeLen(Value::Type type);
     Value visit(Block* block) override;
     Value visit(BinaryExp* exp) override;
     Value visit(UnaryExp* exp) override;
