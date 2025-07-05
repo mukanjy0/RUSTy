@@ -46,6 +46,7 @@ private:
 
     Value::Type currentReturnType{Value::UNDEFINED};
     int scopeDepth{};
+    int blockDepth{};
     bool lhsContext{false};
     bool lhsIsVariable{false};
     Value* lhsEntry{nullptr};

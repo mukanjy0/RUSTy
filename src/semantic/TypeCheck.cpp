@@ -44,12 +44,14 @@ TypeCheck::~TypeCheck() = default;
 
 // Visit methods for expressions
 Value TypeCheck::visit(Block* block) {
+    ++blockDepth;
     table->pushScope();
     Value::Type last = Value::UNIT;
     for (auto stmt : block->stmts) {
         last = stmt->accept(this).type;
     }
     table->popScope();
+    --blockDepth;
     block->type = last;
     return {last};
 }
@@ -342,7 +344,7 @@ Value TypeCheck::visit(PrintStmt* stmt) {
 }
 
 Value TypeCheck::visit(BreakStmt* stmt) {
-    if (getScopeDepth() <= scopeDepth)
+    if (blockDepth <= 0)
         throw std::runtime_error("break outside loop at " +
                                  std::to_string(stmt->line) + ':' +
                                  std::to_string(stmt->col));
@@ -353,6 +355,10 @@ Value TypeCheck::visit(BreakStmt* stmt) {
 }
 
 Value TypeCheck::visit(ReturnStmt* stmt) {
+    if (getScopeDepth() == 0)
+        throw std::runtime_error("return outside function at " +
+                                 std::to_string(stmt->line) + ':' +
+                                 std::to_string(stmt->col));
     Value r{Value::UNIT};
     if (stmt->exp) r = stmt->exp->accept(this);
     assertType(r.type, currentReturnType, stmt->line, stmt->col);
@@ -368,7 +374,7 @@ Value TypeCheck::visit(ExpStmt* stmt) {
 
 // Visit methods for functions and programs
 Value TypeCheck::visit(Fun* fun) {
-    scopeDepth = getScopeDepth();
+    --blockDepth;
     table->pushScope();
     currentReturnType = fun->type != Value::UNDEFINED ? fun->type : Value::UNIT;
     for (const auto& p : fun->params) {
@@ -378,6 +384,7 @@ Value TypeCheck::visit(Fun* fun) {
     if (fun->type == Value::UNDEFINED)
         fun->type = r.type;
     table->popScope();
+    ++blockDepth;
     return {Value::UNIT};
 }
 

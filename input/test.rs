@@ -16,7 +16,7 @@ fn main() {
     // Statements here are executed when the compiled binary is called.
     let mut i : i32 = fun(8);
     let nv : i32 = fun(84);
-    break;
+    
     // const g : i32 = 1 * 8;
     println!("{}", i);
     println!("{} {}", i, nv);
