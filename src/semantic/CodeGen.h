@@ -2,54 +2,141 @@
 #define RUSTY_GENCODE_H
 
 #include "Visitor.h"
+#include <map>
+#include <stack>
 
 using namespace std;
 
+enum L {B, W, D, Q};
+enum C {NONE, EQ, NE, GT, LT, GE, LE};
+
+class Operand {
+public:
+    L lvl {L::Q};
+    virtual ~Operand() = 0;
+    virtual void print(std::ostream &out) = 0;
+    friend ostream& operator<<(ostream& out, Operand* op);
+};
+
+class Reg : public Operand {
+    friend class CodeGen;
+
+    string reg {"a"};
+    Reg() {}
+    Reg(string reg) : reg(reg) {}
+public:
+    ~Reg();
+    void print(std::ostream &out) override;
+};
+
+class Const : public Operand {
+    friend class CodeGen;
+
+    Value value {};
+    Const(Value value) : value(value) {
+        switch(value.type) {
+            case Value::CHAR:
+                value.numericValues.push_back(
+                    value.stringValues.front()[0]
+                );
+            case Value::BOOL:
+                lvl = B;
+                break;
+            case Value::I32:
+                lvl = D;
+                break;
+            default: lvl = Q;
+        }
+    }
+public:
+    ~Const();
+    void print(std::ostream &out) override;
+};
+
+class Mem : public Operand {
+    friend class CodeGen;
+
+    Reg* reg;
+    int offset {};
+    string label {};
+    Mem(Reg* reg, int offset) 
+    : reg(reg), offset(offset) {}
+    Mem(Reg* reg, string label) 
+    : reg(reg), label(label) {}
+    Mem(Reg* reg, int offset, string label) 
+    : reg(reg), offset(offset), label(label) {}
+public:
+    ~Mem();
+    void print(std::ostream &out) override;
+};
+
 class CodeGen : public Visitor {
 private:
-    enum L {B, W, D, Q};
     ostream& out;
 
-    struct Operand {
-        L lvl {L::Q};
-        bool mem {};
-        bool constant {};
-        int offset {}; // for memory
-        int value {}; // for constant
-        string reg {"a"}; // for regs
-
-        operator string() const;
-    };
-
-    char suffix(L lvl);
-    char suffix(Value value);
-    char suffix(Value::Type type);
     L valueToL(Value value);
     L typeToL(Value::Type type);
 
-    void mov(Value value, Operand l, Operand r);
+    void mov();
+    void movz();
     // arithmetic
-    void add(Value value, Operand l, Operand r);
-    void inc(Value value, Operand o);
-    void sub(Value value, Operand l, Operand r);
-    void dec(Value value, Operand o);
-    void mul(Value value, Operand l, Operand r);
-    void div(Value value, Operand l, Operand r);
+    void add();
+    void inc();
+    void sub();
+    void dec();
+    void mul();
+    void div();
     // stack
-    void push(Value value, Operand o);
-    void pop(Value value, Operand o);
+    void push();
+    void pop();
     // memory
-    void lea(Value value, Operand l, Operand r);
+    void lea();
+    // conditional
+    void cmp();
+    void jmp(C=NONE);
+    void jmp(string label, C=NONE);
+    void set(C=NONE);
+    void cmov(C=NONE);
+    void call(string label);
+    void enter();
+    void leave();
+    void ret();
 
-    friend ostream& operator<<(ostream& out, const Operand& op) {
-        out << string(op);
-        return out;
-    }
+    string LCLabel();
+    void LBLabel();
+    void LELabel();
+    void LILabel();
+    void LIELabel();
+    string endI(string label);
+    void LFBLabel();
+    void LFELabel();
+    string end(string label);
+    int getOffset(string label);
+
+    int lb {};
+    int lc {};
+    int lf {};
+    int li {};
+    stack<int> lbs;
+    stack<int> lis;
+    stack<int> bp {};
+    stack<string> labels {};
+    int offset {};
+    int prevOff {};
+    bool init {};
+    Operand* l;
+    Operand* r;
+    stack<Block*> cur;
+    map<Block*, int> allocated;
+    map<Block*, int> toAllocate;
 
 public:
     CodeGen(SymbolTable* table, std::ostream& out): Visitor(table), out(out){}
     explicit CodeGen(std::ostream& out): Visitor(nullptr), out(out){}
     ~CodeGen() override;
+    static int typeLen(L lvl);
+    static int typeLen(Value value);
+    static int typeLen(Value::Type type);
     Value visit(Block* block) override;
     Value visit(BinaryExp* exp) override;
     Value visit(UnaryExp* exp) override;
@@ -63,16 +150,16 @@ public:
     Value visit(ReferenceExp* exp) override;
     Value visit(ArrayExp* exp) override;
     Value visit(UniformArrayExp* exp) override;
-    void visit(DecStmt* stmt) override;
-    void visit(AssignStmt* stmt) override;
-    void visit(CompoundAssignStmt* stmt) override;
-    void visit(ForStmt* stmt) override;
-    void visit(WhileStmt* stmt) override;
-    void visit(PrintStmt* stmt) override;
-    void visit(BreakStmt* stmt) override;
-    void visit(ReturnStmt* stmt) override;
-    void visit(ExpStmt* stmt) override;
-    void visit(Fun* fun) override;
+    Value visit(DecStmt* stmt) override;
+    Value visit(AssignStmt* stmt) override;
+    Value visit(CompoundAssignStmt* stmt) override;
+    Value visit(ForStmt* stmt) override;
+    Value visit(WhileStmt* stmt) override;
+    Value visit(PrintStmt* stmt) override;
+    Value visit(BreakStmt* stmt) override;
+    Value visit(ReturnStmt* stmt) override;
+    Value visit(ExpStmt* stmt) override;
+    Value visit(Fun* fun) override;
     void visit(Program* program) override;
 };
 

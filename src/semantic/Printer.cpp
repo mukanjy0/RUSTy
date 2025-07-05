@@ -68,44 +68,54 @@ Value Printer::visit(UniformArrayExp* exp) {
     return {};
 }
 
-void Printer::visit(DecStmt* stmt) {
+Value Printer::visit(DecStmt* stmt) {
     std::cout << stmt;
+    return {};
 }
 
-void Printer::visit(AssignStmt* stmt) {
+Value Printer::visit(AssignStmt* stmt) {
     std::cout << stmt;
+    return {};
 }
 
-void Printer::visit(CompoundAssignStmt* stmt) {
+Value Printer::visit(CompoundAssignStmt* stmt) {
     std::cout << stmt;
+    return {};
 }
 
-void Printer::visit(ForStmt* stmt) {
+Value Printer::visit(ForStmt* stmt) {
     std::cout << stmt;
+    return {};
 }
 
-void Printer::visit(WhileStmt* stmt) {
+Value Printer::visit(WhileStmt* stmt) {
     std::cout << stmt;
+    return {};
 }
 
-void Printer::visit(PrintStmt* stmt) {
+Value Printer::visit(PrintStmt* stmt) {
     std::cout << stmt;
+    return {};
 }
 
-void Printer::visit(BreakStmt* stmt) {
+Value Printer::visit(BreakStmt* stmt) {
     std::cout << stmt;
+    return {};
 }
 
-void Printer::visit(ReturnStmt* stmt) {
+Value Printer::visit(ReturnStmt* stmt) {
     std::cout << stmt;
+    return {};
 }
 
-void Printer::visit(ExpStmt* stmt) {
+Value Printer::visit(ExpStmt* stmt) {
     std::cout << stmt;
+    return {};
 }
 
-void Printer::visit(Fun* fun) {
+Value Printer::visit(Fun* fun) {
     std::cout << fun;
+    return {};
 }
 
 void Printer::visit(Program* program) {

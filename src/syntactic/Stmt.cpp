@@ -13,6 +13,7 @@ void DecStmt::print(std::ostream& out) {
         case Value::BOOL: out << "bool"; break;
         case Value::CHAR: out << "char"; break;
         case Value::I32: out << "i32"; break;
+        case Value::I64: out << "i64"; break;
         case Value::STR: out << "str"; break;
         case Value::UNIT: out << "()"; break;
         default: break;
