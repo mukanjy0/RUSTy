@@ -95,11 +95,16 @@ Value TypeCheck::visit(Literal* exp) {
 }
 
 Value TypeCheck::visit(Variable* exp) {
-    Value v = lookup(exp->name);
+    Value* entry = table->lookup(exp->name);
+    Value v = *entry;
     if (!lhsContext && !v.initialized)
         throw std::runtime_error("use of uninitialized variable at " +
                                  std::to_string(exp->line) + ':' +
                                  std::to_string(exp->col));
+    if (lhsContext) {
+        lhsEntry = entry;
+        lhsIsVariable = true;
+    }
     exp->type = v.type;
     return v;
 }
@@ -146,15 +151,20 @@ Value TypeCheck::visit(LoopExp* exp) {
 }
 
 Value TypeCheck::visit(SubscriptExp* exp) {
-    Value coll = lookup(exp->id);
+    Value* entry = table->lookup(exp->id);
+    Value coll = *entry;
     Value idx = exp->exp->accept(this);
     assertType(idx.type, Value::I32, exp->line, exp->col);
     if (!(coll.type == Value::STR || coll.size > 0))
         throw std::runtime_error("subscript on non-indexable at " +
                                  std::to_string(exp->line) + ':' +
                                  std::to_string(exp->col));
+    if (lhsContext) {
+        lhsEntry = entry;
+        lhsIsVariable = false;
+    }
     exp->type = coll.type;
-    return lookup(exp->id);
+    return coll;
 }
 
 Value TypeCheck::visit(SliceExp* exp) {
@@ -221,20 +231,21 @@ Value TypeCheck::visit(DecStmt* stmt) {
 
 Value TypeCheck::visit(AssignStmt* stmt) {
     lhsContext = true;
+    lhsIsVariable = false;
+    lhsEntry = nullptr;
     Value lhs = stmt->lhs->accept(this);
     lhsContext = false;
     Value rhs = stmt->rhs->accept(this);
-    if (auto var = dynamic_cast<Variable*>(stmt->lhs)) {
-        Value* entry = table->lookup(var->name);
-        if (!entry->initialized) {
-            if (entry->type == Value::UNDEFINED)
-                entry->type = rhs.type;
+    if (lhsIsVariable && lhsEntry) {
+        if (!lhsEntry->initialized) {
+            if (lhsEntry->type == Value::UNDEFINED)
+                lhsEntry->type = rhs.type;
             if (rhs.size > 0)
-                entry->size = rhs.size;
-            entry->initialized = true;
+                lhsEntry->size = rhs.size;
+            lhsEntry->initialized = true;
         } else {
-            assertMut(*entry, stmt->line, stmt->col);
-            assertType(rhs.type, entry->type, stmt->line, stmt->col);
+            assertMut(*lhsEntry, stmt->line, stmt->col);
+            assertType(rhs.type, lhsEntry->type, stmt->line, stmt->col);
         }
     } else {
         assertMut(lhs, stmt->line, stmt->col);
