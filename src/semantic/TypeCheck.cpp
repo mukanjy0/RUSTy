@@ -123,8 +123,12 @@ Value TypeCheck::visit(Variable* exp) {
 
 Value TypeCheck::visit(FunCall* exp) {
     Value fn = lookup(exp->id);
-    if (fn.types.size() != exp->args.size())
-        throw std::runtime_error("incorrect argument count at " +
+    if (fn.types.size() < exp->args.size())
+        throw std::runtime_error("too many arguments for " + exp->id + " at " +
+                                 std::to_string(exp->line) + ':' +
+                                 std::to_string(exp->col));
+    if (fn.types.size() > exp->args.size())
+        throw std::runtime_error("not enough arguments for " + exp->id + " at " +
                                  std::to_string(exp->line) + ':' +
                                  std::to_string(exp->col));
     auto it = fn.types.begin();
@@ -297,8 +301,6 @@ Value TypeCheck::visit(WhileStmt* stmt) {
 }
 
 Value TypeCheck::visit(PrintStmt* stmt) {
-    for (auto exp : stmt->args) exp->accept(this);
-
     std::string parsed;
     size_t pos = 0;
     auto it = stmt->args.begin();
