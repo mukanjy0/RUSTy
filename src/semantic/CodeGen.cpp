@@ -71,6 +71,7 @@ int CodeGen::typeLen(L lvl) {
         case W: return 2;
         case D: return 4;
         case Q: return 8;
+        default: return 8;
     }
 }
 
@@ -80,6 +81,30 @@ int CodeGen::typeLen(Value::Type type) {
         case Value::CHAR: return 1;
         case Value::I32: return 4;
         default: return 8;
+    }
+}
+
+
+int CodeGen::typeLen(Value value) {
+    if (value.ref) return 8;
+    if (value.size) {
+        switch(value.type) {
+            case Value::BOOL:
+            case Value::CHAR: return value.size + 8;
+            case Value::I32: return 4 * value.size + 8;
+            default: return 8 * value.size + 8;
+        }
+    }
+    else if (value.right) {
+        return 2 * 8;
+    }
+    else {
+        switch(value.type) {
+            case Value::BOOL:
+            case Value::CHAR: return 1;
+            case Value::I32: return 4;
+            default: return 8;
+        }
     }
 }
 
@@ -143,7 +168,7 @@ void CodeGen::lea() {
     out << "lea" << l->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::cmp() {
-    out << "cmp" << l->lvl << ' ' << r << '\n';
+    out << "cmp" << l->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::jmp(C cond) {
     if (cond!=NONE) {
@@ -242,6 +267,9 @@ string CodeGen::end(string label) {
     }
     return label;
 }
+int CodeGen::getOffset(string label) {
+    return bp.top() - int(*(table->lookup(label)));
+}
 
 // Destructor
 CodeGen::~CodeGen() = default;
@@ -251,16 +279,19 @@ Value CodeGen::visit(Block* block) {
     if (init) {
         table->pushScope();
         Value val;
+        cur.push(block);
         for(auto stmt : block->stmts) {
             val = stmt->accept(this);
         }
+        cur.pop();
         table->popScope();
     }
     else {
-        cur = block;
+        cur.push(block);
         for(auto stmt : block->stmts) {
             stmt->accept(this);
         }
+        cur.pop();
     }
     return {};
 }
@@ -344,8 +375,8 @@ Value CodeGen::visit(BinaryExp* exp) {
     else {
         exp->lhs->accept(this);
         exp->rhs->accept(this);
+        return {};
     }
-    return {};
 
 }
 
@@ -371,8 +402,8 @@ Value CodeGen::visit(UnaryExp* exp) {
     }
     else {
         exp->exp->accept(this);
+        return {};
     }
-    return {};
 }
 
 Value CodeGen::visit(Literal* exp) {
@@ -504,6 +535,7 @@ Value CodeGen::visit(LoopExp* exp) {
 
 Value CodeGen::visit(SubscriptExp* exp) {
     if (init) {
+
     }
     return {};
 }
@@ -537,6 +569,25 @@ Value CodeGen::visit(ArrayExp* exp) {
 
 Value CodeGen::visit(UniformArrayExp* exp) {
     if (init) {
+        auto value = exp->value->accept(this);
+
+        r = new Reg();
+        push();
+
+        auto size = exp->size->accept(this);
+
+        r = new Reg("c");
+        pop();
+
+        // a  -> size, c -> value
+
+        l = new Const(Value(Value::I64, 0));
+        r = new Reg("d");
+        mov();
+
+        LBLabel();
+
+        LELabel();
 
     }
     else {
@@ -548,24 +599,70 @@ Value CodeGen::visit(UniformArrayExp* exp) {
 // Visit methods for statements
 Value CodeGen::visit(DecStmt* stmt) {
     if (init) {
+        auto value = stmt->var;
+        Block* b = cur.top();
 
+        int off = allocated[b] - toAllocate[b];
+        table->declare(stmt->id, Value(value.type, off));
+
+        if (stmt->rhs) {
+            auto rhs = stmt->rhs->accept(this);
+
+            if (value.size) {
+                off += 8; // pointer size
+
+                for (int i=0; i<value.size; ++i) {
+                    r = new Reg();
+                    pop();
+
+                    l = new Reg();
+                    auto reg = new Reg("bp");
+                    r = new Mem(reg, off);
+                    mov();
+
+                    off += typeLen(value.type);
+                }
+            }
+            else {
+                l = new Reg();
+                auto reg = new Reg("bp");
+                r = new Mem(reg, off);
+                mov();
+            }
+        }
+        allocated[b] += typeLen(value);
+        return Value(Value::UNIT, 0);
     }
     else {
-        toAllocate[cur] += typeLen(stmt->var.type);
+        toAllocate[cur.top()] += typeLen(stmt->var.type);
         if (stmt->var.type == Value::STR) {
             stmt->rhs->accept(this);
         }
+        return {};
     }
-    return {};
 }
 
 Value CodeGen::visit(AssignStmt* stmt) {
     if (init) {
+        auto lhs = stmt->lhs->accept(this);
+        r = new Reg();
+        push();
+
+        auto rhs = stmt->rhs->accept(this);
+
+        r = new Reg("c");
+        pop();
+
+        l = new Reg();
+        auto reg = new Reg("c");
+        r = new Mem(reg, 0);
+        mov();
+        return Value(Value::UNIT, 0);
     }
     else {
         stmt->rhs->accept(this);
+        return {};
     }
-    return {};
 }
 
 Value CodeGen::visit(CompoundAssignStmt* stmt) {
@@ -580,29 +677,29 @@ Value CodeGen::visit(ForStmt* stmt) {
 
         auto value = stmt->start->accept(this);
 
-        auto it = new Reg();
-        it->lvl = valueToL(value);
-        r = it;
+        r = new Reg();
+        r->lvl = valueToL(value);
         push();
         table->declare(stmt->id, Value(Value::ID, offset));
+        int off = getOffset(stmt->id);
+
+        Reg* reg = new Reg("bp");
+        auto it = new Mem(reg, off);
 
         LBLabel();
-        l = it;
-        r = new Reg("c");
-        r->lvl = l->lvl;
-        mov();
-
         value = stmt->end->accept(this);
+
         l = new Reg();
         l->lvl = valueToL(value);
-        r = new Reg("c");
+        r = it;
+        cmp();
+
         jmp(end(labels.top()), 
-            stmt->inclusive ? GT : GE);
+            stmt->inclusive ? LE : LT);
 
         stmt->block->accept(this);
 
-        Reg* reg = new Reg("bp");
-        r = new Mem(reg, bp.top() - int(*(table->lookup(stmt->id))));
+        r = it;
         inc();
         jmp(labels.top());
 
@@ -748,7 +845,7 @@ Value CodeGen::visit(Fun* fun) {
 
         table->popScope();
 
-        //return Value(fun->type);
+        return Value(fun->type);
     }
     else {
         fun->block->accept(this);
