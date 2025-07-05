@@ -555,38 +555,49 @@ Value CodeGen::visit(SliceExp* exp) {
 
 Value CodeGen::visit(ReferenceExp* exp) {
     if (init) {
+        auto value = exp->exp->accept(this);
+        value.ref = true;
+        return value;
     }
     else {
         exp->exp->accept(this);
+        return {};
     }
-    return {};
 }
 
 Value CodeGen::visit(ArrayExp* exp) {
     if (init) {
+        r = new Reg();
+        r->lvl = typeToL(exp->type);
 
+        for (auto el : exp->elements) {
+            auto value = el->accept(this);
+            push();
+        }
+        auto ret = Value(exp->type);
+        ret.size = 1;
+        return ret;
     }
     else {
         for (auto el : exp->elements) {
             el->accept(this);
         }
+        return {};
     }
-    return {};
 }
 
 Value CodeGen::visit(UniformArrayExp* exp) {
     if (init) {
-        auto value = exp->value->accept(this);
-
+        auto size = exp->size->accept(this);
         r = new Reg();
         push();
 
-        auto size = exp->size->accept(this);
+        auto value = exp->value->accept(this);
+        auto val = new Reg();
+        val->lvl = valueToL(value);
 
         r = new Reg("c");
         pop();
-
-        // a  -> size, c -> value
 
         l = new Const(Value(Value::I64, 0));
         r = new Reg("d");
@@ -594,13 +605,29 @@ Value CodeGen::visit(UniformArrayExp* exp) {
 
         LBLabel();
 
+        l = new Reg("c");
+        r = new Reg("d");
+        cmp();
+
+        jmp(end(labels.top()), LT);
+
+        r = val;
+        push();
+
+        r = new Reg("d");
+        inc();
+        jmp(labels.top());
+
         LELabel();
 
+        auto ret = Value(value.type);
+        ret.size = 1;
+        return ret;
     }
     else {
         exp->value->accept(this);
+        return {};
     }
-    return {};
 }
 
 // Visit methods for statements
