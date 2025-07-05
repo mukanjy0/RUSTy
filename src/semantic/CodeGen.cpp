@@ -71,6 +71,7 @@ int CodeGen::typeLen(L lvl) {
         case W: return 2;
         case D: return 4;
         case Q: return 8;
+        default: return 8;
     }
 }
 
@@ -238,16 +239,19 @@ Value CodeGen::visit(Block* block) {
     if (init) {
         table->pushScope();
         Value val;
+        cur.push(block);
         for(auto stmt : block->stmts) {
             val = stmt->accept(this);
         }
+        cur.pop();
         table->popScope();
     }
     else {
-        cur = block;
+        cur.push(block);
         for(auto stmt : block->stmts) {
             stmt->accept(this);
         }
+        cur.pop();
     }
     return {};
 }
@@ -331,8 +335,8 @@ Value CodeGen::visit(BinaryExp* exp) {
     else {
         exp->lhs->accept(this);
         exp->rhs->accept(this);
+        return {};
     }
-    return {};
 
 }
 
@@ -358,8 +362,8 @@ Value CodeGen::visit(UnaryExp* exp) {
     }
     else {
         exp->exp->accept(this);
+        return {};
     }
-    return {};
 }
 
 Value CodeGen::visit(Literal* exp) {
@@ -483,24 +487,51 @@ Value CodeGen::visit(UniformArrayExp* exp) {
 // Visit methods for statements
 Value CodeGen::visit(DecStmt* stmt) {
     if (init) {
+        Block* b = cur.top();
+        allocated[b] += typeLen(stmt->var.type);
+        int off = toAllocate[b] - allocated[b];
+        table->declare(stmt->id, Value(stmt->var.type, off));
 
+        if (stmt->rhs) {
+            auto rhs = stmt->rhs->accept(this);
+
+            l = new Reg();
+            auto reg = new Reg("bp");
+            r = new Mem(reg, off);
+            mov();
+        }
+        return Value(Value::UNIT, 0);
     }
     else {
-        toAllocate[cur] += typeLen(stmt->var.type);
+        toAllocate[cur.top()] += typeLen(stmt->var.type);
         if (stmt->var.type == Value::STR) {
             stmt->rhs->accept(this);
         }
+        return {};
     }
-    return {};
 }
 
 Value CodeGen::visit(AssignStmt* stmt) {
     if (init) {
+        auto lhs = stmt->lhs->accept(this);
+        r = new Reg();
+        push();
+
+        auto rhs = stmt->rhs->accept(this);
+
+        r = new Reg("c");
+        pop();
+
+        l = new Reg();
+        auto reg = new Reg("c");
+        r = new Mem(reg, 0);
+        mov();
+        return Value(Value::UNIT, 0);
     }
     else {
         stmt->rhs->accept(this);
+        return {};
     }
-    return {};
 }
 
 Value CodeGen::visit(CompoundAssignStmt* stmt) {
@@ -683,7 +714,7 @@ Value CodeGen::visit(Fun* fun) {
 
         table->popScope();
 
-        //return Value(fun->type);
+        return Value(fun->type);
     }
     else {
         fun->block->accept(this);

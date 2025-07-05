@@ -120,7 +120,8 @@ private:
     bool init {};
     Operand* l;
     Operand* r;
-    Block* cur;
+    stack<Block*> cur;
+    map<Block*, int> allocated;
     map<Block*, int> toAllocate;
 
 public:
