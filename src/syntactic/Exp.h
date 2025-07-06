@@ -12,7 +12,7 @@ class Visitor;
 class CodeGen;
 
 struct Value {
-    enum Type { UNDEFINED, BOOL, CHAR, I32, I64, STR, ID, UNIT};
+    enum Type { UNDEFINED, BOOL, CHAR, I8, I16, I32, I64, STR, ID, UNIT};
 
     Type type {};
     // in case of array has multiple values, otherwise only one
@@ -22,6 +22,7 @@ struct Value {
     // array of types for functions
     std::list<Type> types {};
 
+    bool literal {};
     bool fun {};
     bool ref {};
     bool mut {};
@@ -35,31 +36,31 @@ struct Value {
 
     Value() : type(UNDEFINED), initialized(false) {}
 
+    Value(Type type) : type(type) {}
+
     Value(Type type, std::string stringValue,
-          bool ref=false, bool mut=false, bool fun=false)
+          bool ref=false, bool mut=false, bool literal=false, bool fun=false)
         : type(type), stringValues({std::move(stringValue)}),
         ref(ref), mut(mut), initialized(true) {}
 
     Value(Type type, int numericValue,
-          bool ref=false, bool mut=false, bool fun=false)
+          bool ref=false, bool mut=false, bool literal=false, bool fun=false)
         : type(type), numericValues({numericValue}),
         ref(ref), mut(mut), initialized(true) {}
 
     Value(Type type, std::list<std::string> stringValues,
-        bool ref=false, bool mut=false, bool fun=false)
+        bool ref=false, bool mut=false, bool literal=false, bool fun=false)
         : type(type), stringValues(std::move(stringValues)),
         ref(ref), mut(mut), initialized(true) {}
 
     Value(Type type, std::list<int> numericValues,
-        bool ref=false, bool mut=false, bool fun=false)
+        bool ref=false, bool mut=false, bool literal=false, bool fun=false)
         : type(type), numericValues(std::move(numericValues)),
         ref(ref), mut(mut), initialized(true) {}
 
-    Value(Type type, bool fun=false)
-        : type(type), fun(fun), initialized(true) {}
-
     ~Value() = default;
 
+    bool isNumber();
     bool isArray();
     bool isFunction();
     void addType(Type type);

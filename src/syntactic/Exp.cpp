@@ -4,11 +4,16 @@
 Value::Type Value::stringToType(std::string type) {
     if (type == "bool") return BOOL;
     else if (type == "char") return CHAR;
+    else if (type == "i8") return I8;
+    else if (type == "i16") return I16;
     else if (type == "i32") return I32;
     else if (type == "i64") return I64;
     else if (type == "str") return STR;
     else if (type == "()") return UNIT;
     throw std::runtime_error("invalid type: " + type);
+}
+bool Value::isNumber() {
+    return type == I8 || type == I16 || type == I32 || type == I64;
 }
 bool Value::isArray() {
     return size > 0;
@@ -34,7 +39,10 @@ std::ostream& operator<<(std::ostream& out, const Value::Type& type) {
     switch(type) {
         case Value::BOOL: out << "bool"; break;
         case Value::CHAR: out << "char"; break;
+        case Value::I8: out << "i8"; break;
+        case Value::I16: out << "i16"; break;
         case Value::I32: out << "i32"; break;
+        case Value::I64: out << "i64"; break;
         case Value::STR: out << "str"; break;
         case Value::UNIT: out << "()"; break;
         default: throw std::runtime_error(std::string("invalid type")
@@ -60,6 +68,8 @@ std::ostream& operator<<(std::ostream& out, const Value& var) {
                 if (++i < var.size) out << ", ";
             }
             break;
+        case Value::I8:
+        case Value::I16:
         case Value::I32:
         case Value::I64:
             for (auto el : var.numericValues) {
