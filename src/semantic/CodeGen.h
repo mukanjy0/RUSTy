@@ -79,6 +79,7 @@ private:
 
     void mov();
     void movz();
+    void movs();
     // arithmetic
     void add();
     void inc();

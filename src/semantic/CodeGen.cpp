@@ -126,26 +126,33 @@ L CodeGen::valueToL(Value value) {
 }
 
 void CodeGen::mov() {
-    if (l->lvl != r->lvl) return movz();
-    out << "mov" << l->lvl << ' ' << l << ", " << r << '\n';
+    auto c = dynamic_cast<Const*>(l);
+    if (!c && l->lvl < r->lvl) {
+        if (l->lvl == B) return movz(); //zero-extend
+        else return movs(); // sign-extend
+    }
+    out << "mov" << r->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::movz() {
     out << "movz" << l->lvl << r->lvl << ' ' << l << ", " << r << '\n';
 }
+void CodeGen::movs() {
+    out << "movs" << l->lvl << r->lvl << ' ' << l << ", " << r << '\n';
+}
 void CodeGen::add() {
-    out << "add" << l->lvl << ' ' << l << ", " << r << '\n';
+    out << "add" << r->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::inc() {
     out << "inc" << r->lvl << ' ' << r << '\n';
 }
 void CodeGen::sub() {
-    out << "sub" << l->lvl << ' ' << l << ", " << r << '\n';
+    out << "sub" << r->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::dec() {
     out << "dec" << r->lvl << ' ' << r << '\n';
 }
 void CodeGen::mul() {
-    out << "imul" << l->lvl << ' ' << l << ", " << r << '\n';
+    out << "imul" << r->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::div() {
     out << "mov rax, " << l << '\n';
@@ -161,10 +168,10 @@ void CodeGen::pop() {
     offset -= typeLen(r->lvl);
 }
 void CodeGen::lea() {
-    out << "lea" << l->lvl << ' ' << l << ", " << r << '\n';
+    out << "lea" << r->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::cmp() {
-    out << "cmp" << l->lvl << ' ' << l << ", " << r << '\n';
+    out << "cmp" << r->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::jmp(C cond) {
     if (cond!=NONE) {
@@ -246,12 +253,12 @@ string CodeGen::endI(string label) {
 }
 void CodeGen::LFBLabel() {
     string label = ".LFB" + to_string(++lf);
-    out << label << '\n';
+    out << label << ":\n";
     labels.push(label);
 }
 void CodeGen::LFELabel() {
     string label = ".LFE" + to_string(lf);
-    out << label << '\n';
+    out << label << ":\n";
     labels.pop();
 }
 string CodeGen::end(string label) {
@@ -297,6 +304,7 @@ Value CodeGen::visit(Block* block) {
         for(auto stmt : block->stmts) {
             stmt->accept(this);
         }
+        toAllocate[cur.top()] = ((toAllocate[block] + 15) / 16) * 16;
         cur.pop();
     }
     return {};
@@ -439,7 +447,7 @@ Value CodeGen::visit(Variable* exp) {
         r = new Reg();
         lea();
 
-        return value;
+        return Value(Value::ID, exp->name);
     }
     return {};
 }
@@ -644,7 +652,7 @@ Value CodeGen::visit(DecStmt* stmt) {
         Block* b = cur.top();
 
         int off = allocated[b] - toAllocate[b];
-        table->declare(stmt->id, Value(value.type, offset - off));
+        table->declare(stmt->id, Value(value.type, bp.top() - off));
 
         if (stmt->rhs) {
             auto rhs = stmt->rhs->accept(this);
@@ -794,10 +802,20 @@ Value CodeGen::visit(PrintStmt* stmt) {
         for (auto it = stmt->args.begin(); it != stmt->args.end(); ++it, ++it2) {
             Value value = (*it)->accept(this);
 
+            if (value.type == Value::ID || value.ref) {
+                reg = new Reg();
+                l = new Mem(reg, 0);
+            }
+            else {
+                l = new Reg();
+                l->lvl = valueToL(value);
+            }
+            r = new Reg();
+            mov();
+
             l = new Reg();
-            l->lvl = valueToL(value);
             r = new Reg(*it2);
-            movz();
+            mov();
         }
 
         int argCnt = stmt->args.size();
@@ -915,13 +933,13 @@ void CodeGen::visit(Program* program) {
         out << ".globl " << id << '\n';
         out << ".type " << id << ", @function\n";
         out << id << ":\n";
-        out << ".LFB" << ++lf << ":\n";
+        LFBLabel();
         enter();
 
         fun->accept(this);
 
         // epilogue
-        out << ".LFE" << ++lf << ":\n";
+        LFELabel();
         leave();
         ret();
     }

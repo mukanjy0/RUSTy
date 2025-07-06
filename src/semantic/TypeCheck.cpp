@@ -339,7 +339,7 @@ Value TypeCheck::visit(PrintStmt* stmt) {
             "too many arguments for print at " + std::to_string(stmt->line) + ":" + std::to_string(stmt->col));
     }
 
-    stmt->strLiteral = parsed;
+    stmt->strLiteral = parsed + "\\n";
     return {Value::UNIT};
 }
 
