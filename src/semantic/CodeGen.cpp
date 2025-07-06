@@ -651,7 +651,9 @@ Value CodeGen::visit(DecStmt* stmt) {
         auto value = stmt->var;
         Block* b = cur.top();
 
-        int off = allocated[b] - toAllocate[b];
+
+        allocated[b] += typeLen(value);
+        int off = -allocated[b];
         table->declare(stmt->id, Value(value.type, bp.top() - off));
 
         if (stmt->rhs) {
@@ -679,7 +681,6 @@ Value CodeGen::visit(DecStmt* stmt) {
                 mov();
             }
         }
-        allocated[b] += typeLen(value);
         return Value(Value::UNIT, 0);
     }
     else {
