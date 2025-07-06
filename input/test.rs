@@ -44,6 +44,11 @@ fn main() {
     let mut cs: [char; 2] = ['a' ; 2];
     let mut is: [i32; 2] = [i + 8 ; 2];
     let mut ys;
+    let valid_str: &str = "hola";
+    println!("{}", valid_str);
+    // let invalid_str: str = "error"; // should fail: strings must be references
+    let im: i32 = 1;
+    // im = 2; // should fail: cannot assign to immutable variable
     let empty = ();
     // let empty : () = ();
     ys = [0, 0, 0, 0];
@@ -52,6 +57,10 @@ fn main() {
     // println!("{}", xs[(xs[0] + 1) as usize]);
     xs[0] = 2;
     println!("{}", xs[0]);
+    let mut ok_arr: [i32; 3];
+    ok_arr = [1; 3];
+    // let mut bad_arr: [i32; g * 20]; // should fail: size not constant
+    // ok_arr = [0; im]; // should fail: size not constant
     let c = loop {
         break 0;
         //s = "hi";

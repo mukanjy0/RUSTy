@@ -41,6 +41,7 @@ private:
     void declare(const std::string& id, const Value& val) const;
     static void assertMut(const Value& val, int line, int col);
     static void assertType(Value::Type from, Value::Type to, int line, int col);
+    static void assertStringRef(const Value& val, int line, int col);
     static std::string typeToFormat(Value::Type type);
     int getScopeDepth() const;
 
