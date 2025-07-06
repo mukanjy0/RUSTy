@@ -74,6 +74,7 @@ class CodeGen : public Visitor {
 private:
     ostream& out;
 
+    char nextL(L lvl);
     L valueToL(Value value);
     L typeToL(Value::Type type);
 
@@ -82,11 +83,15 @@ private:
     void movs();
     // arithmetic
     void add();
+    void addSP(int off);
     void inc();
     void sub();
+    void subSP(int off);
     void dec();
     void mul();
     void div();
+    void land();
+    void lor();
     // stack
     void push();
     void pop();
