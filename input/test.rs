@@ -16,9 +16,11 @@ fn main() {
     // Statements here are executed when the compiled binary is called.
     let mut i : i32 = fun(8);
     let nv : i32 = fun(84);
+    
     // const g : i32 = 1 * 8;
     println!("{}", i);
-
+    println!("{} {}", i, nv);
+    println!("{} {} {}", i, 'a', 42);
     let s; // does not have size
     s = "hello"; // does not have size
     // | h | e | l | l | o |
@@ -28,7 +30,7 @@ fn main() {
     let s2 : &str;
     s2 = &ss[..]; // AHHHHHH
     // | h | e | l | l |
-    println!("{s2}");
+    println!("{}", s2);
     let mut xs: [i32; 5];
     xs = [10; 5];
     let mut xp : &i32 = &xs[3];

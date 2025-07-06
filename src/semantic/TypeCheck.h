@@ -39,12 +39,14 @@ public:
 private:
     Value lookup(const std::string& id) const;
     void declare(const std::string& id, const Value& val) const;
-    static void assertMut(const Value& val, int line, int col) ;
-    static void assertType(Value::Type from, Value::Type to, int line, int col) ;
+    static void assertMut(const Value& val, int line, int col);
+    static void assertType(Value::Type from, Value::Type to, int line, int col);
+    static std::string typeToFormat(Value::Type type);
     int getScopeDepth() const;
 
     Value::Type currentReturnType{Value::UNDEFINED};
     int scopeDepth{};
+    int blockDepth{};
     bool lhsContext{false};
     bool lhsIsVariable{false};
     Value* lhsEntry{nullptr};
