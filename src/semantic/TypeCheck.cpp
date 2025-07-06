@@ -211,20 +211,26 @@ Value TypeCheck::visit(SliceExp* exp) {
 
 Value TypeCheck::visit(ReferenceExp* exp) {
     Value v = exp->exp->accept(this);
+    v.ref = true;
     exp->type = v.type;
     return v;
 }
 
 Value TypeCheck::visit(ArrayExp* exp) {
     Value::Type elType = Value::UNDEFINED;
+    bool ref = true;
     for (auto el : exp->elements) {
         Value v = el->accept(this);
-        if (elType == Value::UNDEFINED) elType = v.type;
-        else assertType(v.type, elType, el->line, el->col);
+        if (elType == Value::UNDEFINED)
+            elType = v.type;
+        else
+            assertType(v.type, elType, el->line, el->col);
+        ref = ref && v.ref;
     }
     exp->type = elType;
     Value val{elType};
     val.size = exp->elements.size();
+    val.ref = ref;
     return val;
 }
 
@@ -247,6 +253,7 @@ Value TypeCheck::visit(UniformArrayExp* exp) {
     exp->type = v.type;
     Value val{v.type};
     val.size = s.numericValues.front();
+    val.ref = v.ref;
     return val;
 }
 
