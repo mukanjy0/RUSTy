@@ -138,7 +138,9 @@ Value NameRes::visit(ForStmt* stmt) {
     stmt->start->accept(this);
     stmt->end->accept(this);
     table->pushScope();
-    declare(stmt->id, {}, stmt->line, stmt->col);
+    Value value {};
+    value.initialized = true;
+    declare(stmt->id, value, stmt->line, stmt->col);
     stmt->block->accept(this);
     table->popScope();
     return {};
@@ -186,7 +188,8 @@ Value NameRes::visit(Fun* fun) {
 void NameRes::visit(Program* program) {
     table->pushScope();
     for (const auto& [id, fun]: program->funs) {
-        Value val{fun->type, true};
+        Value val(fun->type);
+        val.fun = true;
         for (const auto& param : fun->params)
             val.addType(param.type);
         declare(id, val, fun->line, fun->col);

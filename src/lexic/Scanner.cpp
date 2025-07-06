@@ -204,7 +204,10 @@ void Scanner::advance() {
                 while (pos < size && (isalnum(source[pos]) || source[pos] == '_')) {
                     increasePos();
                 }
-                if (current.content == "i32"
+                if (current.content == "i64"
+                    || current.content == "i32"
+                    || current.content == "i16"
+                    || current.content == "i8"
                     || current.content == "bool"
                     || current.content == "char"
                     || current.content == "str"

@@ -285,7 +285,9 @@ Value TypeCheck::visit(ForStmt* stmt) {
     stmt->start->accept(this);
     stmt->end->accept(this);
     table->pushScope();
-    declare(stmt->id, Value{Value::I32});
+    Value value (Value::I32);
+    value.initialized = true;
+    declare(stmt->id, value);
     stmt->block->accept(this);
     table->popScope();
     return {Value::UNIT};

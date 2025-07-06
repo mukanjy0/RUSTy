@@ -71,7 +71,9 @@ int CodeGen::typeLen(L lvl) {
 int CodeGen::typeLen(Value::Type type) {
     switch(type) {
         case Value::BOOL:
+        case Value::I8:
         case Value::CHAR: return 1;
+        case Value::I16: return 2;
         case Value::I32: return 4;
         default: return 8;
     }
@@ -81,32 +83,25 @@ int CodeGen::typeLen(Value::Type type) {
 int CodeGen::typeLen(Value value) {
     if (value.ref) return 8;
     if (value.size) {
-        switch(value.type) {
-            case Value::BOOL:
-            case Value::CHAR: return value.size + 8;
-            case Value::I32: return 4 * value.size + 8;
-            default: return 8 * value.size + 8;
-        }
+        return typeLen(value.type) * value.size + 8;
     }
     else if (value.right) {
         return 2 * 8;
     }
     else {
-        switch(value.type) {
-            case Value::BOOL:
-            case Value::CHAR: return 1;
-            case Value::I32: return 4;
-            default: return 8;
-        }
+        return typeLen(value.type);
     }
 }
 
 L CodeGen::typeToL(Value::Type type) {
     switch(type) {
         case Value::CHAR: 
+        case Value::I8: 
         case Value::BOOL: return B;
-        case Value::I32: 
+        case Value::I16: return W;
+        case Value::I32:
         case Value::UNIT: return D;
+        case Value::I64:
         case Value::STR: return Q; // it will always be a pointer
         default: return Q;
     }
@@ -115,14 +110,7 @@ L CodeGen::typeToL(Value::Type type) {
 L CodeGen::valueToL(Value value) {
     if (value.ref) return Q;
 
-    switch(value.type) {
-        case Value::CHAR: 
-        case Value::BOOL: return B;
-        case Value::I32: 
-        case Value::UNIT: return D;
-        case Value::STR: return Q; // it will always be a pointer
-        default: return Q;
-    }
+    return valueToL(value.type);
 }
 
 void CodeGen::mov() {
