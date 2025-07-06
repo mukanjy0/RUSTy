@@ -9,20 +9,13 @@ std::ostream& operator<<(std::ostream& out, Operand* op) {
 Reg::~Reg() {}
 void Reg::print(ostream& out) {
     out << "%";
-    switch (lvl) {
-        case B:
-            out << reg + "l";
-            break;
-        case W:
-            out << reg;
-            if (reg.length() == 1) out << "x";
-        case D:
-            out << "e" + reg;
-            if (reg.length() == 1) out << "x";
-        case Q:
-            out << "r" + reg;
-            if (reg.length() == 1) out << "x";
+    if (lvl == D) out << 'e';
+    else if (lvl == Q) out << 'r';
+    out << reg;
+    if (lvl != B) {
+        if (reg.length() == 1) out << "x";
     }
+    else out << 'l';
 }
 
 Const::~Const() {}
@@ -44,10 +37,10 @@ void Mem::print(ostream& out) {
 
 ostream& operator<<(ostream& out, L lvl) {
     switch (lvl) {
-        case B: out << 'b';
-        case W: out << 'w';
-        case D: out << 'l';
-        case Q: out << 'q';
+        case B: out << 'b'; break;
+        case W: out << 'w'; break;
+        case D: out << 'l'; break;
+        case Q: out << 'q'; break;
     }
     return out;
 }
@@ -133,6 +126,7 @@ L CodeGen::valueToL(Value value) {
 }
 
 void CodeGen::mov() {
+    if (l->lvl != r->lvl) return movz();
     out << "mov" << l->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::movz() {
@@ -222,29 +216,29 @@ void CodeGen::ret() {
 }
 string CodeGen::LCLabel() {
     string label = ".LC" + to_string(++lc);
-    out << label << '\n';
+    out << label << ":\n";
     return label;
 }
 void CodeGen::LBLabel() {
     string label = ".LB" + to_string(++lb);
-    out << label << '\n';
+    out << label << ":\n";
     lbs.push(lb);
     labels.push(label);
 }
 void CodeGen::LELabel() {
     string label = ".LE" + to_string(lbs.top());
-    out << label << '\n';
+    out << label << ":\n";
     lbs.pop();
     labels.pop();
 }
 void CodeGen::LILabel() {
     string label = ".LI" + to_string(++li);
-    out << label << '\n';
+    out << label << ":\n";
     lis.push(li);
 }
 void CodeGen::LIELabel() {
     string label = ".LIE" + to_string(lis.top());
-    out << label << '\n';
+    out << label << ":\n";
     lis.pop();
 }
 string CodeGen::endI(string label) {
@@ -280,12 +274,22 @@ CodeGen::~CodeGen() = default;
 Value CodeGen::visit(Block* block) {
     if (init) {
         table->pushScope();
+
+        l = new Const(Value(Value::I64, toAllocate[block]));
+        r = new Reg("sp");
+        sub();
+
         Value val;
         cur.push(block);
         for(auto stmt : block->stmts) {
             val = stmt->accept(this);
         }
         cur.pop();
+
+        l = new Const(Value(Value::I64, toAllocate[block]));
+        r = new Reg("sp");
+        add();
+
         table->popScope();
     }
     else {
@@ -640,7 +644,7 @@ Value CodeGen::visit(DecStmt* stmt) {
         Block* b = cur.top();
 
         int off = allocated[b] - toAllocate[b];
-        table->declare(stmt->id, Value(value.type, off));
+        table->declare(stmt->id, Value(value.type, offset - off));
 
         if (stmt->rhs) {
             auto rhs = stmt->rhs->accept(this);
@@ -778,7 +782,7 @@ Value CodeGen::visit(WhileStmt* stmt) {
 }
 
 Value CodeGen::visit(PrintStmt* stmt) {
-    list<string> regs = {"si", "si", "d", "c"};
+    list<string> regs = {"si", "d", "c"};
     string print = "printf@PLT";
     if (init) {
         Reg* reg = new Reg("ip");
@@ -789,13 +793,15 @@ Value CodeGen::visit(PrintStmt* stmt) {
         auto it2 = regs.begin();
         for (auto it = stmt->args.begin(); it != stmt->args.end(); ++it, ++it2) {
             Value value = (*it)->accept(this);
+
             l = new Reg();
             l->lvl = valueToL(value);
             r = new Reg(*it2);
             movz();
         }
 
-        //l = new Const(Value(Value::I64, stmt->args.size()));
+        int argCnt = stmt->args.size();
+        l = new Const(Value(Value::I64, argCnt));
         r = new Reg();
         mov();
 
@@ -865,10 +871,6 @@ Value CodeGen::visit(Fun* fun) {
     if (init) {
         table->pushScope();
 
-        // l = new Const(Value(Value::I64, curOffset));
-        // r = new Reg("sp");
-        // sub();
-
         int len = {};
 
         for (auto param : fun->params) {
@@ -911,7 +913,7 @@ void CodeGen::visit(Program* program) {
         init = true;
         out << ".text\n";
         out << ".globl " << id << '\n';
-        out << ".type " << id << ", @function";
+        out << ".type " << id << ", @function\n";
         out << id << ":\n";
         out << ".LFB" << ++lf << ":\n";
         enter();
