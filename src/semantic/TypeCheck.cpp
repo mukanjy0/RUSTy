@@ -28,6 +28,14 @@ void TypeCheck::assertType(Value::Type from, Value::Type to, int line, int col) 
     }
 }
 
+void TypeCheck::assertStringRef(const Value& val, int line, int col) {
+    if (val.type == Value::STR && !val.ref) {
+        throw std::runtime_error("string type must be referenced at " +
+                                 std::to_string(line) + ':' +
+                                 std::to_string(col));
+    }
+}
+
 std::string TypeCheck::typeToFormat(Value::Type type) {
     switch (type) {
         case Value::CHAR: return "%c";
@@ -222,9 +230,20 @@ Value TypeCheck::visit(ArrayExp* exp) {
 
 Value TypeCheck::visit(UniformArrayExp* exp) {
     Value v = exp->value->accept(this);
+    assertStringRef(v, exp->line, exp->col);
     Value s = exp->size->accept(this);
     Exp* size = exp->size;
     assertType(s.type, Value::I32, size->line, size->col);
+    if (s.numericValues.empty()) {
+        throw std::runtime_error("array size must be constant at " +
+                                 std::to_string(size->line) + ':' +
+                                 std::to_string(size->col));
+    }
+    if (s.numericValues.front() <= 0) {
+        throw std::runtime_error("array size must be positive at " +
+                                 std::to_string(size->line) + ':' +
+                                 std::to_string(size->col));
+    }
     exp->type = v.type;
     Value val{v.type};
     val.size = s.numericValues.front();
@@ -233,12 +252,20 @@ Value TypeCheck::visit(UniformArrayExp* exp) {
 
 // Visit methods for statements
 Value TypeCheck::visit(DecStmt* stmt) {
+    if (stmt->var.type == Value::STR)
+        assertStringRef(stmt->var, stmt->line, stmt->col);
+    if (stmt->var.size < 0)
+        throw std::runtime_error("array size must be positive at " +
+                                 std::to_string(stmt->line) + ':' +
+                                 std::to_string(stmt->col));
     Value rhs{stmt->var.type};
     if (stmt->rhs) {
         rhs = stmt->rhs->accept(this);
         if (stmt->var.type == Value::UNDEFINED)
             stmt->var.type = rhs.type;
         assertType(rhs.type, stmt->var.type, stmt->line, stmt->col);
+        if (stmt->var.type == Value::STR)
+            assertStringRef(rhs, stmt->line, stmt->col);
         stmt->var.initialized = true;
     } else {
         stmt->var.initialized = false;
@@ -254,16 +281,20 @@ Value TypeCheck::visit(AssignStmt* stmt) {
     Value lhs = stmt->lhs->accept(this);
     lhsContext = false;
     Value rhs = stmt->rhs->accept(this);
+    assertStringRef(rhs, stmt->line, stmt->col);
     if (lhsIsVariable && lhsEntry) {
         if (!lhsEntry->initialized) {
             if (lhsEntry->type == Value::UNDEFINED)
                 lhsEntry->type = rhs.type;
+            lhsEntry->ref = rhs.ref;
             if (rhs.size > 0)
                 lhsEntry->size = rhs.size;
             lhsEntry->initialized = true;
         } else {
             assertMut(*lhsEntry, stmt->line, stmt->col);
             assertType(rhs.type, lhsEntry->type, stmt->line, stmt->col);
+            if (lhsEntry->type == Value::STR)
+                assertStringRef(*lhsEntry, stmt->line, stmt->col);
         }
     } else {
         assertMut(lhs, stmt->line, stmt->col);
