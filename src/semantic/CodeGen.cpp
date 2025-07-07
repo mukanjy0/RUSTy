@@ -9,6 +9,16 @@ std::ostream& operator<<(std::ostream& out, Operand* op) {
 Reg::~Reg() {}
 void Reg::print(ostream& out) {
     out << "%";
+    if (reg.length() > 1 && isdigit(reg[1])) {
+        out << reg;
+        switch(lvl) {
+            case B: out << 'b'; break;
+            case W: out << 'w'; break;
+            case D: out << 'd'; break;
+            default: break;
+        }
+        return;
+    }
     if (lvl == D) out << 'e';
     else if (lvl == Q) out << 'r';
     out << reg;
@@ -125,9 +135,21 @@ L CodeGen::valueToL(Value value) {
 
 void CodeGen::mov() {
     auto c = dynamic_cast<Const*>(l);
+    if (c) {
+        out << "mov" << r->lvl << ' ' << l << ", " << r << '\n';
+        return;
+    }
     auto m = dynamic_cast<Mem*>(r);
-    if (!c && !m && l->lvl < r->lvl) {
+    if (m) {
+        out << "mov" << l->lvl << ' ' << l << ", " << r << '\n';
+        return;
+    }
+
+    if (l->lvl < r->lvl) {
         return movs(); // sign-extend
+    }
+    else if (l->lvl > r->lvl) {
+        l->lvl = r->lvl; // downgrade to destination's level
     }
     out << "mov" << (m ? l->lvl : r->lvl) << ' ' << l << ", " << r << '\n';
 }
@@ -175,12 +197,27 @@ void CodeGen::lor() {
     out << "or" << r->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::push() {
+    if (typeLen(r->lvl) < typeLen(Q)) {
+        l = r;
+        r = new Reg("r11");
+        mov();
+    }
     out << "push" << r->lvl << ' ' << r << '\n';
     offset += typeLen(r->lvl);
 }
 void CodeGen::pop() {
-    out << "pop" << r->lvl << ' ' << r << '\n';
-    offset -= typeLen(r->lvl);
+    if (typeLen(r->lvl) < typeLen(Q)) {
+        l = r;
+        r = new Reg("r11");
+        out << "pop" << r->lvl << ' ' << r << '\n';
+        r = l;
+        l = new Reg("r11");
+        mov();
+    }
+    else {
+        out << "pop" << r->lvl << ' ' << r << '\n';
+    }
+    offset -= typeLen(Q);
 }
 void CodeGen::lea() {
     out << "lea" << r->lvl << ' ' << l << ", " << r << '\n';
@@ -332,7 +369,7 @@ Value CodeGen::visit(BinaryExp* exp) {
         r = new Reg();
         r->lvl = valueToL(lhs);
 
-        if (lhs.type == Value::ID) {
+        if (lhs.ref) {
             Reg* reg = new Reg();
             reg->lvl = valueToL(lhs);
             l = new Mem(reg, 0);
@@ -342,7 +379,7 @@ Value CodeGen::visit(BinaryExp* exp) {
 
         auto rhs = exp->rhs->accept(this);
 
-        if (rhs.type == Value::ID) {
+        if (rhs.ref) {
             Reg* reg = new Reg();
             reg->lvl = valueToL(rhs);
             l = new Mem(reg, 0);
@@ -472,7 +509,8 @@ Value CodeGen::visit(Literal* exp) {
             out << label << '\n';
             out << ".string \"" << exp->value.stringValues.front() << "\"\n"; 
 
-            exp->value.type = Value::ID;
+            exp->value.type = Value::STR;
+            exp->value.ref = true;
             exp->value.stringValues.front() = label;
         }
     }
@@ -488,7 +526,7 @@ Value CodeGen::visit(Variable* exp) {
         r = new Reg();
         lea();
 
-        return Value(Value::ID, exp->name);
+        return value;
     }
     return {};
 }
@@ -693,7 +731,9 @@ Value CodeGen::visit(DecStmt* stmt) {
         Block* b = cur.top();
 
         allocated[b] += typeLen(value);
-        table->declare(stmt->id, Value(value.type, bp.top() + allocated[b]));
+        Value val = Value(value.type, bp.top() + allocated[b]);
+        val.ref = true;
+        table->declare(stmt->id, val);
 
         if (stmt->rhs) {
             auto rhs = stmt->rhs->accept(this);
@@ -761,33 +801,27 @@ Value CodeGen::visit(CompoundAssignStmt* stmt) {
         auto lhs = stmt->lhs->accept(this);
 
         L ptrLen = valueToL(lhs);
+        L typeLen = typeToL(lhs.type);
 
         // store temporarily address of lhs
         l = new Reg(ptrLen);
         r = new Reg("b", ptrLen);
         mov();
 
-        if (lhs.type == Value::ID) {
-            Reg* reg = new Reg();
-            reg->lvl = ptrLen;
+        if (lhs.ref) {
+            Reg* reg = new Reg(ptrLen);
             l = new Mem(reg, 0);
-            r = new Reg();
-            r->lvl = ptrLen;
+            r = new Reg(typeLen);
             mov();
         }
         push();
 
         auto rhs = stmt->rhs->accept(this);
-        L typeLen = typeToL(lhs.type);
 
-        if (rhs.type == Value::ID) {
-            Reg* reg = new Reg();
-            reg->lvl = typeLen;
+        if (rhs.ref) {
+            Reg* reg = new Reg(ptrLen);
             l = new Mem(reg, 0);
-
-            r = new Reg();
-            r->lvl = typeLen;
-
+            r = new Reg(typeLen);
             mov();
         }
 
@@ -795,7 +829,7 @@ Value CodeGen::visit(CompoundAssignStmt* stmt) {
         r = new Reg("c", typeLen);
         mov();
 
-        r = new Reg(ptrLen);
+        r = new Reg(typeLen);
         pop();
 
         l = new Reg("c", typeLen);
@@ -908,11 +942,11 @@ Value CodeGen::visit(PrintStmt* stmt) {
         for (auto it = stmt->args.begin(); it != stmt->args.end(); ++it, ++it2) {
             Value value = (*it)->accept(this);
 
-            L typeLen = valueToL(value);
+            L typeLen = typeToL(value.type);
 
-            if (value.type == Value::ID || value.ref) {
+            if (value.ref) {
                 reg = new Reg();
-                l = new Mem(reg, 0, typeLen);
+                l = new Mem(reg, 0);
             }
             else {
                 l = new Reg(typeLen);
@@ -1001,7 +1035,9 @@ Value CodeGen::visit(Fun* fun) {
             len += typeLen(param.type);
             offset += typeLen(param.type);
 
-            table->declare(param.id, Value(Value::ID, prevOff - len));
+            Value value = Value(param.type, prevOff - len);
+            value.ref = true;
+            table->declare(param.id, value);
         }
 
         fun->block->accept(this);
@@ -1020,7 +1056,7 @@ void CodeGen::visit(Program* program) {
     table->pushScope();
 
     for (auto [id, fun] : program->funs) {
-        Value value (Value::ID, id);
+        Value value (fun->type, id);
         value.fun = true;
 
         for (auto param : fun->params) {

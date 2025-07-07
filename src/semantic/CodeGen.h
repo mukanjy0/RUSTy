@@ -65,11 +65,17 @@ class Mem : public Operand {
     int offset {};
     string label {};
     Mem(Reg* reg, int offset, L lvl = Q) 
-    : Operand(lvl), reg(reg), offset(offset) {}
+    : Operand(lvl), reg(reg), offset(offset) {
+        if (reg->lvl != Q) throw runtime_error("nonono");
+    }
     Mem(Reg* reg, string label, L lvl = Q) 
-    : Operand(lvl), reg(reg), label(label) {}
+    : Operand(lvl), reg(reg), label(label) {
+        if (reg->lvl != Q) throw runtime_error("nonono");
+    }
     Mem(Reg* reg, int offset, string label, L lvl = Q) 
-    : Operand(lvl), reg(reg), offset(offset), label(label) {}
+    : Operand(lvl), reg(reg), offset(offset), label(label) {
+        if (reg->lvl != Q) throw runtime_error("nonono");
+    }
 public:
     ~Mem();
     void print(std::ostream &out) override;
