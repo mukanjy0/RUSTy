@@ -163,6 +163,8 @@ void CodeGen::add() {
     out << "add" << r->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::addSP(int off) {
+    if (off == 0) return;
+
     l = new Const(Value(Value::I64, off));
     r = new Reg("sp");
     out << "add" << r->lvl << ' ' << l << ", " << r << '\n';
@@ -175,6 +177,7 @@ void CodeGen::sub() {
     out << "sub" << r->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::subSP(int off) {
+    if (off == 0) return;
     l = new Const(Value(Value::I64, off));
     r = new Reg("sp");
     out << "sub" << r->lvl << ' ' << l << ", " << r << '\n';
@@ -386,19 +389,19 @@ Value CodeGen::visit(Block* block) {
 Value CodeGen::visit(BinaryExp* exp) {
     if (init) {
         auto lhs = accept(exp->lhs);
-        L typeLen = typeToL(lhs.type);
+        L lvl = typeToL(lhs.type);
         push();
 
         auto rhs = accept(exp->rhs);
-        l = new Reg(typeLen);
-        r = new Reg("c", typeLen);
+        l = new Reg(lvl);
+        r = new Reg("c", lvl);
         mov();
 
-        r = new Reg(typeLen);
+        r = new Reg(lvl);
         pop();
 
-        l = new Reg("c", typeLen);
-        r = new Reg(typeLen);
+        l = new Reg("c", lvl);
+        r = new Reg(lvl);
         switch (exp->op) {
             case BinaryExp::LAND:
                 land();
@@ -528,18 +531,25 @@ Value CodeGen::visit(FunCall* exp) {
             s.push(arg);
         }
 
+        int bytes {};
+
+        Reg* reg = new Reg("bp");
         while (!s.empty()) {
             auto arg = s.top();
             s.pop();
 
             Value value = accept(arg);
-            L typeLen = typeToL(value.type);
+            L lvl = typeToL(value.type);
+            bytes += typeLen(lvl);
 
-            r = new Reg(typeLen);
-            push();
+            l = new Reg(lvl);
+            r = new Mem(reg, bp.top() - (offset + bytes), lvl);
+            mov();
         }
 
+        subSP(bytes);
         call(exp->id);
+        addSP(bytes);
     }
     else {
         for (auto arg : exp->args) {
@@ -553,12 +563,12 @@ Value CodeGen::visit(IfExp* exp) {
     if (init) {
         string label = LIBLabel();
 
-        L typeLen = B;
+        L lvl = B;
 
         Value value = accept(exp->ifBranch->cond);
 
         l = new Const(Value(Value::BOOL, 0));
-        r = new Reg(typeLen);
+        r = new Reg(lvl);
         cmp();
 
         string nextLabel = end(label);
@@ -584,7 +594,7 @@ Value CodeGen::visit(IfExp* exp) {
             accept(br->cond);
 
             l = new Const(Value(Value::BOOL, 0));
-            r = new Reg(typeLen);
+            r = new Reg(lvl);
             cmp();
             jmp(nextLabel, EQ);
 
@@ -792,7 +802,7 @@ Value CodeGen::visit(CompoundAssignStmt* stmt) {
         auto lhs = stmt->lhs->accept(this);
 
         L ptrLen = valueToL(lhs);
-        L typeLen = typeToL(lhs.type);
+        L lvl = typeToL(lhs.type);
 
         // store temporarily address of lhs
         l = new Reg(ptrLen);
@@ -802,21 +812,21 @@ Value CodeGen::visit(CompoundAssignStmt* stmt) {
         // push value in address
         Reg* reg = new Reg(ptrLen);
         l = new Mem(reg, 0);
-        r = new Reg(typeLen);
+        r = new Reg(lvl);
         mov();
         push();
 
         auto rhs = accept(stmt->rhs);
 
-        l = new Reg(typeLen);
-        r = new Reg("c", typeLen);
+        l = new Reg(lvl);
+        r = new Reg("c", lvl);
         mov();
 
-        r = new Reg(typeLen);
+        r = new Reg(lvl);
         pop();
 
-        l = new Reg("c", typeLen);
-        r = new Reg(typeLen);
+        l = new Reg("c", lvl);
+        r = new Reg(lvl);
 
         switch (stmt->op) {
             case BinaryExp::PLUS:
@@ -836,7 +846,7 @@ Value CodeGen::visit(CompoundAssignStmt* stmt) {
         }
 
         // store result of operation in previously cached address
-        l = new Reg(typeLen);
+        l = new Reg(lvl);
         reg = new Reg("b");
         r = new Mem(reg, 0, ptrLen);
         mov();
@@ -926,9 +936,9 @@ Value CodeGen::visit(PrintStmt* stmt) {
         for (auto it = stmt->args.begin(); it != stmt->args.end(); ++it, ++it2) {
             Value value = accept(*it);
 
-            L typeLen = typeToL(value.type);
+            L lvl = typeToL(value.type);
 
-            Reg* valReg = new Reg(typeLen);
+            Reg* valReg = new Reg(lvl);
 
             if (value.type == Value::BOOL) {
                 // bool value in valReg -> convert to pointer to "true"/"false"
@@ -957,7 +967,7 @@ Value CodeGen::visit(PrintStmt* stmt) {
                 mov();
             } else {
                 l = valReg;
-                r = new Reg(*it2, typeLen);
+                r = new Reg(*it2, lvl);
                 mov();
             }
         }
