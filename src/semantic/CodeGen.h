@@ -124,9 +124,10 @@ private:
     string LCLabel();
     void LBLabel();
     void LELabel();
-    void LILabel();
+    string LIBLabel();
+    void LIBLabel2();
     void LIELabel();
-    string endI(string label);
+    string nextIf();
     void LFBLabel();
     void LFELabel();
     string end(string label);
@@ -135,7 +136,8 @@ private:
     int lb {};
     int lc {};
     int lf {};
-    int li {};
+    int lib {};
+    int lie {};
     stack<int> lbs;
     stack<int> lis;
     stack<int> bp {};
