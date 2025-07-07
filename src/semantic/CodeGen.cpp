@@ -111,7 +111,8 @@ L CodeGen::typeToL(Value::Type type) {
         case Value::I32:
         case Value::UNIT: return D;
         case Value::I64:
-        case Value::STR: return Q; // it will always be a pointer
+        case Value::ID:
+        case Value::STR: // it will always be a pointer
         default: return Q;
     }
 }
@@ -124,10 +125,11 @@ L CodeGen::valueToL(Value value) {
 
 void CodeGen::mov() {
     auto c = dynamic_cast<Const*>(l);
-    if (!c && l->lvl < r->lvl) {
+    auto m = dynamic_cast<Mem*>(r);
+    if (!c && !m && l->lvl < r->lvl) {
         return movs(); // sign-extend
     }
-    out << "mov" << r->lvl << ' ' << l << ", " << r << '\n';
+    out << "mov" << (m ? l->lvl : r->lvl) << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::movz() {
     out << "movz" << l->lvl << r->lvl << ' ' << l << ", " << r << '\n';
@@ -351,20 +353,15 @@ Value CodeGen::visit(BinaryExp* exp) {
             mov();
         }
 
-        l = new Reg();
-        l->lvl = valueToL(rhs);
-        r = new Reg("c");
-        r->lvl = valueToL(rhs);
+        l = new Reg(valueToL(rhs));
+        r = new Reg("c", valueToL(rhs));
         mov();
 
-        r = new Reg();
-        r->lvl = valueToL(lhs);
+        r = new Reg(valueToL(lhs));
         pop();
 
-        l = new Reg("c");
-        l->lvl = valueToL(lhs);
-        r = new Reg();
-        r->lvl = valueToL(rhs);
+        l = new Reg("c", valueToL(lhs));
+        r = new Reg(valueToL(rhs));
         switch (exp->op) {
             case BinaryExp::LAND:
                 land();
@@ -451,6 +448,8 @@ Value CodeGen::visit(UnaryExp* exp) {
         l = new Reg("c");
         r = new Reg();
         mov();
+
+        return Value(Value::BOOL);
     }
     else {
         exp->exp->accept(this);
@@ -460,9 +459,12 @@ Value CodeGen::visit(UnaryExp* exp) {
 
 Value CodeGen::visit(Literal* exp) {
     if (init) {
-        l = new Const(exp->value);
-        r = new Reg();
+        L lvl = valueToL(exp->value);
+        l = new Const(exp->value, lvl);
+        r = new Reg(lvl);
         mov();
+
+        return exp->value;
     }
     else {
         if (exp->value.type == Value::STR) {
@@ -703,20 +705,20 @@ Value CodeGen::visit(DecStmt* stmt) {
                 for (int i=0; i<value.size; ++i) {
                     allocated[b] += typeLen(value.type);
 
-                    r = new Reg(); r->lvl = len;
+                    r = new Reg(len);
                     pop();
 
-                    l = new Reg(); l->lvl = len;
+                    l = new Reg(len);
                     reg = new Reg("bp");
                     r = new Mem(reg, -allocated[b]); r->lvl = len;
                     mov();
                 }
             }
             else {
-                l = new Reg(); l->lvl = len;
+                l = new Reg(len);
 
                 reg = new Reg("bp");
-                r = new Mem(reg, -allocated[b]); r->lvl = len;
+                r = new Mem(reg, -allocated[b], len);
                 mov();
             }
         }
@@ -742,7 +744,7 @@ Value CodeGen::visit(AssignStmt* stmt) {
         r = new Reg("c");
         pop();
 
-        l = new Reg();
+        l = new Reg(valueToL(rhs));
         auto reg = new Reg("c");
         r = new Mem(reg, 0);
         mov();
@@ -756,6 +758,71 @@ Value CodeGen::visit(AssignStmt* stmt) {
 
 Value CodeGen::visit(CompoundAssignStmt* stmt) {
     if (init) {
+        auto lhs = stmt->lhs->accept(this);
+
+        L ptrLen = valueToL(lhs);
+
+        // store temporarily address of lhs
+        l = new Reg(ptrLen);
+        r = new Reg("b", ptrLen);
+        mov();
+
+        if (lhs.type == Value::ID) {
+            Reg* reg = new Reg();
+            reg->lvl = ptrLen;
+            l = new Mem(reg, 0);
+            r = new Reg();
+            r->lvl = ptrLen;
+            mov();
+        }
+        push();
+
+        auto rhs = stmt->rhs->accept(this);
+        L typeLen = typeToL(lhs.type);
+
+        if (rhs.type == Value::ID) {
+            Reg* reg = new Reg();
+            reg->lvl = typeLen;
+            l = new Mem(reg, 0);
+
+            r = new Reg();
+            r->lvl = typeLen;
+
+            mov();
+        }
+
+        l = new Reg(typeLen);
+        r = new Reg("c", typeLen);
+        mov();
+
+        r = new Reg(ptrLen);
+        pop();
+
+        l = new Reg("c", typeLen);
+        r = new Reg(typeLen);
+
+        switch (stmt->op) {
+            case BinaryExp::PLUS:
+                add();
+                break;
+            case BinaryExp::MINUS:
+                sub();
+                break;
+            case BinaryExp::TIMES:
+                mul();
+                break;
+            case BinaryExp::DIV:
+                div();
+                break;
+            default:
+                throw std::runtime_error("Invalid binary operation");
+        }
+
+        // store result of operation in previously cached address
+        l = new Reg(typeLen);
+        Reg* reg = new Reg("b");
+        r = new Mem(reg, 0, ptrLen);
+        mov();
     }
     return {};
 }
@@ -778,8 +845,7 @@ Value CodeGen::visit(ForStmt* stmt) {
         LBLabel();
         value = stmt->end->accept(this);
 
-        l = new Reg();
-        l->lvl = valueToL(value);
+        l = new Reg(valueToL(value));
         r = it;
         cmp();
 
@@ -842,18 +908,19 @@ Value CodeGen::visit(PrintStmt* stmt) {
         for (auto it = stmt->args.begin(); it != stmt->args.end(); ++it, ++it2) {
             Value value = (*it)->accept(this);
 
+            L typeLen = valueToL(value);
+
             if (value.type == Value::ID || value.ref) {
                 reg = new Reg();
-                l = new Mem(reg, 0);
+                l = new Mem(reg, 0, typeLen);
             }
             else {
-                l = new Reg();
-                l->lvl = valueToL(value);
+                l = new Reg(typeLen);
             }
-            r = new Reg();
+            r = new Reg(typeLen);
             mov();
 
-            l = new Reg();
+            l = new Reg(typeLen);
             r = new Reg(*it2);
             mov();
         }
@@ -898,8 +965,7 @@ Value CodeGen::visit(ReturnStmt* stmt) {
         else {
             Value value = Value(Value::UNIT, 0);
             l = new Const(value);
-            r = new Reg("a");
-            r->lvl = l->lvl;
+            r = new Reg("a", l->lvl);
             mov();
             return value;
         }

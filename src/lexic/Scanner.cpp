@@ -156,7 +156,7 @@ void Scanner::advance() {
                 increasePos();
                 current.type = Token::MINUS_ASSIGN;
             }
-            if (source[pos + 1] == '>') {
+            else if (source[pos + 1] == '>') {
                 increasePos();
                 current.type = Token::ARROW;
             }

@@ -13,6 +13,7 @@ enum C {NONE, EQ, NE, GT, LT, GE, LE};
 class Operand {
 public:
     L lvl {L::Q};
+    Operand(L lvl) : lvl(lvl) {}
     virtual ~Operand() = 0;
     virtual void print(std::ostream &out) = 0;
     friend ostream& operator<<(ostream& out, Operand* op);
@@ -22,8 +23,8 @@ class Reg : public Operand {
     friend class CodeGen;
 
     string reg {"a"};
-    Reg() {}
-    Reg(string reg) : reg(reg) {}
+    Reg(L lvl = Q) : Operand(lvl) {}
+    Reg(string reg, L lvl = Q) : Operand(lvl), reg(reg) {}
 public:
     ~Reg();
     void print(std::ostream &out) override;
@@ -33,14 +34,18 @@ class Const : public Operand {
     friend class CodeGen;
 
     Value value {};
-    Const(Value value) : value(value) {
+    Const(Value value, L lvl = Q) : Operand(lvl), value(value) {
         switch(value.type) {
             case Value::CHAR:
                 value.numericValues.push_back(
                     value.stringValues.front()[0]
                 );
+            case Value::I8:
             case Value::BOOL:
                 lvl = B;
+                break;
+            case Value::I16:
+                lvl = W;
                 break;
             case Value::I32:
                 lvl = D;
@@ -59,12 +64,12 @@ class Mem : public Operand {
     Reg* reg;
     int offset {};
     string label {};
-    Mem(Reg* reg, int offset) 
-    : reg(reg), offset(offset) {}
-    Mem(Reg* reg, string label) 
-    : reg(reg), label(label) {}
-    Mem(Reg* reg, int offset, string label) 
-    : reg(reg), offset(offset), label(label) {}
+    Mem(Reg* reg, int offset, L lvl = Q) 
+    : Operand(lvl), reg(reg), offset(offset) {}
+    Mem(Reg* reg, string label, L lvl = Q) 
+    : Operand(lvl), reg(reg), label(label) {}
+    Mem(Reg* reg, int offset, string label, L lvl = Q) 
+    : Operand(lvl), reg(reg), offset(offset), label(label) {}
 public:
     ~Mem();
     void print(std::ostream &out) override;

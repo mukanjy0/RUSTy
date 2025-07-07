@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "src/syntactic/Parser.h"
 #include "src/semantic/Printer.h"
 #include "src/semantic/NameRes.h"
@@ -44,8 +45,10 @@ int main(const int argc, char* argv[]) {
     TypeCheck typeCheck(&table);
     typeCheck.visit(program);
 
-    CodeGen codeGen(&table, std::cout);
+    std::ofstream f ("a.s");
+    CodeGen codeGen(&table, f);
     codeGen.visit(program);
+    f.close();
 
     return 0;
 }
