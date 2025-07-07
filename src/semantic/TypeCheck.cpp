@@ -39,7 +39,7 @@ void TypeCheck::assertStringRef(const Value& val, int line, int col) {
 std::string TypeCheck::typeToFormat(Value::Type type) {
     switch (type) {
         case Value::CHAR: return "%c";
-        case Value::BOOL:
+        case Value::BOOL: return "%s";
         case Value::I32:  return "%d";
         case Value::I64:  return "%ld";
         case Value::STR:  return "%s";

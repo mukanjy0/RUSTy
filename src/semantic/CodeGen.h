@@ -149,9 +149,15 @@ private:
     map<Block*, int> allocated;
     map<Block*, int> toAllocate;
 
+    // labels for boolean printing
+    std::string boolTrueLabel;
+    std::string boolFalseLabel;
+
 public:
-    CodeGen(SymbolTable* table, std::ostream& out): Visitor(table), out(out){}
-    explicit CodeGen(std::ostream& out): Visitor(nullptr), out(out){}
+    CodeGen(SymbolTable* table, std::ostream& out)
+        : Visitor(table), out(out), boolTrueLabel(), boolFalseLabel() {}
+    explicit CodeGen(std::ostream& out)
+        : Visitor(nullptr), out(out), boolTrueLabel(), boolFalseLabel() {}
     ~CodeGen() override;
     static int typeLen(L lvl);
     static int typeLen(Value value);

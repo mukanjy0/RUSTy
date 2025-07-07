@@ -187,7 +187,22 @@ void CodeGen::mul() {
     out << "imul" << r->lvl << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::div() {
-    out << 'c' << r->lvl << 't' << nextL(r->lvl) << '\n';
+    switch (r->lvl) {
+        case Q:
+            out << "cqto\n";
+            break;
+        case D:
+            out << "cdq\n";
+            break;
+        case W:
+            out << "cwd\n";
+            break;
+        case B:
+            out << "cbtw\n";
+            break;
+        default:
+            break;
+    }
     out << "idiv" << ' ' << l << '\n';
 }
 void CodeGen::land() {
@@ -250,7 +265,7 @@ void CodeGen::set(C cond) {
     out << "set" << cond << ' ' << r << '\n';
 }
 void CodeGen::cmov(C cond) {
-    out << "cmov" << cond << ' ' << l << ' ' << r << '\n';
+    out << "cmov" << cond << ' ' << l << ", " << r << '\n';
 }
 void CodeGen::call(string label) {
     out << "call " << label << "\n";
@@ -577,7 +592,7 @@ Value CodeGen::visit(IfExp* exp) {
         jmp(endLabel);
 
         if (!exp->elseIfBranches.empty() || exp->elseBranch) {
-            out << nextLabel << '\n';
+            out << nextLabel << ":\n";
             auto it = exp->elseIfBranches.begin();
             while (it != exp->elseIfBranches.end()) {
                 IfExp::IfBranch* br = *it;
@@ -595,7 +610,7 @@ Value CodeGen::visit(IfExp* exp) {
                 br->block->accept(this);
                 jmp(endLabel);
 
-                out << afterLabel << '\n';
+                out << afterLabel << ":\n";
             }
 
             if (exp->elseBranch) {
@@ -603,7 +618,7 @@ Value CodeGen::visit(IfExp* exp) {
             }
         }
 
-        out << endLabel << '\n';
+        out << endLabel << ":\n";
         return {exp->type};
     }
     else {
@@ -947,12 +962,40 @@ Value CodeGen::visit(PrintStmt* stmt) {
             else {
                 l = new Reg(typeLen);
             }
-            r = new Reg(typeLen);
+            Reg* valReg = new Reg(typeLen);
+            r = valReg;
             mov();
 
-            l = new Reg(typeLen);
-            r = new Reg(*it2);
-            mov();
+            if (value.type == Value::BOOL) {
+                // bool value in valReg -> convert to pointer to "true"/"false"
+                Reg* regTrue = new Reg("r10");
+                reg = new Reg("ip");
+                l = new Mem(reg, boolTrueLabel);
+                r = regTrue;
+                lea();
+
+                Reg* regFalse = new Reg("r11");
+                reg = new Reg("ip");
+                l = new Mem(reg, boolFalseLabel);
+                r = regFalse;
+                lea();
+
+                l = new Const(Value(Value::I64, 0));
+                r = valReg;
+                cmp();
+
+                l = regFalse;
+                r = regTrue;
+                cmov(EQ);
+
+                l = regTrue;
+                r = new Reg(*it2);
+                mov();
+            } else {
+                l = valReg;
+                r = new Reg(*it2);
+                mov();
+            }
         }
 
         int argCnt = stmt->args.size();
@@ -1050,6 +1093,15 @@ Value CodeGen::visit(Fun* fun) {
 
 void CodeGen::visit(Program* program) {
     table->pushScope();
+
+    // emit boolean string constants once
+    out << ".section .rodata\n";
+    if (boolTrueLabel.empty()) {
+        boolTrueLabel = LCLabel();
+        out << ".string \"true\"\n";
+        boolFalseLabel = LCLabel();
+        out << ".string \"false\"\n";
+    }
 
     for (auto [id, fun] : program->funs) {
         Value value (fun->type, id);
