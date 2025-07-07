@@ -188,6 +188,29 @@ public:
     Value visit(ExpStmt* stmt) override;
     Value visit(Fun* fun) override;
     void visit(Program* program) override;
+    Value accept(Block* block);
+    Value accept(BinaryExp* exp);
+    Value accept(UnaryExp* exp);
+    Value accept(Literal* exp);
+    Value accept(Variable* exp);
+    Value accept(FunCall* exp);
+    Value accept(IfExp* exp);
+    Value accept(LoopExp* exp);
+    Value accept(SubscriptExp* exp);
+    Value accept(SliceExp* exp);
+    Value accept(ReferenceExp* exp);
+    Value accept(ArrayExp* exp);
+    Value accept(UniformArrayExp* exp);
+    Value accept(DecStmt* stmt);
+    Value accept(AssignStmt* stmt);
+    Value accept(CompoundAssignStmt* stmt);
+    Value accept(ForStmt* stmt);
+    Value accept(WhileStmt* stmt);
+    Value accept(PrintStmt* stmt);
+    Value accept(BreakStmt* stmt);
+    Value accept(ReturnStmt* stmt);
+    Value accept(ExpStmt* stmt);
+    Value accept(Fun* fun);
 };
 
 #endif //RUSTY_GENCODE_H

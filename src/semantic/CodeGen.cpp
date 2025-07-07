@@ -1098,7 +1098,7 @@ Value CodeGen::visit(Fun* fun) {
             len += typeLen(param.type);
         }
 
-        fun->block->accept(this);
+        accept(fun->block);
 
         return Value(fun->type);
     }
@@ -1155,4 +1155,304 @@ void CodeGen::visit(Program* program) {
 
     table->popScope();
     out << ".section .note.GNU-stack,\"\",@progbits"<<endl;
+}
+
+Value CodeGen::accept(Block* block) {
+    Value value = block->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(BinaryExp* exp) {
+    Value value = exp->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(UnaryExp* exp) {
+    Value value = exp->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(Literal* exp) {
+    Value value = exp->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(Variable* exp) {
+    Value value = exp->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(FunCall* exp) {
+    Value value = exp->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(IfExp* exp) {
+    Value value = exp->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(LoopExp* exp) {
+    Value value = exp->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(SubscriptExp* exp) {
+    Value value = exp->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(SliceExp* exp) {
+    Value value = exp->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(ReferenceExp* exp) {
+    Value value = exp->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(ArrayExp* exp) {
+    Value value = exp->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(UniformArrayExp* exp) {
+    Value value = exp->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(DecStmt* stmt) {
+    Value value = stmt->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(AssignStmt* stmt) {
+    Value value = stmt->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(CompoundAssignStmt* stmt) {
+    Value value = stmt->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(ForStmt* stmt) {
+    Value value = stmt->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(WhileStmt* stmt) {
+    Value value = stmt->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(PrintStmt* stmt) {
+    Value value = stmt->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(BreakStmt* stmt) {
+    Value value = stmt->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(ReturnStmt* stmt) {
+    Value value = stmt->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(ExpStmt* stmt) {
+    Value value = stmt->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
+}
+Value CodeGen::accept(Fun* fun) {
+    Value value = fun->accept(this);
+
+    if (value.ref) {
+        Reg* reg = new Reg();
+        l = new Mem(reg, 0);
+        r = new Reg(typeToL(value.type));
+        mov();
+    }
+
+    value.ref = false;
+    return value;
 }
