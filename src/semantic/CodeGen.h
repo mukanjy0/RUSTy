@@ -142,8 +142,8 @@ private:
     stack<int> lis;
     stack<int> bp {};
     stack<string> labels {};
+    string curFun {};
     int offset {};
-    int prevOff {};
     bool init {};
     Operand* l;
     Operand* r;

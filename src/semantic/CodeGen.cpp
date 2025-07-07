@@ -1005,16 +1005,18 @@ Value CodeGen::visit(BreakStmt* stmt) {
 
 Value CodeGen::visit(ReturnStmt* stmt) {
     if (init) {
+        Value value;
         if (stmt->exp) {
-            return stmt->exp->accept(this);
+            value = stmt->exp->accept(this);
         }
         else {
             Value value = Value(Value::UNIT, 0);
             l = new Const(value);
             r = new Reg("a", l->lvl);
             mov();
-            return value;
         }
+        jmp(end(curFun));
+        return value;
     }
     else {
         stmt->exp->accept(this);
@@ -1094,6 +1096,8 @@ void CodeGen::visit(Program* program) {
         table->pushScope();
 
         LFBLabel();
+
+        curFun = labels.top();
 
         fun->accept(this);
 

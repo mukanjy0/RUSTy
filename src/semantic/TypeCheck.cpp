@@ -403,7 +403,7 @@ Value TypeCheck::visit(ReturnStmt* stmt) {
     if (stmt->exp) r = stmt->exp->accept(this);
     assertType(r.type, currentReturnType, stmt->line, stmt->col);
     stmt->type = r.type;
-    return r;
+    return {Value::UNIT};
 }
 
 Value TypeCheck::visit(ExpStmt* stmt) {
@@ -423,8 +423,7 @@ Value TypeCheck::visit(Fun* fun) {
         declare(p.id, paramVal);
     }
     Value r = fun->block->accept(this);
-    if (fun->type == Value::UNDEFINED)
-        fun->type = r.type;
+    fun->type = currentReturnType;
     table->popScope();
     ++blockDepth;
     return {Value::UNIT};
