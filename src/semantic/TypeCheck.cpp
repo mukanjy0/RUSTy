@@ -1,6 +1,18 @@
 #include "TypeCheck.h"
 #include <ranges>
 
+static bool isNumeric(Value::Type type) {
+    return type == Value::I8 || type == Value::I16 ||
+           type == Value::I32 || type == Value::I64;
+}
+
+static Value::Type promoteNumeric(Value::Type a, Value::Type b) {
+    if (a == Value::I64 || b == Value::I64) return Value::I64;
+    if (a == Value::I32 || b == Value::I32) return Value::I32;
+    if (a == Value::I16 || b == Value::I16) return Value::I16;
+    return Value::I8;
+}
+
 
 Value TypeCheck::lookup(const std::string& id) const {
     return *table->lookup(id);
@@ -76,21 +88,25 @@ Value TypeCheck::visit(BinaryExp* exp) {
             break;
         case BinaryExp::GT: case BinaryExp::LT:
         case BinaryExp::GE: case BinaryExp::LE:
-            assertType(lhs.type, Value::I32, exp->line, exp->col);
-            assertType(rhs.type, Value::I32, exp->line, exp->col);
+            if (!lhs.isNumber() || !rhs.isNumber())
+                throw std::runtime_error("Invalid binary operation");
             exp->type = Value::BOOL;
             break;
         case BinaryExp::EQ: case BinaryExp::NEQ:
-            assertType(lhs.type, rhs.type, exp->line, exp->col);
-            if (lhs.type != Value::I32 && lhs.type != Value::BOOL)
+            if (lhs.type != rhs.type) {
+                if (!(lhs.isNumber() && rhs.isNumber()))
+                    assertType(lhs.type, rhs.type, exp->line, exp->col);
+            }
+            if (!(lhs.isNumber() && rhs.isNumber()) &&
+                lhs.type != Value::I32 && lhs.type != Value::BOOL)
                 throw std::runtime_error("Invalid binary operation");
             exp->type = Value::BOOL;
             break;
         case BinaryExp::PLUS: case BinaryExp::MINUS:
         case BinaryExp::TIMES: case BinaryExp::DIV:
-            assertType(lhs.type, Value::I32, exp->line, exp->col);
-            assertType(rhs.type, Value::I32, exp->line, exp->col);
-            exp->type = Value::I32;
+            if (!lhs.isNumber() || !rhs.isNumber())
+                throw std::runtime_error("Invalid binary operation");
+            exp->type = promoteNumeric(lhs.type, rhs.type);
             break;
         default:
             throw std::runtime_error("Invalid binary operation");
@@ -314,8 +330,8 @@ Value TypeCheck::visit(CompoundAssignStmt* stmt) {
     Value lhs = stmt->lhs->accept(this);
     Value rhs = stmt->rhs->accept(this);
     assertMut(lhs, stmt->line, stmt->col);
-    assertType(lhs.type, Value::I32, stmt->line, stmt->col);
-    assertType(rhs.type, Value::I32, stmt->line, stmt->col);
+    if (!lhs.isNumber() || !rhs.isNumber())
+        throw std::runtime_error("Invalid compound assignment");
     return {Value::UNIT};
 }
 
