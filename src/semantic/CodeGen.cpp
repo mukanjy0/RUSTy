@@ -196,6 +196,9 @@ void CodeGen::land() {
 void CodeGen::lor() {
     out << "or" << r->lvl << ' ' << l << ", " << r << '\n';
 }
+void CodeGen::bnot() {
+    out << "not" << r->lvl << ' ' << r << '\n';
+}
 void CodeGen::push() {
     if (typeLen(r->lvl) < typeLen(Q)) {
         l = r;
@@ -403,38 +406,32 @@ Value CodeGen::visit(BinaryExp* exp) {
                 return Value(Value::BOOL);
             case BinaryExp::GT:
                 cmp();
-                r = new Reg();
-                r->lvl = B;
+                r = new Reg(B);
                 set(GT);
                 return Value(Value::BOOL);
             case BinaryExp::LT:
                 cmp();
-                r = new Reg();
-                r->lvl = B;
+                r = new Reg(B);
                 set(LT);
                 return Value(Value::BOOL);
             case BinaryExp::GE:
                 cmp();
-                r = new Reg();
-                r->lvl = B;
+                r = new Reg(B);
                 set(GE);
                 return Value(Value::BOOL);
             case BinaryExp::LE:
                 cmp();
-                r = new Reg();
-                r->lvl = B;
+                r = new Reg(B);
                 set(LE);
                 return Value(Value::BOOL);
             case BinaryExp::EQ:
                 cmp();
-                r = new Reg();
-                r->lvl = B;
+                r = new Reg(B);
                 set(EQ);
                 return Value(Value::BOOL);
             case BinaryExp::NEQ:
                 cmp();
-                r = new Reg();
-                r->lvl = B;
+                r = new Reg(B);
                 set(NE);
                 return Value(Value::BOOL);
             case BinaryExp::PLUS:
@@ -463,23 +460,27 @@ Value CodeGen::visit(BinaryExp* exp) {
 
 Value CodeGen::visit(UnaryExp* exp) {
     if (init) {
-        exp->exp->accept(this);
+        Value value = exp->exp->accept(this);
 
-        l = new Reg();
-        r = new Reg("c");
-        mov();
+        L typeLen = typeToL(value.type);
+
+        if (value.ref) {
+            Reg* reg = new Reg();
+            l = new Mem(reg, 0);
+            r = new Reg(typeLen);
+            mov();
+        }
 
         switch (exp->op) {
             case UnaryExp::LNOT:
-                out << " notq %rcx\n";
+                l = new Const(Value(Value::BOOL, 0));
+                r = new Reg(B);
+                cmp();
+                set(EQ);
                 break;
             default:
                 throw std::runtime_error("Invalid unary operation");
         }
-
-        l = new Reg("c");
-        r = new Reg();
-        mov();
 
         return Value(Value::BOOL);
     }

@@ -103,6 +103,8 @@ private:
     void div();
     void land();
     void lor();
+    void lnot();
+    void bnot();
     // stack
     void push();
     void pop();
