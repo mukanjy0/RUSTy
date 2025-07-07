@@ -366,13 +366,12 @@ Value CodeGen::visit(BinaryExp* exp) {
     if (init) {
         auto lhs = exp->lhs->accept(this);
 
-        r = new Reg();
-        r->lvl = valueToL(lhs);
+        L typeLen = typeToL(lhs.type);
 
         if (lhs.ref) {
             Reg* reg = new Reg();
-            reg->lvl = valueToL(lhs);
             l = new Mem(reg, 0);
+            r = new Reg(typeLen);
             mov();
         }
         push();
@@ -381,24 +380,20 @@ Value CodeGen::visit(BinaryExp* exp) {
 
         if (rhs.ref) {
             Reg* reg = new Reg();
-            reg->lvl = valueToL(rhs);
             l = new Mem(reg, 0);
-
-            r = new Reg();
-            r->lvl = valueToL(rhs);
-
+            r = new Reg(typeLen);
             mov();
         }
 
-        l = new Reg(valueToL(rhs));
-        r = new Reg("c", valueToL(rhs));
+        l = new Reg(typeLen);
+        r = new Reg("c", typeLen);
         mov();
 
-        r = new Reg(valueToL(lhs));
+        r = new Reg(typeLen);
         pop();
 
-        l = new Reg("c", valueToL(lhs));
-        r = new Reg(valueToL(rhs));
+        l = new Reg("c", typeLen);
+        r = new Reg(typeLen);
         switch (exp->op) {
             case BinaryExp::LAND:
                 land();

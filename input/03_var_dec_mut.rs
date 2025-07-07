@@ -8,7 +8,7 @@ fn main() {
     z += 5;
     z *= y;
 //     z /= 2;
-//     y -= z;
+    y -= z;
     println!("{}",z);
     println!("{}",y);
 }
