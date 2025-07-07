@@ -283,11 +283,12 @@ void CodeGen::enter() {
 
     bp.push(offset);
 }
-void CodeGen::leave() {
+void CodeGen::leave(bool early) {
     out << "leave\n";
-    offset -= typeLen(Q);
-
-    bp.pop();
+    if (!early) {
+        offset -= typeLen(Q);
+        bp.pop();
+    }
 }
 void CodeGen::ret() {
     out << "ret\n";
@@ -1014,6 +1015,9 @@ Value CodeGen::visit(ReturnStmt* stmt) {
             l = new Const(value);
             r = new Reg("a", l->lvl);
             mov();
+        }
+        for (int i=0; i<bp.size(); ++i) {
+            leave(true);
         }
         jmp(end(curFun));
         return value;

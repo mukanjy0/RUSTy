@@ -118,7 +118,7 @@ private:
     void cmov(C=NONE);
     void call(string label);
     void enter();
-    void leave();
+    void leave(bool early=false);
     void ret();
 
     string LCLabel();
