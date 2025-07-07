@@ -177,7 +177,9 @@ Value NameRes::visit(ExpStmt* stmt) {
 Value NameRes::visit(Fun* fun) {
     table->pushScope();
     for (auto& param : fun->params) {
-        Value val; val.type=param.type;
+        Value val;
+        val.type = param.type;
+        val.initialized = true; // parameters are initialized when the function is called
         declare(param.id, val, param.line, param.col);
     }
     fun->block->accept(this);

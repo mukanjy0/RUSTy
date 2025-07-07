@@ -418,7 +418,9 @@ Value TypeCheck::visit(Fun* fun) {
     table->pushScope();
     currentReturnType = fun->type != Value::UNDEFINED ? fun->type : Value::UNIT;
     for (const auto& p : fun->params) {
-        declare(p.id, Value{p.type});
+        Value paramVal{p.type};
+        paramVal.initialized = true; // parameters are always initialized
+        declare(p.id, paramVal);
     }
     Value r = fun->block->accept(this);
     if (fun->type == Value::UNDEFINED)
