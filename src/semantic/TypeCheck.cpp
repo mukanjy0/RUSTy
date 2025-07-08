@@ -114,7 +114,9 @@ Value TypeCheck::visit(BinaryExp* exp) {
         default:
             throw std::runtime_error("Invalid binary operation");
     }
-    return {exp->type};
+    Value val (exp->type);
+    if (lhs.literal && rhs.literal) val.literal = true;
+    return val;
 
 }
 
@@ -128,7 +130,7 @@ Value TypeCheck::visit(UnaryExp* exp) {
         default:
             throw std::runtime_error("Invalid unary operation");
     }
-    return {exp->type};
+    return v;
 }
 
 Value TypeCheck::visit(Literal* exp) {

@@ -835,7 +835,7 @@ Value CodeGen::visit(DecStmt* stmt) {
     else {
         toAllocate[curFun] += typeLen(stmt->var);
         if (stmt->var.type == Value::STR) {
-            stmt->rhs->accept(this);
+            if (stmt->rhs) stmt->rhs->accept(this);
         }
         return {};
     }
