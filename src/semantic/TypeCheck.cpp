@@ -33,11 +33,16 @@ void TypeCheck::assertMut(const Value& val, int line, int col) {
     }
 }
 
-void TypeCheck::assertType(Value::Type from, Value::Type to, int line, int col) {
-    if (from != to) {
-        throw std::runtime_error("type mismatch at " + std::to_string(line) +
-                                 ':' + std::to_string(col));
+Value::Type TypeCheck::assertType(Value::Type from, Value::Type to, int line, int col) {
+    if (from == to)
+        return to;
+    if (isNumeric(from) && isNumeric(to)) {
+        Value::Type promoted = promoteNumeric(from, to);
+        if (promoted == to)
+            return to;
     }
+    throw std::runtime_error("type mismatch at " + std::to_string(line) + ':' +
+                             std::to_string(col));
 }
 
 void TypeCheck::assertStringRef(const Value& val, int line, int col) {
@@ -106,7 +111,7 @@ Value TypeCheck::visit(BinaryExp* exp) {
         case BinaryExp::TIMES: case BinaryExp::DIV:
             if (!lhs.isNumber() || !rhs.isNumber())
                 throw std::runtime_error("Invalid binary operation");
-            exp->type = promoteNumeric(lhs.type, rhs.type);
+            exp->type = assertType(lhs.type, rhs.type, exp->line, exp->col);
             break;
         default:
             throw std::runtime_error("Invalid binary operation");
@@ -286,7 +291,7 @@ Value TypeCheck::visit(DecStmt* stmt) {
         rhs = stmt->rhs->accept(this);
         if (stmt->var.type == Value::UNDEFINED)
             stmt->var.type = rhs.type;
-        assertType(rhs.type, stmt->var.type, stmt->line, stmt->col);
+        stmt->var.type = assertType(rhs.type, stmt->var.type, stmt->line, stmt->col);
         if (stmt->var.type == Value::STR)
             assertStringRef(rhs, stmt->line, stmt->col);
         stmt->var.initialized = true;
