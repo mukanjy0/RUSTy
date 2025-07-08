@@ -8,9 +8,9 @@ static bool isNumeric(Value::Type type) {
 
 static Value::Type promoteNumeric(Value::Type a, Value::Type b) {
     if (a == Value::I64 || b == Value::I64) return Value::I64;
-    if (a == Value::I32 || b == Value::I32) return Value::I32;
     if (a == Value::I16 || b == Value::I16) return Value::I16;
-    return Value::I8;
+    if (a == Value::I8 || b == Value::I8) return Value::I8;
+    return Value::I32;
 }
 
 
@@ -33,13 +33,11 @@ void TypeCheck::assertMut(const Value& val, int line, int col) {
     }
 }
 
-Value::Type TypeCheck::assertType(Value::Type from, Value::Type to, int line, int col) {
-    if (from == to)
-        return to;
-    if (isNumeric(from) && isNumeric(to)) {
-        Value::Type promoted = promoteNumeric(from, to);
-        if (promoted == to)
-            return to;
+Value TypeCheck::assertType(Value from, Value to, int line, int col) {
+    if (from.type == to.type) return to;
+    if (isNumeric(from.type) && isNumeric(to.type)
+        && (from.ref ^ to.ref)) {
+        return promoteNumeric(from.type, to.type);
     }
     throw std::runtime_error("type mismatch at " + std::to_string(line) + ':' +
                              std::to_string(col));
@@ -87,8 +85,8 @@ Value TypeCheck::visit(BinaryExp* exp) {
     switch (exp->op) {
         case BinaryExp::LAND:
         case BinaryExp::LOR:
-            assertType(lhs.type, Value::BOOL, exp->line, exp->col);
-            assertType(rhs.type, Value::BOOL, exp->line, exp->col);
+            assertType(lhs, Value::BOOL, exp->line, exp->col);
+            assertType(rhs, Value::BOOL, exp->line, exp->col);
             exp->type = Value::BOOL;
             break;
         case BinaryExp::GT: case BinaryExp::LT:
@@ -100,7 +98,7 @@ Value TypeCheck::visit(BinaryExp* exp) {
         case BinaryExp::EQ: case BinaryExp::NEQ:
             if (lhs.type != rhs.type) {
                 if (!(lhs.isNumber() && rhs.isNumber()))
-                    assertType(lhs.type, rhs.type, exp->line, exp->col);
+                    assertType(lhs, rhs, exp->line, exp->col);
             }
             if (!(lhs.isNumber() && rhs.isNumber()) &&
                 lhs.type != Value::I32 && lhs.type != Value::BOOL)
@@ -111,7 +109,7 @@ Value TypeCheck::visit(BinaryExp* exp) {
         case BinaryExp::TIMES: case BinaryExp::DIV:
             if (!lhs.isNumber() || !rhs.isNumber())
                 throw std::runtime_error("Invalid binary operation");
-            exp->type = assertType(lhs.type, rhs.type, exp->line, exp->col);
+            exp->type = assertType(lhs, rhs, exp->line, exp->col).type;
             break;
         default:
             throw std::runtime_error("Invalid binary operation");
@@ -124,7 +122,7 @@ Value TypeCheck::visit(UnaryExp* exp) {
     Value v = exp->exp->accept(this);
     switch (exp->op) {
         case UnaryExp::LNOT:
-            assertType(v.type, Value::BOOL, exp->line, exp->col);
+            assertType(v, Value::BOOL, exp->line, exp->col);
             exp->type = Value::BOOL;
             break;
         default:
@@ -149,6 +147,7 @@ Value TypeCheck::visit(Variable* exp) {
         lhsIsVariable = true;
     }
     exp->type = v.type;
+    v.ref = true;
     return v;
 }
 
@@ -165,7 +164,7 @@ Value TypeCheck::visit(FunCall* exp) {
     auto it = fn.types.begin();
     for (auto arg : exp->args) {
         Value a = arg->accept(this);
-        assertType(a.type, *it, arg->line, arg->col);
+        assertType(a, *it, arg->line, arg->col);
         ++it;
     }
     exp->type = fn.type;
@@ -175,18 +174,18 @@ Value TypeCheck::visit(FunCall* exp) {
 Value TypeCheck::visit(IfExp* exp) {
     Value cond = exp->ifBranch->getCondition()->accept(this);
     Exp* condex = exp->ifBranch->getCondition();
-    assertType(cond.type, Value::BOOL, condex->line, condex->col);
+    assertType(cond, Value::BOOL, condex->line, condex->col);
     Value t = exp->ifBranch->getBlock()->accept(this);
     Value e = {Value::UNIT};
     for (auto br : exp->elseIfBranches) {
         Value c = br->getCondition()->accept(this);
         Exp* cex = br->getCondition();
-        assertType(c.type, Value::BOOL, cex->line, cex->col);
+        assertType(c, Value::BOOL, cex->line, cex->col);
         e = br->getBlock()->accept(this);
     }
     if (exp->elseBranch)
         e = exp->elseBranch->getBlock()->accept(this);
-    assertType(t.type, e.type, exp->line, exp->col);
+    assertType(t, e, exp->line, exp->col);
     exp->type = t.type;
     return {exp->type};
 }
@@ -201,7 +200,7 @@ Value TypeCheck::visit(SubscriptExp* exp) {
     Value* entry = table->lookup(exp->id);
     Value coll = *entry;
     Value idx = exp->exp->accept(this);
-    assertType(idx.type, Value::I32, exp->line, exp->col);
+    assertType(idx, Value::I32, exp->line, exp->col);
     if (!(coll.type == Value::STR || coll.size > 0))
         throw std::runtime_error("subscript on non-indexable at " +
                                  std::to_string(exp->line) + ':' +
@@ -219,12 +218,12 @@ Value TypeCheck::visit(SliceExp* exp) {
     if (exp->start) {
         Value s = exp->start->accept(this);
         Exp* ex = exp->start;
-        assertType(s.type, Value::I32, ex->line, ex->col);
+        assertType(s, Value::I32, ex->line, ex->col);
     }
     if (exp->end) {
         Value e = exp->end->accept(this);
         Exp* ex = exp->end;
-        assertType(e.type, Value::I32, ex->line, ex->col);
+        assertType(e, Value::I32, ex->line, ex->col);
     }
     exp->type = Value::STR;
     return {exp->type};
@@ -245,7 +244,7 @@ Value TypeCheck::visit(ArrayExp* exp) {
         if (elType == Value::UNDEFINED)
             elType = v.type;
         else
-            assertType(v.type, elType, el->line, el->col);
+            assertType(v, elType, el->line, el->col);
         ref = ref && v.ref;
     }
     exp->type = elType;
@@ -260,7 +259,7 @@ Value TypeCheck::visit(UniformArrayExp* exp) {
     assertStringRef(v, exp->line, exp->col);
     Value s = exp->size->accept(this);
     Exp* size = exp->size;
-    assertType(s.type, Value::I32, size->line, size->col);
+    assertType(s, Value::I32, size->line, size->col);
     if (s.numericValues.empty()) {
         throw std::runtime_error("array size must be constant at " +
                                  std::to_string(size->line) + ':' +
@@ -287,11 +286,12 @@ Value TypeCheck::visit(DecStmt* stmt) {
                                  std::to_string(stmt->line) + ':' +
                                  std::to_string(stmt->col));
     Value rhs{stmt->var.type};
+    stmt->var.ref = true;
     if (stmt->rhs) {
         rhs = stmt->rhs->accept(this);
         if (stmt->var.type == Value::UNDEFINED)
             stmt->var.type = rhs.type;
-        stmt->var.type = assertType(rhs.type, stmt->var.type, stmt->line, stmt->col);
+        stmt->var.type = assertType(rhs, stmt->var, stmt->line, stmt->col).type;
         if (stmt->var.type == Value::STR)
             assertStringRef(rhs, stmt->line, stmt->col);
         stmt->var.initialized = true;
@@ -320,13 +320,13 @@ Value TypeCheck::visit(AssignStmt* stmt) {
             lhsEntry->initialized = true;
         } else {
             assertMut(*lhsEntry, stmt->line, stmt->col);
-            assertType(rhs.type, lhsEntry->type, stmt->line, stmt->col);
+            assertType(rhs, *lhsEntry, stmt->line, stmt->col);
             if (lhsEntry->type == Value::STR)
                 assertStringRef(*lhsEntry, stmt->line, stmt->col);
         }
     } else {
         assertMut(lhs, stmt->line, stmt->col);
-        assertType(rhs.type, lhs.type, stmt->line, stmt->col);
+        assertType(rhs, lhs, stmt->line, stmt->col);
     }
     return {Value::UNIT};
 }
@@ -356,7 +356,7 @@ Value TypeCheck::visit(ForStmt* stmt) {
 Value TypeCheck::visit(WhileStmt* stmt) {
     Value c = stmt->cond->accept(this);
     Exp* cond = stmt->cond;
-    assertType(c.type, Value::BOOL, cond->line, cond->col);
+    assertType(c, Value::BOOL, cond->line, cond->col);
     table->pushScope();
     stmt->block->accept(this);
     table->popScope();
@@ -422,7 +422,7 @@ Value TypeCheck::visit(ReturnStmt* stmt) {
                                  std::to_string(stmt->col));
     Value r{Value::UNIT};
     if (stmt->exp) r = stmt->exp->accept(this);
-    assertType(r.type, currentReturnType, stmt->line, stmt->col);
+    assertType(r, currentReturnType, stmt->line, stmt->col);
     stmt->type = r.type;
     return {Value::UNIT};
 }
