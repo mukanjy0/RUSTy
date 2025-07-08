@@ -5,7 +5,7 @@ import tempfile
 import os
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
-
+from typing import Tuple, List, Dict, Optional
 app = FastAPI()
 
 app.add_middleware(
@@ -19,100 +19,149 @@ app.add_middleware(
 class RustCode(BaseModel):
     code: str
 
+def run_command(cmd: List[str], timeout: int = 60) -> Tuple[str, Optional[str]]:
+    """Run a command with a timeout and capture stdout/stderr.
+
+    Returns a tuple (stdout, error). If error is None the command succeeded.
+    """
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        if result.returncode == 0:
+            return result.stdout, None
+        if result.returncode == 139:
+            return result.stdout, "Segmentation fault"
+        error_msg = result.stderr.strip() or f"Exited with code {result.returncode}"
+        return result.stdout, error_msg
+    except subprocess.TimeoutExpired:
+        return "", "Timeout"
+
 @app.post("/compile")
 async def compile_rust(rust_code: RustCode):
-    try:
-        # -------------------------------
-        # Step 1: Write Rust source to a temp file
-        # -------------------------------
-        Path("input").mkdir(parents=True, exist_ok=True)
-        Path("input/ass").mkdir(parents=True, exist_ok=True)
+    """Compile a single Rust source snippet using RUSTy and rustc for comparison."""
+    Path("input").mkdir(parents=True, exist_ok=True)
+    Path("input/ass").mkdir(parents=True, exist_ok=True)
 
-        with tempfile.NamedTemporaryFile(suffix=".rs", delete=False) as rust_file:
-            rust_file.write(rust_code.code.encode("utf-8"))
-            rust_file_path = rust_file.name
+    with tempfile.NamedTemporaryFile(suffix=".rs", delete=False) as rust_file:
+        rust_file.write(rust_code.code.encode("utf-8"))
+        rust_file_path = rust_file.name
 
-        asm_file_path = os.path.join("input/ass", os.path.basename(rust_file_path).replace(".rs", ".s"))
+    asm_file_path = os.path.join("input/ass", os.path.basename(rust_file_path).replace(".rs", ".s"))
 
-        # -------------------------------
-        # Step 2: Compile the C++ backend (RUSTy)
-        # -------------------------------
-        cpp_dir = Path("src")
-        cpp_source_files = [str(file) for file in cpp_dir.rglob("*.cpp")]
-        cpp_source_files.append("main.cpp")
-        compile_cmd = ["g++", "-std=c++20"] + cpp_source_files + ["-o", "main"]
+    # Compile RUSTy backend
+    cpp_dir = Path("src")
+    cpp_source_files = [str(file) for file in cpp_dir.rglob("*.cpp")]
+    cpp_source_files.append("main.cpp")
+    compile_cmd = ["g++", "-std=c++20"] + cpp_source_files + ["-o", "main"]
 
-        print("[1] Compiling RUSTy backend...")
-        rusty_compile = subprocess.run(compile_cmd, capture_output=True, text=True)
+    _, error = run_command(compile_cmd)
+    if error:
+        return {"success": False, "error": f"Backend compile error: {error}"}
 
-        if rusty_compile.returncode != 0:
-            print("\033[91mError: Failed to compile RUSTy backend\033[0m")
-            print(rusty_compile.stderr)
-            raise HTTPException(status_code=500, detail="Failed to compile RUSTy backend")
+    # Run RUSTy
+    _, error = run_command(["./main", rust_file_path])
+    if error:
+        return {"success": False, "error": f"RUSTy execution error: {error}"}
 
-        # -------------------------------
-        # Step 3: Run RUSTy on the Rust file
-        # -------------------------------
-        print("[2] Running RUSTy...")
-        rusty_result = subprocess.run(["./main", rust_file_path], capture_output=True, text=True)
+    # Compile generated assembly
+    _, error = run_command(["g++", asm_file_path, "-o", "main_asm"])
+    if error:
+        return {"success": False, "error": f"Asm compile error: {error}"}
 
-        if rusty_result.returncode != 0:
-            print("\033[91mError: RUSTy execution failed\033[0m")
-            print(rusty_result.stderr)
-            raise HTTPException(status_code=500, detail="RUSTy execution failed")
+    # Execute assembly
+    rusty_output, error = run_command(["./main_asm"])
+    if error:
+        return {"success": False, "error": f"Asm run error: {error}"}
 
-        print("\033[92m[2] RUSTy execution complete\033[0m")
+    # Compile with rustc for comparison
+    _, error = run_command(["rustc", rust_file_path, "-o", "main_rust"])
+    if error:
+        return {"success": False, "error": f"rustc compile error: {error}"}
 
-        # -------------------------------
-        # Step 4: Compile generated assembly
-        # -------------------------------
-        print("[3] Compiling generated assembly...")
-        compile_asm_cmd = ["g++", asm_file_path, "-o", "main_asm"]
-        asm_compile = subprocess.run(compile_asm_cmd, capture_output=True, text=True)
+    rust_output, error = run_command(["./main_rust"])
+    if error:
+        return {"success": False, "error": f"rustc run error: {error}"}
 
-        if asm_compile.returncode != 0:
-            print("\033[91mError: Assembly compilation failed\033[0m")
-            print(asm_compile.stderr)
-            raise HTTPException(status_code=500, detail="Assembly compilation failed")
+    with open(asm_file_path, "r") as asm_file:
+        assembly_code = asm_file.read()
 
-        print("\033[92m[3] Assembly compilation complete\033[0m")
+    for f in [rust_file_path, asm_file_path, "main", "main_asm", "main_rust"]:
+        try:
+            os.remove(f)
+        except OSError:
+            pass
 
-        # -------------------------------
-        # Step 5: Run the compiled assembly
-        # -------------------------------
-        print("[4] Executing assembly...")
-        asm_execution = subprocess.run(["./main_asm"], capture_output=True, text=True)
+    return {
+        "output": rusty_output,
+        "rust_output": rust_output,
+        "assembly": assembly_code,
+        "success": True,
+        "match": rusty_output == rust_output,
+    }
 
-        if asm_execution.returncode != 0:
-            print("\033[91mError: Assembly execution failed\033[0m")
-            print(asm_execution.stderr)
-            raise HTTPException(status_code=500, detail="Assembly execution failed")
 
-        print("\033[92m[4] Assembly execution complete\033[0m")
+@app.get("/run-tests")
+async def run_tests() -> Dict[str, List[Dict[str, str]]]:
+    """Run all test files in the input directory and compare outputs."""
+    Path("input/ass").mkdir(parents=True, exist_ok=True)
 
-        # -------------------------------
-        # Step 6: Read assembly code for return
-        # -------------------------------
-        with open(asm_file_path, "r") as asm_file:
-            assembly_code = asm_file.read()
+    cpp_dir = Path("src")
+    cpp_source_files = [str(file) for file in cpp_dir.rglob("*.cpp")]
+    cpp_source_files.append("main.cpp")
+    compile_cmd = ["g++", "-std=c++20"] + cpp_source_files + ["-o", "main"]
 
-        # -------------------------------
-        # Step 7: Clean up temporary files
-        # -------------------------------
-        for f in [rust_file_path, asm_file_path, "main", "main_asm"]:
+    _, error = run_command(compile_cmd)
+    if error:
+        return {"results": [], "error": f"Backend compile error: {error}"}
+
+    results: List[Dict[str, str]] = []
+    for file in Path("input").glob("*.rs"):
+        asm_file = Path("input/ass") / f"{file.stem}.s"
+        test_result: Dict[str, str] = {"file": file.name}
+
+        _, err = run_command(["./main", str(file)])
+        if err:
+            test_result["error"] = f"RUSTy execution error: {err}"
+            results.append(test_result)
+            continue
+
+        _, err = run_command(["g++", str(asm_file), "-o", "main_asm"])
+        if err:
+            test_result["error"] = f"Asm compile error: {err}"
+            results.append(test_result)
+            continue
+
+        rusty_out, err = run_command(["./main_asm"])
+        if err:
+            test_result["error"] = f"Asm run error: {err}"
+            results.append(test_result)
+            continue
+
+        _, err = run_command(["rustc", str(file), "-o", "main_rust"])
+        if err:
+            test_result["error"] = f"rustc compile error: {err}"
+            results.append(test_result)
+            continue
+
+        rust_out, err = run_command(["./main_rust"])
+        if err:
+            test_result["error"] = f"rustc run error: {err}"
+            results.append(test_result)
+            continue
+
+        test_result["rust_output"] = rust_out
+        test_result["rusty_output"] = rusty_out
+        test_result["success"] = str(rust_out == rusty_out)
+        results.append(test_result)
+
+        for f in [asm_file, "main_asm", "main_rust"]:
             try:
                 os.remove(f)
             except OSError:
-                pass  # Ignore if file was already removed
+                pass
 
-        # -------------------------------
-        # Step 8: Return results
-        # -------------------------------
-        return {
-            "output": asm_execution.stdout,
-            "assembly": assembly_code,
-            "success": True
-        }
+    try:
+        os.remove("main")
+    except OSError:
+        pass
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    return {"results": results}
