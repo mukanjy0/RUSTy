@@ -1,5 +1,5 @@
 fn main(){
-    let x: i32;
+    let x: i16;
     x = 10;
     println!("{}", x);
     let ab123: i32 = 20;

@@ -1067,11 +1067,11 @@ Value CodeGen::visit(PrintStmt* stmt) {
                 cmov(EQ);
 
                 l = regTrue;
-                r = new Reg(*it2, Q);
+                r = new Reg(*it2);
                 mov();
             } else {
                 l = valReg;
-                r = new Reg(*it2, lvl);
+                r = new Reg(*it2);
                 mov();
             }
         }
