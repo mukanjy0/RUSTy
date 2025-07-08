@@ -15,6 +15,7 @@ export default function CompilerPage() {
   const [showAssembly, setShowAssembly] = useState(false)
   const [hasCompiledCode, setHasCompiledCode] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
+  const [abortCtrl, setAbortCtrl] = useState<AbortController | null>(null)
 
   // const highlightSyntax = (code: string) => {
   //   return code
@@ -35,10 +36,12 @@ export default function CompilerPage() {
     setIsLoading(true)
     setHasCompiledCode(false)
     setShowAssembly(false)
+    const controller = new AbortController()
+    setAbortCtrl(controller)
+    const timeout = setTimeout(() => controller.abort(), 60000)
 
     try {
-
-      const response = await postCode({code});
+      const response = await postCode({ code, signal: controller.signal });
 
       if (!response.success) {
         throw new Error("Compilation failed")
@@ -47,12 +50,19 @@ export default function CompilerPage() {
       setOutput(response.output || "Program executed successfully")
       setAssemblyCode(response.assembly || "Assembly code not available")
       setHasCompiledCode(true)
-    } catch (error) {
-      setOutput(`Error: ${error instanceof Error ? error.message : "Unknown error occurred"}`)
+    } catch (error: any) {
+      if (error?.code === "ERR_CANCELED") {
+        setOutput("Execution cancelled")
+      } else {
+        setOutput(`Error: ${error instanceof Error ? error.message : "Unknown error occurred"}`)
+      }
       setAssemblyCode("")
       setHasCompiledCode(false)
     } finally {
-    setIsLoading(false)
+      clearTimeout(timeout)
+      setAbortCtrl(null)
+      setIsLoading(false)
+    }
   }
 
   const handleRunTests = async () => {
@@ -60,13 +70,22 @@ export default function CompilerPage() {
     setShowAssembly(false)
     setHasCompiledCode(false)
     setOutput("")
+    const controller = new AbortController()
+    setAbortCtrl(controller)
+    const timeout = setTimeout(() => controller.abort(), 60000)
     try {
-      const response = await runTests()
+      const response = await runTests(controller.signal)
       setOutput(JSON.stringify(response, null, 2))
       setHasCompiledCode(true)
-    } catch (error) {
-      setOutput(`Error: ${error instanceof Error ? error.message : "Unknown error occurred"}`)
+    } catch (error: any) {
+      if (error?.code === "ERR_CANCELED") {
+        setOutput("Execution cancelled")
+      } else {
+        setOutput(`Error: ${error instanceof Error ? error.message : "Unknown error occurred"}`)
+      }
     } finally {
+      clearTimeout(timeout)
+      setAbortCtrl(null)
       setIsTesting(false)
     }
   }
@@ -155,6 +174,14 @@ export default function CompilerPage() {
                   "Run Tests"
                 )}
               </Button>
+              {abortCtrl && (
+                <Button
+                  onClick={() => abortCtrl.abort()}
+                  className="mt-4 ml-4 bg-red-600 hover:bg-red-700 text-black font-semibold"
+                >
+                  Stop
+                </Button>
+              )}
             </CardContent>
           </Card>
 
