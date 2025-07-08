@@ -967,7 +967,6 @@ Value CodeGen::visit(ForStmt* stmt) {
         jmp(labels.top());
 
         LELabel();
-        addSP(typeLen(lvl));
 
         table->popScope();
 
