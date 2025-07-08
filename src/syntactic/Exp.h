@@ -67,6 +67,7 @@ struct Value {
     std::string getId() const;
 
     operator int();
+    operator std::string();
 
     static Type stringToType(std::string type);
     friend std::ostream& operator<<(std::ostream& out, const Value::Type& type);

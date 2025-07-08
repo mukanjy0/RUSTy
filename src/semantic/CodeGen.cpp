@@ -306,9 +306,10 @@ void CodeGen::ret() {
     out << "ret\n";
     offset -= typeLen(Q);
 }
-string CodeGen::LCLabel() {
+string CodeGen::LCLabel(string s) {
     string label = ".LC" + to_string(++lc);
     out << label << ":\n";
+    out << ".string \"" << s << "\"\n"; 
     return label;
 }
 void CodeGen::LBLabel() {
@@ -505,18 +506,24 @@ Value CodeGen::visit(UnaryExp* exp) {
 
 Value CodeGen::visit(Literal* exp) {
     if (init) {
-        L lvl = valueToL(exp->value);
-        l = new Const(exp->value, lvl);
-        r = new Reg(lvl);
-        mov();
-
+        if (exp->value.type == Value::STR) {
+            Reg* reg = new Reg("ip");
+            l = new Mem(reg, string(exp->value));
+            r = new Reg();
+            lea();
+            exp->value.ref = false;
+        }
+        else {
+            L lvl = valueToL(exp->value);
+            l = new Const(exp->value, lvl);
+            r = new Reg(lvl);
+            mov();
+        }
         return exp->value;
     }
     else {
         if (exp->value.type == Value::STR) {
-            string label = ".LC" + to_string(++lc);
-            out << label << '\n';
-            out << ".string \"" << exp->value.stringValues.front() << "\"\n"; 
+            string label = LCLabel(exp->value.stringValues.front());
 
             exp->value.type = Value::STR;
             exp->value.ref = true;
@@ -1063,8 +1070,7 @@ Value CodeGen::visit(PrintStmt* stmt) {
         return Value (Value::UNIT, 0);
     }
     else {
-        string s = LCLabel();
-        out << ".string \"" << stmt->strLiteral << "\"\n"; 
+        string s = LCLabel(stmt->strLiteral);
         stmt->strLiteral = s;
         return {};
     }
@@ -1168,10 +1174,8 @@ void CodeGen::visit(Program* program) {
     // emit boolean string constants once
     out << ".section .rodata\n";
     if (boolTrueLabel.empty()) {
-        boolTrueLabel = LCLabel();
-        out << ".string \"true\"\n";
-        boolFalseLabel = LCLabel();
-        out << ".string \"false\"\n";
+        boolTrueLabel = LCLabel("true");
+        boolFalseLabel = LCLabel("false");
     }
 
     for (auto [id, fun] : program->funs) {

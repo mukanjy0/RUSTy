@@ -122,7 +122,7 @@ private:
     void leave(bool early=false);
     void ret();
 
-    string LCLabel();
+    string LCLabel(string s);
     void LBLabel();
     void LELabel();
     string LIBLabel();

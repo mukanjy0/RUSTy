@@ -34,6 +34,9 @@ std::string Value::getId() const {
 Value::operator int() {
     return numericValues.front();
 }
+Value::operator std::string() {
+    return stringValues.front();
+}
 
 std::ostream& operator<<(std::ostream& out, const Value::Type& type) {
     switch(type) {
