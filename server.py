@@ -53,6 +53,54 @@ def compile_code(req: CodeRequest):
 
 @app.post("/run")
 def run_code(req: CodeRequest):
+    """Compile the input with RUSTy, assemble with gcc and execute."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        src_file = Path(tmpdir) / "input.rs"
+        exe_file = Path(tmpdir) / "program"
+
+        # Compile Rust code to assembly using RUSTy
+        src_file.write_text(req.code)
+        rusty_res = subprocess.run(
+            [str(COMPILER_PATH), str(src_file)], capture_output=True, text=True
+        )
+        asm_path = Path("a.s")
+        asm_text = asm_path.read_text() if asm_path.exists() else ""
+
+        if rusty_res.returncode != 0:
+            if asm_path.exists():
+                asm_path.unlink()
+            raise HTTPException(
+                status_code=400,
+                detail=rusty_res.stderr or "RUSTy compilation failed",
+            )
+
+        # Assemble using gcc
+        gcc_res = subprocess.run(
+            ["gcc", "-no-pie", str(asm_path), "-o", str(exe_file)],
+            capture_output=True,
+            text=True,
+        )
+        asm_path.unlink()
+        if gcc_res.returncode != 0:
+            raise HTTPException(
+                status_code=400,
+                detail=gcc_res.stderr or "GCC compilation failed",
+            )
+
+        run_res = subprocess.run([str(exe_file)], capture_output=True, text=True)
+
+        return {
+            "output": run_res.stdout,
+            "exit_code": run_res.returncode,
+            "assembly": asm_text,
+            "compiler_output": rusty_res.stdout,
+            "stderr": run_res.stderr,
+        }
+
+
+@app.post("/run_rustc")
+def run_rustc(req: CodeRequest):
+    """Compile the input using rustc and execute."""
     with tempfile.TemporaryDirectory() as tmpdir:
         src_file = Path(tmpdir) / "main.rs"
         exe_file = Path(tmpdir) / "program"
@@ -60,11 +108,16 @@ def run_code(req: CodeRequest):
         compile_cmd = ["rustc", str(src_file), "-o", str(exe_file)]
         result = subprocess.run(compile_cmd, capture_output=True, text=True)
         if result.returncode != 0:
-            raise HTTPException(status_code=400, detail=result.stderr or "Rust compilation failed")
+            raise HTTPException(
+                status_code=400,
+                detail=result.stderr or "Rust compilation failed",
+            )
         run_result = subprocess.run([str(exe_file)], capture_output=True, text=True)
-        if run_result.returncode != 0:
-            raise HTTPException(status_code=400, detail=run_result.stderr or "Program execution failed")
-        return {"output": run_result.stdout}
+        return {
+            "output": run_result.stdout,
+            "exit_code": run_result.returncode,
+            "stderr": run_result.stderr,
+        }
 
 if __name__ == "__main__":
     import uvicorn

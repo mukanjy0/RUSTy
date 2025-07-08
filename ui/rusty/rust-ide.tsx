@@ -22,10 +22,12 @@ export default function RustIDE(): ReactElement {
 }`)
 
   const [output, setOutput] = useState("")
+  const [outputRustc, setOutputRustc] = useState("")
   const [assembly, setAssembly] = useState("")
   const [activeTab, setActiveTab] = useState("output")
   const [isCompiling, setIsCompiling] = useState(false)
   const [isRunning, setIsRunning] = useState(false)
+  const [isRunningRustc, setIsRunningRustc] = useState(false)
   const editorRef = useRef<HTMLTextAreaElement>(null)
   const highlighterContainerRef = useRef<HTMLDivElement>(null)
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 })
@@ -73,6 +75,7 @@ export default function RustIDE(): ReactElement {
       const data = await res.json()
       if (res.ok) {
         setOutput(data.output)
+        setAssembly(data.assembly)
       } else {
         setOutput(data.detail ?? "Execution error")
       }
@@ -81,6 +84,31 @@ export default function RustIDE(): ReactElement {
       setOutput("Failed to connect to backend")
     }
     setIsRunning(false)
+  }
+
+  const handleRunRustc = async () => {
+    setIsRunningRustc(true)
+    setActiveTab("rustc")
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL ?? ""}/run_rustc`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        }
+      )
+      const data = await res.json()
+      if (res.ok) {
+        setOutputRustc(data.output)
+      } else {
+        setOutputRustc(data.detail ?? "Execution error")
+      }
+    } catch (err) {
+      console.error(err)
+      setOutputRustc("Failed to connect to backend")
+    }
+    setIsRunningRustc(false)
   }
 
   const updateCursorPosition = (textarea: HTMLTextAreaElement) => {
@@ -132,7 +160,12 @@ export default function RustIDE(): ReactElement {
   }
 
   const handleCopyToClipboard = async () => {
-    const contentToCopy = activeTab === "output" ? output : assembly
+    const contentToCopy =
+      activeTab === "output"
+        ? output
+        : activeTab === "assembly"
+          ? assembly
+          : outputRustc
     if (!contentToCopy) return
 
     try {
@@ -206,6 +239,23 @@ export default function RustIDE(): ReactElement {
               <>
                 <Play className="w-4 h-4 mr-2" />
                 Run Code
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={handleRunRustc}
+            disabled={isRunningRustc}
+            className="bg-[#6c4d9a] hover:bg-[#7d5fb3] text-white px-4 py-2 text-sm"
+          >
+            {isRunningRustc ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Running...
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4 mr-2" />
+                Run with rustc
               </>
             )}
           </Button>
@@ -320,12 +370,18 @@ export default function RustIDE(): ReactElement {
                 >
                   Assembly (x86)
                 </TabsTrigger>
+                <TabsTrigger
+                  value="rustc"
+                  className="bg-transparent text-[#cccccc] data-[state=active]:bg-[#1e1e1e] data-[state=active]:text-white rounded-none border-b-2 border-transparent data-[state=active]:border-[#0e639c] px-4 py-2"
+                >
+                  Rustc Output
+                </TabsTrigger>
               </TabsList>
             </Tabs>
 
             <Button
               onClick={handleCopyToClipboard}
-              disabled={!output && !assembly}
+              disabled={!output && !assembly && !outputRustc}
               className="bg-transparent hover:bg-[#3e3e42] text-[#cccccc] hover:text-white px-3 py-1 text-xs mr-2"
               size="sm"
             >
@@ -357,6 +413,13 @@ export default function RustIDE(): ReactElement {
                 <div className="h-full bg-[#1e1e1e] p-4 overflow-auto">
                   <pre className="text-[#d4d4d4] font-mono text-sm whitespace-pre">
                     {assembly || "Click 'Compile Code' to see x86 assembly here..."}
+                  </pre>
+                </div>
+              </TabsContent>
+              <TabsContent value="rustc" className="h-full m-0">
+                <div className="h-full bg-[#1e1e1e] p-4 overflow-auto">
+                  <pre className="text-[#d4d4d4] font-mono text-sm whitespace-pre-wrap">
+                    {outputRustc || "Click 'Run with rustc' to see output here..."}
                   </pre>
                 </div>
               </TabsContent>
