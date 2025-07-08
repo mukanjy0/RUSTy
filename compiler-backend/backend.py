@@ -45,7 +45,8 @@ async def compile_rust(rust_code: RustCode):
         rust_file.write(rust_code.code.encode("utf-8"))
         rust_file_path = rust_file.name
 
-    asm_file_path = os.path.join("input/ass", os.path.basename(rust_file_path).replace(".rs", ".s"))
+    # RUSTy always generates assembly in a.s in the current directory
+    asm_file_path = "a.s"
 
     # Compile RUSTy backend
     cpp_dir = Path("src")
@@ -115,7 +116,8 @@ async def run_tests() -> Dict[str, List[Dict[str, str]]]:
 
     results: List[Dict[str, str]] = []
     for file in Path("input").glob("*.rs"):
-        asm_file = Path("input/ass") / f"{file.stem}.s"
+        # RUSTy writes assembly to a.s regardless of the input file
+        asm_file = Path("a.s")
         test_result: Dict[str, str] = {"file": file.name}
 
         _, err = run_command(["./main", str(file)])

@@ -1,6 +1,7 @@
 import axios from "axios";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL;
+const BACKEND_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export const postCode = async ({ code, signal }: { code: string; signal?: AbortSignal }) => {
   console.log("Fetching Code to", BACKEND_URL);

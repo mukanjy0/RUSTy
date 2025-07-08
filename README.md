@@ -38,6 +38,9 @@ This project uses **Docker** and **Docker Compose** to simplify setup and execut
 
 * The backend is available internally at `http://backend:8000` (used by the frontend inside Docker).
 * Any code you compile through the frontend will be handled via this backend.
+* If you start the frontend without Docker, create a `.env.local` file in
+  `compiler-frontend` with `NEXT_PUBLIC_API_URL=http://localhost:8000` so the
+  frontend knows where to send requests.
 * To stop the application, press `Ctrl+C` and run:
 
   ```bash
