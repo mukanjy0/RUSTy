@@ -1,10 +1,11 @@
 output/*
 !output/.gitkeep
-"rusty"
+rusty
+!/rusty/**
 *.o
 *.s
 *.out
 cmake-build-debug/
 .idea/
 .venv
-/compiler-backend/__pycache__
+__pycache__

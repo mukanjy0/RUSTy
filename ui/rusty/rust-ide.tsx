@@ -36,104 +36,50 @@ export default function RustIDE(): ReactElement {
   const handleCompile = async () => {
     setIsCompiling(true)
     setActiveTab("assembly")
-
-    // Simulate compilation delay
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-
-    // Mock x86 assembly output
-    const mockAssembly = `main:
-    push    rbp
-    mov     rbp, rsp
-    sub     rsp, 16
-    
-    ; println!("Hello, World!");
-    lea     rdi, [rip + .L__unnamed_1]
-    mov     esi, 13
-    call    std::io::_print
-    
-    ; let x = 5;
-    mov     DWORD PTR [rbp-4], 5
-    
-    ; let y = 10;
-    mov     DWORD PTR [rbp-8], 10
-    
-    ; let sum = x + y;
-    mov     eax, DWORD PTR [rbp-4]
-    add     eax, DWORD PTR [rbp-8]
-    mov     DWORD PTR [rbp-12], eax
-    
-    ; println! macro expansion
-    lea     rdi, [rip + .L__unnamed_2]
-    mov     esi, DWORD PTR [rbp-4]
-    mov     edx, DWORD PTR [rbp-8]
-    mov     ecx, DWORD PTR [rbp-12]
-    call    std::io::_print
-    
-    add     rsp, 16
-    pop     rbp
-    ret
-
-.L__unnamed_1:
-    .ascii  "Hello, World!\\n"
-
-.L__unnamed_2:
-    .ascii  "The sum of {} and {} is {}\\n"
-
-; Additional assembly to test scrolling
-.section .text
-.global _start
-
-_start:
-    mov     rax, 1
-    mov     rdi, 1
-    mov     rsi, msg
-    mov     rdx, msg_len
-    syscall
-    
-    mov     rax, 60
-    mov     rdi, 0
-    syscall
-
-.section .data
-msg:    .ascii "Hello from assembly!\\n"
-msg_len = . - msg
-
-; More assembly instructions for testing
-add_numbers:
-    push    rbp
-    mov     rbp, rsp
-    mov     eax, edi
-    add     eax, esi
-    pop     rbp
-    ret
-
-multiply_numbers:
-    push    rbp
-    mov     rbp, rsp
-    mov     eax, edi
-    imul    eax, esi
-    pop     rbp
-    ret`
-
-    setAssembly(mockAssembly)
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL ?? ""}/compile`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        }
+      )
+      const data = await res.json()
+      if (res.ok) {
+        setAssembly(data.assembly)
+      } else {
+        setAssembly(data.detail ?? "Compilation error")
+      }
+    } catch (err) {
+      console.error(err)
+      setAssembly("Failed to connect to backend")
+    }
     setIsCompiling(false)
   }
 
   const handleRun = async () => {
     setIsRunning(true)
     setActiveTab("output")
-
-    // Simulate execution delay
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Mock program output
-    const mockOutput = `Hello, World!
-The sum of 5 and 10 is 15
-
-Process finished with exit code 0
-Execution time: 0.002s`
-
-    setOutput(mockOutput)
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL ?? ""}/run`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code }),
+        }
+      )
+      const data = await res.json()
+      if (res.ok) {
+        setOutput(data.output)
+      } else {
+        setOutput(data.detail ?? "Execution error")
+      }
+    } catch (err) {
+      console.error(err)
+      setOutput("Failed to connect to backend")
+    }
     setIsRunning(false)
   }
 
