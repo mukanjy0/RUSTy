@@ -342,6 +342,9 @@ void CodeGen::LFELabel() {
     out << label << ":\n";
     labels.pop();
 }
+string CodeGen::getCurFunLbl() {
+    return ".LFE" + to_string(lf);
+}
 string CodeGen::end(string label) {
     if (label[2] == 'F' || label[2] == 'I') {
         label[3] = 'E';
@@ -1046,7 +1049,7 @@ Value CodeGen::visit(ReturnStmt* stmt) {
             mov();
         }
 
-        jmp(end(curFun));
+        jmp(getCurFunLbl());
 
         return value;
     }

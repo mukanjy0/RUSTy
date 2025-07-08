@@ -10,7 +10,7 @@ fn fib(n: i32) -> i32 {
 }
 
 fn main(){
-    let n: i32 = 3;
+    let n: i32 = 8;
     let result = fib(n);
     println!("The fibonacci of {} is: {}", n, result);
 }

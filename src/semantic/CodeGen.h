@@ -133,6 +133,7 @@ private:
     string end(string label);
     int getReturnDeallocate();
     int getOffset(string label, int idx=0);
+    string getCurFunLbl();
 
     int lb {};
     int lc {};
