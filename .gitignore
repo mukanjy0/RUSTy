@@ -1,7 +1,7 @@
 output/*
 !output/.gitkeep
 rusty
-!/rusty/**
+!ui/rusty/
 *.o
 *.s
 *.out
