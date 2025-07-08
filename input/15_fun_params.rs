@@ -1,10 +1,7 @@
-fn fun(a: i32, b: i32) -> i32 {
-    return a + b;
+fn fun(a : i32, b : i32, c : i32, d : i32, e : i32, f : i32) -> () {
+    println!("The result is: {}", a + b + c + d + e + f);
 }
 
 fn main(){
-    let x: i32 = 10;
-    let y: i32 = 20;
-    let result = fun(x, y);
-    println!("The result is: {}", result);
+    fun(1, 2, 3, 4, 5, 6);
 }

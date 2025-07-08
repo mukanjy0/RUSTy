@@ -116,7 +116,7 @@ private:
     void jmp(string label, C=NONE);
     void set(C=NONE);
     void cmov(C=NONE);
-    void call(string label);
+    void call(string label, bool exteneral=false);
     void enter();
     void leave(bool early=false);
     void ret();
@@ -131,15 +131,16 @@ private:
     void LFBLabel();
     void LFELabel();
     string end(string label);
-    int getOffset(string label);
+    int getReturnDeallocate();
+    int getOffset(string label, int idx=0);
 
     int lb {};
     int lc {};
     int lf {};
     int lib {};
     int lie {};
-    stack<int> lbs;
     stack<int> lis;
+    stack<int> lbs;
     stack<int> bp {};
     stack<string> labels {};
     string curFun {};
@@ -147,13 +148,14 @@ private:
     bool init {};
     Operand* l;
     Operand* r;
-    stack<Block*> cur;
-    map<Block*, int> allocated;
-    map<Block*, int> toAllocate;
+    map<string, int> allocated;
+    map<string, int> toAllocate;
 
     // labels for boolean printing
     std::string boolTrueLabel;
     std::string boolFalseLabel;
+
+    std::list<string> funCallArgs = {"di", "si", "d", "c", "r8", "r9"};
 
 public:
     CodeGen(SymbolTable* table, std::ostream& out)

@@ -157,12 +157,21 @@ std::pair<std::string, Fun*> Parser::parseFunction() {
 
     Value::Type type = Value::UNDEFINED;
     if (match(Token::ARROW)) {
-        if (!check(Token::TYPE)) {
-            throw std::runtime_error("expected type after arrow in function declaration\ngot: "
-                                     + debugInfo(currentToken()));
+        if (match(Token::OPEN_PARENTHESIS)) {
+            if (!match(Token::CLOSE_PARENTHESIS)) {
+                throw std::runtime_error("expected type after arrow in function declaration\ngot: "
+                                         + debugInfo(currentToken()));
+            }
+            type = Value::UNIT;
         }
-        type = Value::stringToType(currentToken().content);
-        match(Token::TYPE);
+        else {
+            if (!check(Token::TYPE)) {
+                throw std::runtime_error("expected type after arrow in function declaration\ngot: "
+                                         + debugInfo(currentToken()));
+            }
+            type = Value::stringToType(currentToken().content);
+            match(Token::TYPE);
+        }
     }
 
     Block* block = parseBlock();

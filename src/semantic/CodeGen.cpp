@@ -100,9 +100,11 @@ int CodeGen::typeLen(Value::Type type) {
 
 
 int CodeGen::typeLen(Value value) {
-    if (value.ref || value.size) return 8;
-    if (value.size) {
-        return typeLen(value.type) * value.size + 8;
+    if (value.ref) {
+        return 8;
+    } 
+    else if (value.size) {
+        return typeLen(value.type) * value.size;
     }
     else if (value.right) {
         return 2 * 8;
@@ -270,8 +272,9 @@ void CodeGen::set(C cond) {
 void CodeGen::cmov(C cond) {
     out << "cmov" << cond << ' ' << l << ", " << r << '\n';
 }
-void CodeGen::call(string label) {
+void CodeGen::call(string label, bool external) {
     out << "call " << label << "\n";
+    if (!external) offset += typeLen(Q);
 }
 void CodeGen::enter() {
     r = new Reg("bp");
@@ -292,6 +295,7 @@ void CodeGen::leave(bool early) {
 }
 void CodeGen::ret() {
     out << "ret\n";
+    offset -= typeLen(Q);
 }
 string CodeGen::LCLabel() {
     string label = ".LC" + to_string(++lc);
@@ -347,8 +351,14 @@ string CodeGen::end(string label) {
     }
     return label;
 }
-int CodeGen::getOffset(string label) {
-    return bp.top() - int(*(table->lookup(label)));
+int CodeGen::getReturnDeallocate() {
+    // enter (Q) will be restored with leave
+    // call (Q) will be restore with ret
+    return offset - 2 * typeLen(Q);
+}
+int CodeGen::getOffset(string label, int idx) {
+    Value v = *(table->lookup(label));
+    return -1 * (int(v) + idx * typeLen(typeToL(v.type)));
 }
 
 // Destructor
@@ -359,32 +369,20 @@ Value CodeGen::visit(Block* block) {
     if (init) {
         table->pushScope();
 
-        enter();
-
-        subSP(toAllocate[block]);
-
         Value val;
-        cur.push(block);
         for(auto stmt : block->stmts) {
             val = stmt->accept(this);
         }
-        cur.pop();
-
-        addSP(toAllocate[block]);
-
-        leave();
 
         table->popScope();
 
         return Value(block->type);
     }
     else {
-        cur.push(block);
         for(auto stmt : block->stmts) {
             stmt->accept(this);
         }
-        toAllocate[cur.top()] = ((toAllocate[block] + 15) / 16) * 16;
-        cur.pop();
+        // toAllocate[curFun] = ((toAllocate[curFun] + 15) / 16) * 16;
 
         return {};
     }
@@ -521,7 +519,7 @@ Value CodeGen::visit(Variable* exp) {
         Value value = *(table->lookup(exp->name));
 
         Reg* reg = new Reg("bp");
-        l = new Mem(reg, bp.top() - int(value));
+        l = new Mem(reg, getOffset(exp->name));
         r = new Reg();
         lea();
 
@@ -534,30 +532,18 @@ Value CodeGen::visit(Variable* exp) {
 
 Value CodeGen::visit(FunCall* exp) {
     if (init) {
-        stack<Exp*> s;
-        for (auto arg : exp->args) {
-            s.push(arg);
-        }
+        auto it2 = funCallArgs.begin();
 
-        int bytes {};
-
-        Reg* reg = new Reg("bp");
-        while (!s.empty()) {
-            auto arg = s.top();
-            s.pop();
-
-            Value value = accept(arg);
+        for (auto it = exp->args.begin(); it != exp->args.end(); ++it, ++it2) {
+            Value value = accept(*it);
             L lvl = typeToL(value.type);
-            bytes += typeLen(lvl);
 
             l = new Reg(lvl);
-            r = new Mem(reg, bp.top() - (offset + bytes), lvl);
+            r = new Reg(*it2, lvl);
             mov();
         }
 
-        subSP(bytes);
         call(exp->id);
-        addSP(bytes);
 
         return Value(exp->type);
     }
@@ -646,9 +632,20 @@ Value CodeGen::visit(LoopExp* exp) {
 
 Value CodeGen::visit(SubscriptExp* exp) {
     if (init) {
+        Reg* reg = new Reg("bp");
+        l = new Mem(reg, getOffset(exp->id));
+        r = new Reg("c");
+        lea();
 
-        auto value = Value(exp->type);
+        auto value = accept(exp->exp);
+
+        l = new Reg("c");
+        r = new Reg();
+        add();
+
+        value = Value(exp->type);
         value.ref = true;
+
         return value;
     }
     else {
@@ -749,44 +746,41 @@ Value CodeGen::visit(UniformArrayExp* exp) {
 Value CodeGen::visit(DecStmt* stmt) {
     if (init) {
         auto value = stmt->var;
-        Block* b = cur.top();
 
-        allocated[b] += typeLen(value);
-        Value val = Value(value.type, bp.top() + allocated[b]);
+        L lvl = typeToL(value.type);
+        allocated[curFun] += typeLen(lvl);
+
+        Value val = Value(value.type, allocated[curFun]);
         val.ref = true;
+        val.size = value.size;
         table->declare(stmt->id, val);
+
+        Reg* reg = new Reg("bp");
 
         if (stmt->rhs) {
             auto rhs = accept(stmt->rhs);
-            Reg* reg;
-
-            L len = typeToL(value.type);
 
             if (value.size) {
+                auto it2 = funCallArgs.begin();
+
                 for (int i=0; i<value.size; ++i) {
-                    allocated[b] += typeLen(value.type);
-
-                    r = new Reg(len);
-                    pop();
-
-                    l = new Reg(len);
-                    reg = new Reg("bp");
-                    r = new Mem(reg, -allocated[b]); r->lvl = len;
+                    l = new Reg(*it2, lvl);
+                    r = new Mem(reg, getOffset(stmt->id, i), lvl);
                     mov();
                 }
+
+                allocated[curFun] += typeLen(value) - typeLen(lvl);
             }
             else {
-                l = new Reg(len);
-
-                reg = new Reg("bp");
-                r = new Mem(reg, -allocated[b], len);
+                l = new Reg(lvl);
+                r = new Mem(reg, getOffset(stmt->id), lvl);
                 mov();
             }
         }
         return Value(Value::UNIT, 0);
     }
     else {
-        toAllocate[cur.top()] += typeLen(stmt->var);
+        toAllocate[curFun] += typeLen(stmt->var);
         if (stmt->var.type == Value::STR) {
             stmt->rhs->accept(this);
         }
@@ -797,18 +791,29 @@ Value CodeGen::visit(DecStmt* stmt) {
 Value CodeGen::visit(AssignStmt* stmt) {
     if (init) {
         auto lhs = stmt->lhs->accept(this);
-        r = new Reg();
-        push();
+        if (lhs.size == 0) {
+            r = new Reg();
+            push();
 
-        auto rhs = accept(stmt->rhs);
+            auto rhs = accept(stmt->rhs);
 
-        r = new Reg("c");
-        pop();
+            r = new Reg("c");
+            pop();
 
-        l = new Reg(valueToL(rhs));
-        auto reg = new Reg("c");
-        r = new Mem(reg, 0);
-        mov();
+            l = new Reg(valueToL(rhs));
+            auto reg = new Reg("c");
+            r = new Mem(reg, 0);
+            mov();
+        }
+        // else {
+        //     l = new Reg(); 
+        //     r = new Reg("r12");
+        //     mov();
+
+        //     auto rhs = accept(stmt->rhs);
+
+
+        // }
         return Value(Value::UNIT, 0);
     }
     else {
@@ -885,14 +890,12 @@ Value CodeGen::visit(ForStmt* stmt) {
         auto value = accept(stmt->start);
         L lvl = valueToL(value);
 
-        subSP(typeLen(lvl));
-        table->declare(stmt->id, Value(value.type, offset, true));
-
-        int off = getOffset(stmt->id);
+        allocated[curFun] += typeLen(lvl);
+        table->declare(stmt->id, Value(value.type, allocated[curFun], true));
 
         l = new Reg(lvl);
         Reg* reg = new Reg("bp");
-        auto it = new Mem(reg, off, lvl);
+        auto it = new Mem(reg, getOffset(stmt->id), lvl);
         r = it;
         mov();
 
@@ -918,6 +921,7 @@ Value CodeGen::visit(ForStmt* stmt) {
         return Value(Value::UNIT, 0);
     }
     else {
+        toAllocate[curFun] += typeLen(stmt->start->type);
         stmt->block->accept(this);
         return {};
     }
@@ -948,16 +952,18 @@ Value CodeGen::visit(WhileStmt* stmt) {
 }
 
 Value CodeGen::visit(PrintStmt* stmt) {
-    list<string> regs = {"si", "d", "c"};
     string print = "printf@PLT";
     if (init) {
+        auto it2 = funCallArgs.begin();
+
         Reg* reg = new Reg("ip");
         l = new Mem(reg, stmt->strLiteral);
-        r = new Reg("di");
+        r = new Reg(*it2);
         lea();
 
-        auto it2 = regs.begin();
-        for (auto it = stmt->args.begin(); it != stmt->args.end(); ++it, ++it2) {
+        for (auto it = stmt->args.begin(); it != stmt->args.end(); ++it) {
+            ++it2;
+
             Value value = accept(*it);
 
             L lvl = typeToL(value.type);
@@ -1000,7 +1006,7 @@ Value CodeGen::visit(PrintStmt* stmt) {
         r = new Reg();
         mov();
 
-        call(print);
+        call(print, true);
 
         return Value (Value::UNIT, 0);
     }
@@ -1031,7 +1037,7 @@ Value CodeGen::visit(ReturnStmt* stmt) {
     if (init) {
         Value value;
         if (stmt->exp) {
-            value = stmt->exp->accept(this);
+            value = accept(stmt->exp);
         }
         else {
             value = Value(Value::UNIT, 0);
@@ -1040,10 +1046,6 @@ Value CodeGen::visit(ReturnStmt* stmt) {
             mov();
         }
 
-        // logically restore allocated memory inside fun except from enter()
-        addSP(offset - typeLen(Q), true); 
-        // restore rsp & rbp before call
-        leave(true);
         jmp(end(curFun));
 
         return value;
@@ -1056,12 +1058,7 @@ Value CodeGen::visit(ReturnStmt* stmt) {
 
 Value CodeGen::visit(ExpStmt* stmt) {
     if (init) {
-        if (stmt->returnValue) {
-            return stmt->exp->accept(this);
-        }
-        else {
-            return Value(Value::UNIT, 0);
-        }
+        return stmt->exp->accept(this);
     }
     else {
         return stmt->exp->accept(this);
@@ -1071,23 +1068,43 @@ Value CodeGen::visit(ExpStmt* stmt) {
 // Visit methods for functions and programs
 Value CodeGen::visit(Fun* fun) {
     if (init) {
-        int off = offset - typeLen(Q); // call push
-        int len = {};
+        table->pushScope();
 
+        subSP(toAllocate[curFun]);
 
+        // assigning arguments to parameters
+        auto it2 = funCallArgs.begin();
+        Reg* reg = new Reg("bp");
 
         for (auto param : fun->params) {
-            Value value = Value(param.type, off - len);
+            L lvl = typeToL(param.type);
+
+            allocated[curFun] += typeLen(lvl);
+
+            Value value = Value(param.type, allocated[curFun]);
             value.ref = true;
             table->declare(param.id, value);
-            len += typeLen(param.type);
+
+            l = new Reg(*it2, lvl);
+            r = new Mem(reg, getOffset(param.id), lvl);
+            mov();
+
+            ++it2;
         }
 
         fun->block->accept(this);
 
+        addSP(toAllocate[curFun]);
+
+        table->popScope();
+
         return Value(fun->type);
     }
     else {
+        for (auto param : fun->params) {
+            L lvl = typeToL(param.type);
+            toAllocate[curFun] += typeLen(lvl);
+        }
         fun->block->accept(this);
         return {};
     }
@@ -1108,12 +1125,12 @@ void CodeGen::visit(Program* program) {
     for (auto [id, fun] : program->funs) {
         Value value (fun->type, id);
         value.fun = true;
-
         for (auto param : fun->params) {
             value.addType(param.type);
         }
-
         table->declare(id, value);
+
+        curFun = id;
 
         out << ".section .rodata\n";
         init = false;
@@ -1126,19 +1143,16 @@ void CodeGen::visit(Program* program) {
         out << ".type " << id << ", @function\n";
         out << id << ":\n";
 
-        table->pushScope();
-
+        // prologue
         LFBLabel();
-
-        curFun = labels.top();
+        enter();
 
         fun->accept(this);
 
         // epilogue
         LFELabel();
+        leave();
         ret();
-
-        table->popScope();
     }
 
     table->popScope();
