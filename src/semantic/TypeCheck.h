@@ -6,6 +6,7 @@
 #define TYPECHECK_H
 
 #include "Visitor.h"
+#include <map>
 
 class TypeCheck final : public Visitor {
 public:
@@ -51,6 +52,7 @@ private:
     bool lhsContext{false};
     bool lhsIsVariable{false};
     Value* lhsEntry{nullptr};
+    std::map<std::string, DecStmt*> dec;
 };
 
 #endif //TYPECHECK_H

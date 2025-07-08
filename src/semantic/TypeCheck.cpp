@@ -297,6 +297,7 @@ Value TypeCheck::visit(DecStmt* stmt) {
         stmt->var.initialized = false;
     }
     declare(stmt->id, stmt->var);
+    dec[stmt->id] = stmt;
     return stmt->var;
 }
 
@@ -316,6 +317,18 @@ Value TypeCheck::visit(AssignStmt* stmt) {
             if (rhs.size > 0)
                 lhsEntry->size = rhs.size;
             lhsEntry->initialized = true;
+            std::string id;
+            auto var = dynamic_cast<Variable*>(stmt->lhs);
+            if (var) {
+                id = var->name;
+            }
+            // or SubscriptExp
+            auto var2 = dynamic_cast<SubscriptExp*>(stmt->lhs);
+            if (var2) {
+                id = var2->id;
+            }
+            table->update(id, *lhsEntry);
+            dec[id]->var = *lhsEntry;
         } else {
             assertMut(*lhsEntry, stmt->line, stmt->col);
             assertType(rhs, *lhsEntry, stmt->line, stmt->col);

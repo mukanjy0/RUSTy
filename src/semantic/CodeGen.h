@@ -148,6 +148,7 @@ private:
     string curFun {};
     int offset {};
     bool init {};
+    bool inLhs {};
     Operand* l;
     Operand* r;
     map<string, int> allocated;

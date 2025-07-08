@@ -537,9 +537,22 @@ Value CodeGen::visit(Variable* exp) {
         Value value = *(table->lookup(exp->name));
 
         Reg* reg = new Reg("bp");
-        l = new Mem(reg, getOffset(exp->name));
-        r = new Reg();
-        lea();
+        if (value.size && !inLhs) {
+            auto it2 = funCallArgs.begin();
+
+            L lvl = typeToL(value.type);
+
+            for (int i=0; i<value.size; ++i, ++it2) {
+                l = new Mem(reg, getOffset(exp->name, i), lvl);
+                r = new Reg(*it2, lvl);
+                mov();
+            }
+        }
+        else {
+            l = new Mem(reg, getOffset(exp->name));
+            r = new Reg();
+            lea();
+        }
 
         return value;
     }
@@ -796,9 +809,9 @@ Value CodeGen::visit(DecStmt* stmt) {
         Reg* reg = new Reg("bp");
 
         if (stmt->rhs) {
-            auto rhs = accept(stmt->rhs);
-
             if (value.size) {
+                auto rhs = stmt->rhs->accept(this);
+
                 auto it2 = funCallArgs.begin();
 
                 for (int i=0; i<value.size; ++i, ++it2) {
@@ -810,6 +823,8 @@ Value CodeGen::visit(DecStmt* stmt) {
                 allocated[curFun] += typeLen(value) - typeLen(lvl);
             }
             else {
+                auto rhs = accept(stmt->rhs);
+
                 l = new Reg(lvl);
                 r = new Mem(reg, getOffset(stmt->id), lvl);
                 mov();
@@ -828,7 +843,9 @@ Value CodeGen::visit(DecStmt* stmt) {
 
 Value CodeGen::visit(AssignStmt* stmt) {
     if (init) {
+        inLhs = true;
         auto lhs = stmt->lhs->accept(this);
+        inLhs = false;
 
         L lvl = typeToL(lhs.type);
 
@@ -847,12 +864,11 @@ Value CodeGen::visit(AssignStmt* stmt) {
             mov();
         }
         else {
+            auto rhs = stmt->rhs->accept(this);
+
             auto it2 = funCallArgs.begin();
 
-            Value value;
-
             string id;
-
             // Lhs is either Variable
             auto var = dynamic_cast<Variable*>(stmt->lhs);
             if (var) {
@@ -864,7 +880,7 @@ Value CodeGen::visit(AssignStmt* stmt) {
                 id = var2->id;
             }
 
-            value = *(table->lookup(id));
+            Value value = *(table->lookup(id));
 
             auto reg = new Reg("bp");
             for (int i=0; i<value.size; ++i, ++it2) {
