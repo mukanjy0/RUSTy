@@ -1,72 +1,51 @@
 import subprocess
 from pathlib import Path
+import sys
 
-# output directory
-out_dir = Path("output")
-# cpp directory
-cpp_dir = Path("src")
-source_files = [str(file) for file in cpp_dir.rglob("*.cpp")]
-source_files.append("main.cpp")
-
-# Compile
-print("[1] Compiling...")
-compile_cmd = ["g++", "-std=c++20"] + source_files + ["-o", out_dir/"main"]
-comp_rusty = subprocess.run(compile_cmd)
-
-# Check for compilation errors
-if comp_rusty.returncode != 0:
-    print("\033[91mCompiling Error\033[0m") # Red text
-    exit(1)
-
-
-print("[2] Compiling Rust files...")
+out_dir = Path('output')
+cpp_dir = Path('src')
 rust_dir = Path('input')
-rust_output = []
-
-for i, file in enumerate(rust_dir.glob("*.rs")):
-    # Rust file compilation
-    path = str(file)
-    output_path = out_dir/str(file.name)[:-3]
-    compile_cmd = ["rustc", path, "-o",output_path]
-
-    print(f"\t[{i}] Compiling on Rust: {file}")
-    comp_rust = subprocess.run(compile_cmd, capture_output=True, text=True)
-
-    # Successful compilation
-    if comp_rust.returncode == 0:
-        print(f"\033[92m\t[{i}] Rust compiling complete\033[0m")
-
-        ejec_cmd = [output_path]
-        result_rust = subprocess.run(ejec_cmd, capture_output=True, text=True)
-
-        if result_rust.returncode == 0:
-            print(f"\033[92m\t[{i}] Rust excecution complete\033[0m")
-            rust_output.append(result_rust.stdout)
-        else:  
-            print(f"\033[91mExecuting error on {file}\033[0m")
-            exit(1)
-    else:
-        print(f"\033[91mCompiling Error on {file}\033[0m")
-        exit(1)
-
-
-    print(f"\t[{i}] Compiling on RUSTy")
-    result_rusty = subprocess.run([out_dir/"main", str(file)], capture_output=True, text=True)
-    if result_rusty.returncode == 0:
-        print(f"\033[92m\t[{i}] RUSTy execution complete\033[0m")
-
-        if rust_output[i] == result_rusty.stdout:
-            print(f"\033[92m\t[{i}] RUSTy output matches Rust output\033[0m")
+# Collect Rust outputs
+rust_outputs = {}
+for file in rust_dir.glob('*.rs'):
+    exec_path = out_dir / file.stem
+    comp = subprocess.run(['rustc', str(file), '-o', str(exec_path)], capture_output=True, text=True)
+    if comp.returncode == 0:
+        run = subprocess.run([str(exec_path)], capture_output=True, text=True)
+        if run.returncode == 0:
+            rust_outputs[file.name] = run.stdout
         else:
-            print(f"\033[91m\t[{i}] RUSTy output does not match Rust output\033[0m")
-            print(f"\033[33mRUSTy output:\n{result_rusty.stdout}\n---\033[0m")
-            print(f"\033[34mRust output:\n{rust_output[i]}\n===\033[0m")
-            exit(1)
+            rust_outputs[file.name] = f"Runtime error:\n{run.stderr}"
 
     else:
-        print(result_rusty.stdout)
-        print(f"\033[91mRUSTy execution error on {file}\033[0m")
+        rust_outputs[file.name] = f"Compile error:\n{comp.stderr}"
+
+# Compile RUSTy
+source_files = [str(f) for f in cpp_dir.rglob('*.cpp')]
+source_files.append('main.cpp')
+compile_cmd = ['g++', '-std=c++20', *source_files, '-o', str(out_dir/'main')]
+comp_rusty = subprocess.run(compile_cmd, capture_output=True, text=True)
+if comp_rusty.returncode != 0:
+    print('RUSTy compilation error:')
+    print(comp_rusty.stderr)
+    print('\nRust outputs:')
+    for name, out in rust_outputs.items():
+        print(f"\n{name}:\n{out}")
+    sys.exit(1)
+
+# Run RUSTy for each test case
+for file in rust_dir.glob('*.rs'):
+    result_rusty = subprocess.run([out_dir/'main', str(file)], capture_output=True, text=True)
+    if result_rusty.returncode != 0:
+        print(f"RUSTy error on {file.name}:")
         print(result_rusty.stderr)
+        print('\nRust outputs:')
+        for name, out in rust_outputs.items():
+            print(f"\n{name}:\n{out}")
+        sys.exit(1)
 
-
-print("Compilación exitosa.\n")
+    print(f"== {file.name} ==")
+    print('Rust:')
+    print(rust_outputs[file.name])
+    print('RUSTy:')
+    print(result_rusty.stdout)
