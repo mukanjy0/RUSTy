@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, Play, Code2 } from "lucide-react"
-import { postCode } from "./api/api"
+import { postCode, runTests } from "./api/api"
 
 export default function CompilerPage() {
   const [code, setCode] = useState("")
@@ -14,6 +14,7 @@ export default function CompilerPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [showAssembly, setShowAssembly] = useState(false)
   const [hasCompiledCode, setHasCompiledCode] = useState(false)
+  const [isTesting, setIsTesting] = useState(false)
 
   // const highlightSyntax = (code: string) => {
   //   return code
@@ -51,7 +52,22 @@ export default function CompilerPage() {
       setAssemblyCode("")
       setHasCompiledCode(false)
     } finally {
-      setIsLoading(false)
+    setIsLoading(false)
+  }
+
+  const handleRunTests = async () => {
+    setIsTesting(true)
+    setShowAssembly(false)
+    setHasCompiledCode(false)
+    setOutput("")
+    try {
+      const response = await runTests()
+      setOutput(JSON.stringify(response, null, 2))
+      setHasCompiledCode(true)
+    } catch (error) {
+      setOutput(`Error: ${error instanceof Error ? error.message : "Unknown error occurred"}`)
+    } finally {
+      setIsTesting(false)
     }
   }
 
@@ -115,15 +131,29 @@ export default function CompilerPage() {
               >
               {isLoading ? (
                 <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Compiling...
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Compiling...
                 </>
               ) : (
                 <>
-                <Play className="w-4 h-4 mr-2" />
-                Compile & Run
+                  <Play className="w-4 h-4 mr-2" />
+                  Compile & Run
                 </>
               )}
+              </Button>
+              <Button
+              onClick={handleRunTests}
+              disabled={isTesting}
+              className="mt-4 ml-4 bg-orange-600 hover:bg-orange-700 text-black font-semibold"
+              >
+                {isTesting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Running Tests...
+                  </>
+                ) : (
+                  "Run Tests"
+                )}
               </Button>
             </CardContent>
           </Card>
@@ -166,7 +196,7 @@ export default function CompilerPage() {
         <div className="mt-6 p-4 bg-gray-900 border border-orange-600 rounded-md">
           <div className="flex items-center justify-between text-sm">
             <span className="text-orange-300">
-              Status: {isLoading ? "Compiling..." : hasCompiledCode ? "Ready" : "Waiting for code"}
+              Status: {isTesting ? "Running tests..." : isLoading ? "Compiling..." : hasCompiledCode ? "Ready" : "Waiting for code"}
             </span>
             <span className="text-orange-300">Lines: {code.split("\n").length}</span>
           </div>
