@@ -2,8 +2,9 @@ output/*
 !output/.gitkeep
 rusty
 *.o
+*.s
 *.out
 cmake-build-debug/
-CMakeLists.txt
 .idea/
 .venv
+/compiler-backend/__pycache__

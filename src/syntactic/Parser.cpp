@@ -157,12 +157,21 @@ std::pair<std::string, Fun*> Parser::parseFunction() {
 
     Value::Type type = Value::UNDEFINED;
     if (match(Token::ARROW)) {
-        if (!check(Token::TYPE)) {
-            throw std::runtime_error("expected type after arrow in function declaration\ngot: "
-                                     + debugInfo(currentToken()));
+        if (match(Token::OPEN_PARENTHESIS)) {
+            if (!match(Token::CLOSE_PARENTHESIS)) {
+                throw std::runtime_error("expected type after arrow in function declaration\ngot: "
+                                         + debugInfo(currentToken()));
+            }
+            type = Value::UNIT;
         }
-        type = Value::stringToType(currentToken().content);
-        match(Token::TYPE);
+        else {
+            if (!check(Token::TYPE)) {
+                throw std::runtime_error("expected type after arrow in function declaration\ngot: "
+                                         + debugInfo(currentToken()));
+            }
+            type = Value::stringToType(currentToken().content);
+            match(Token::TYPE);
+        }
     }
 
     Block* block = parseBlock();
@@ -560,24 +569,29 @@ Exp* Parser::parseFactorExp() {
         return exp;
     }
     else if (check(Token::BOOLEAN)) {
-        int value = currentToken().content == "true";
+        Value value (Value::BOOL, currentToken().content == "true");
         match(Token::BOOLEAN);
-        return new Literal(line, col, Value(Value::BOOL, value));
+        value.literal = true;
+        return new Literal(line, col, value);
     }
     else if (check(Token::CHAR)) {
-        auto value = std::string(1,currentToken().content[0]);
+        Value value (Value::CHAR, std::string(1,currentToken().content[0]));
         match(Token::CHAR);
-        return new Literal(line, col, Value(Value::CHAR, value));
+        value.literal = true;
+        return new Literal(line, col, value);
     }
     else if (check(Token::NUMBER)) {
-        int value = stoi(currentToken().content);
+        Value value = Value(Value::I32, stoi(currentToken().content));
         match(Token::NUMBER);
-        return new Literal(line, col, Value(Value::I32, value));
+        value.literal = true;
+        return new Literal(line, col, value);
     }
     else if (check(Token::STRING)) {
-        std::string value = currentToken().content;
+        Value value (Value::STR, currentToken().content);
         match(Token::STRING);
-        return new Literal(line, col, Value(Value::STR, value));
+        value.literal = true;
+        value.ref = true;
+        return new Literal(line, col, value);
     }
     else if (check(Token::ID)) {
         std::string id = currentToken().content;

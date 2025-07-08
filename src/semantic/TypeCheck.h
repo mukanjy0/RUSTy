@@ -6,6 +6,7 @@
 #define TYPECHECK_H
 
 #include "Visitor.h"
+#include <map>
 
 class TypeCheck final : public Visitor {
 public:
@@ -24,17 +25,34 @@ public:
     Value visit(ReferenceExp* exp) override;
     Value visit(ArrayExp* exp) override;
     Value visit(UniformArrayExp* exp) override;
-    void visit(DecStmt* stmt) override;
-    void visit(AssignStmt* stmt) override;
-    void visit(CompoundAssignStmt* stmt) override;
-    void visit(ForStmt* stmt) override;
-    void visit(WhileStmt* stmt) override;
-    void visit(PrintStmt* stmt) override;
-    void visit(BreakStmt* stmt) override;
-    void visit(ReturnStmt* stmt) override;
-    void visit(ExpStmt* stmt) override;
-    void visit(Fun* fun) override;
+    Value visit(DecStmt* stmt) override;
+    Value visit(AssignStmt* stmt) override;
+    Value visit(CompoundAssignStmt* stmt) override;
+    Value visit(ForStmt* stmt) override;
+    Value visit(WhileStmt* stmt) override;
+    Value visit(PrintStmt* stmt) override;
+    Value visit(BreakStmt* stmt) override;
+    Value visit(ReturnStmt* stmt) override;
+    Value visit(ExpStmt* stmt) override;
+    Value visit(Fun* fun) override;
     void visit(Program* program) override;
+
+private:
+    Value lookup(const std::string& id) const;
+    void declare(const std::string& id, const Value& val) const;
+    static void assertMut(const Value& val, int line, int col);
+    static Value assertType(Value from, Value to, int line, int col);
+    static void assertStringRef(const Value& val, int line, int col);
+    static std::string typeToFormat(Value::Type type);
+    int getScopeDepth() const;
+
+    Value::Type currentReturnType{Value::UNDEFINED};
+    int scopeDepth{};
+    int blockDepth{};
+    bool lhsContext{false};
+    bool lhsIsVariable{false};
+    Value* lhsEntry{nullptr};
+    std::map<std::string, DecStmt*> dec;
 };
 
 #endif //TYPECHECK_H
