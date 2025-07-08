@@ -94,7 +94,7 @@ private:
     void movs();
     // arithmetic
     void add();
-    void addSP(int off);
+    void addSP(int off, bool early=false);
     void inc();
     void sub();
     void subSP(int off);

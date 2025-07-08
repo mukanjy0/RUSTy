@@ -162,13 +162,13 @@ void CodeGen::movs() {
 void CodeGen::add() {
     out << "add" << r->lvl << ' ' << l << ", " << r << '\n';
 }
-void CodeGen::addSP(int off) {
+void CodeGen::addSP(int off, bool early) {
     if (off == 0) return;
 
     l = new Const(Value(Value::I64, off));
     r = new Reg("sp");
     out << "add" << r->lvl << ' ' << l << ", " << r << '\n';
-    offset -= off;
+    if (!early) offset -= off;
 }
 void CodeGen::inc() {
     out << "inc" << r->lvl << ' ' << r << '\n';
@@ -375,6 +375,8 @@ Value CodeGen::visit(Block* block) {
         leave();
 
         table->popScope();
+
+        return Value(block->type);
     }
     else {
         cur.push(block);
@@ -383,14 +385,17 @@ Value CodeGen::visit(Block* block) {
         }
         toAllocate[cur.top()] = ((toAllocate[block] + 15) / 16) * 16;
         cur.pop();
+
+        return {};
     }
-    return {};
 }
 
 Value CodeGen::visit(BinaryExp* exp) {
     if (init) {
         auto lhs = accept(exp->lhs);
         L lvl = typeToL(lhs.type);
+
+        r = new Reg(lvl);
         push();
 
         auto rhs = accept(exp->rhs);
@@ -507,8 +512,8 @@ Value CodeGen::visit(Literal* exp) {
             exp->value.ref = true;
             exp->value.stringValues.front() = label;
         }
+        return {};
     }
-    return {};
 }
 
 Value CodeGen::visit(Variable* exp) {
@@ -522,7 +527,9 @@ Value CodeGen::visit(Variable* exp) {
 
         return value;
     }
-    return {};
+    else {
+        return {};
+    }
 }
 
 Value CodeGen::visit(FunCall* exp) {
@@ -551,13 +558,15 @@ Value CodeGen::visit(FunCall* exp) {
         subSP(bytes);
         call(exp->id);
         addSP(bytes);
+
+        return Value(exp->type);
     }
     else {
         for (auto arg : exp->args) {
             arg->accept(this);
         }
+        return {};
     }
-    return {};
 }
 
 Value CodeGen::visit(IfExp* exp) {
@@ -631,21 +640,31 @@ Value CodeGen::visit(LoopExp* exp) {
     }
     else {
         exp->block->accept(this);
+        return {};
     }
-    return {};
 }
 
 Value CodeGen::visit(SubscriptExp* exp) {
     if (init) {
 
+        auto value = Value(exp->type);
+        value.ref = true;
+        return value;
     }
-    return {};
+    else {
+        return {};
+    }
 }
 
 Value CodeGen::visit(SliceExp* exp) {
     if (init) {
+        auto value = Value(exp->type);
+        value.ref = true;
+        return value;
     }
-    return {};
+    else {
+        return {};
+    }
 }
 
 Value CodeGen::visit(ReferenceExp* exp) {
@@ -851,8 +870,12 @@ Value CodeGen::visit(CompoundAssignStmt* stmt) {
         reg = new Reg("b");
         r = new Mem(reg, 0, ptrLen);
         mov();
+
+        return Value(Value::UNIT);
     }
-    return {};
+    else {
+        return {};
+    }
 }
 
 Value CodeGen::visit(ForStmt* stmt) {
@@ -1011,15 +1034,18 @@ Value CodeGen::visit(ReturnStmt* stmt) {
             value = stmt->exp->accept(this);
         }
         else {
-            Value value = Value(Value::UNIT, 0);
+            value = Value(Value::UNIT, 0);
             l = new Const(value);
             r = new Reg("a", l->lvl);
             mov();
         }
-        for (int i=0; i<bp.size(); ++i) {
-            leave(true);
-        }
+
+        // logically restore allocated memory inside fun except from enter()
+        addSP(offset - typeLen(Q), true); 
+        // restore rsp & rbp before call
+        leave(true);
         jmp(end(curFun));
+
         return value;
     }
     else {
@@ -1047,6 +1073,8 @@ Value CodeGen::visit(Fun* fun) {
     if (init) {
         int off = offset - typeLen(Q); // call push
         int len = {};
+
+
 
         for (auto param : fun->params) {
             Value value = Value(param.type, off - len);
@@ -1087,6 +1115,7 @@ void CodeGen::visit(Program* program) {
 
         table->declare(id, value);
 
+        out << ".section .rodata\n";
         init = false;
         fun->accept(this);
 
