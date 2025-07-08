@@ -30,6 +30,7 @@ export default function RustIDE(): ReactElement {
   const [isRunningRustc, setIsRunningRustc] = useState(false)
   const editorRef = useRef<HTMLTextAreaElement>(null)
   const highlighterContainerRef = useRef<HTMLDivElement>(null)
+  const lineNumbersRef = useRef<HTMLDivElement>(null)
   const [cursorPosition, setCursorPosition] = useState({ line: 1, column: 1 })
   const [leftPaneWidth, setLeftPaneWidth] = useState(50) // percentage
   const [isResizing, setIsResizing] = useState(false)
@@ -135,6 +136,9 @@ export default function RustIDE(): ReactElement {
       const { scrollTop, scrollLeft } = e.currentTarget
       highlighterContainerRef.current.scrollTop = scrollTop
       highlighterContainerRef.current.scrollLeft = scrollLeft
+    }
+    if (lineNumbersRef.current) {
+      lineNumbersRef.current.scrollTop = e.currentTarget.scrollTop
     }
   }
 
@@ -278,6 +282,7 @@ export default function RustIDE(): ReactElement {
                 scrollbarWidth: "none",
                 msOverflowStyle: "none",
                 pointerEvents: "none",
+                height: "100%",
               }}
             >
               <style jsx>{`
@@ -295,6 +300,11 @@ export default function RustIDE(): ReactElement {
                   fontSize: "14px",
                   lineHeight: "1.5",
                   fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
+                  tabSize: 4,
+                  MozTabSize: 4,
+                  overflow: "hidden",
+                  display: "inline-block",
+                  minWidth: "100%",
                   whiteSpace: "pre",
                   wordWrap: "normal",
                   overflowWrap: "normal",
@@ -322,6 +332,8 @@ export default function RustIDE(): ReactElement {
                 padding: `16px 16px 16px ${lineNumberWidth + 16}px`,
                 lineHeight: "1.5",
                 tabSize: 4,
+                MozTabSize: 4,
+                fontSize: "14px",
                 fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace',
                 whiteSpace: "pre",
                 wordWrap: "normal",
@@ -333,8 +345,9 @@ export default function RustIDE(): ReactElement {
 
             {/* Line numbers */}
             <div
+              ref={lineNumbersRef}
               className="absolute left-0 top-0 bg-[#1e1e1e] text-[#858585] font-mono text-sm py-4 px-2 pointer-events-none select-none border-r border-[#3e3e42] overflow-hidden"
-              style={{ width: lineNumberWidth }}
+              style={{ width: lineNumberWidth, height: "100%" }}
             >
               {code.split("\n").map((_, index) => (
                 <div key={index} className="text-right whitespace-nowrap" style={{ lineHeight: "1.5" }}>
