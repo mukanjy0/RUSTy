@@ -11,7 +11,12 @@ pkgs.mkShell rec {
     ninja
     git
     rustc
+    nodejs
+    yarn
   ];
+  shellHook = ''
+    export PATH=$PATH:${pkgs.nodejs}/bin:${pkgs.yarn}/bin
+  '';
 
 }
 

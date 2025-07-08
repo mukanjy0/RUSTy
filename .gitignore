@@ -1,6 +1,6 @@
 output/*
 !output/.gitkeep
-rusty
+"rusty"
 *.o
 *.s
 *.out
