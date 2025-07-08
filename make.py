@@ -60,7 +60,7 @@ for file in rust_dir.glob('*.rs'):
 
     run_res = subprocess.run([str(exe_path)], capture_output=True, text=True)
     if run_res.returncode != 0:
-        print(f"Execution error on {file.name}:")
+        #print(f"Execution error on {file.name}:")
         print(run_res.stderr)
         #sys.exit(1)
 
