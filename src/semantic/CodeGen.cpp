@@ -526,7 +526,6 @@ Value CodeGen::visit(Literal* exp) {
             string label = LCLabel(exp->value.stringValues.front());
 
             exp->value.type = Value::STR;
-            exp->value.ref = true;
             exp->value.stringValues.front() = label;
         }
         return {};
