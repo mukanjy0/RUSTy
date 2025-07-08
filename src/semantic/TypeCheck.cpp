@@ -36,7 +36,7 @@ void TypeCheck::assertMut(const Value& val, int line, int col) {
 Value TypeCheck::assertType(Value from, Value to, int line, int col) {
     if (from.type == to.type) return to;
     if (isNumeric(from.type) && isNumeric(to.type)
-        && (from.ref ^ to.ref)) {
+        && (from.literal ^ to.literal)) {
         return promoteNumeric(from.type, to.type);
     }
     throw std::runtime_error("type mismatch at " + std::to_string(line) + ':' +
@@ -147,7 +147,6 @@ Value TypeCheck::visit(Variable* exp) {
         lhsIsVariable = true;
     }
     exp->type = v.type;
-    v.ref = true;
     return v;
 }
 
@@ -286,7 +285,6 @@ Value TypeCheck::visit(DecStmt* stmt) {
                                  std::to_string(stmt->line) + ':' +
                                  std::to_string(stmt->col));
     Value rhs{stmt->var.type};
-    stmt->var.ref = true;
     if (stmt->rhs) {
         rhs = stmt->rhs->accept(this);
         if (stmt->var.type == Value::UNDEFINED)
@@ -341,8 +339,10 @@ Value TypeCheck::visit(CompoundAssignStmt* stmt) {
 }
 
 Value TypeCheck::visit(ForStmt* stmt) {
-    stmt->start->accept(this);
-    stmt->end->accept(this);
+    Value val = stmt->start->accept(this);
+    stmt->start->type = val.type;
+    val = stmt->end->accept(this);
+    stmt->end->type = val.type;
     table->pushScope();
     Value value (Value::I32);
     value.initialized = true;

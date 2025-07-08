@@ -88,6 +88,7 @@ private:
     char nextL(L lvl);
     L valueToL(Value value);
     L typeToL(Value::Type type);
+    Value::Type LToNumericType(L lvl);
 
     void mov();
     void movz();
@@ -130,10 +131,10 @@ private:
     string nextIf();
     void LFBLabel();
     void LFELabel();
+    string getCurFunLbl();
     string end(string label);
     int getReturnDeallocate();
     int getOffset(string label, int idx=0);
-    string getCurFunLbl();
 
     int lb {};
     int lc {};

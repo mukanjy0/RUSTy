@@ -100,12 +100,12 @@ int CodeGen::typeLen(Value::Type type) {
 
 
 int CodeGen::typeLen(Value value) {
-    if (value.ref) {
-        return 8;
-    } 
-    else if (value.size) {
+    if (value.size) {
         return typeLen(value.type) * value.size;
     }
+    else if (value.ref) {
+        return 8;
+    } 
     else if (value.right) {
         return 2 * 8;
     }
@@ -126,6 +126,15 @@ L CodeGen::typeToL(Value::Type type) {
         case Value::ID:
         case Value::STR: // it will always be a pointer
         default: return Q;
+    }
+}
+Value::Type CodeGen::LToNumericType(L lvl) {
+    switch(lvl) {
+        case B:  return Value::I8;
+        case W:  return Value::I16;
+        case D:  return Value::I32;
+        case Q:  return Value::I64;
+        default: return Value::I64;
     }
 }
 
@@ -637,14 +646,29 @@ Value CodeGen::visit(SubscriptExp* exp) {
     if (init) {
         Reg* reg = new Reg("bp");
         l = new Mem(reg, getOffset(exp->id));
-        r = new Reg("c");
+        r = new Reg();
         lea();
 
+        r = new Reg();
+        push();
+
         auto value = accept(exp->exp);
+        L lvl = valueToL(value);
+
+        l = new Reg(lvl);
+        r = new Reg("c", lvl);
+        mov();
+
+        l = new Const(Value(Value::I64, typeLen(value)));
+        r = new Reg("c");
+        mul();
+
+        r = new Reg();
+        pop();
 
         l = new Reg("c");
         r = new Reg();
-        add();
+        sub();
 
         value = Value(exp->type);
         value.ref = true;
@@ -682,15 +706,21 @@ Value CodeGen::visit(ReferenceExp* exp) {
 
 Value CodeGen::visit(ArrayExp* exp) {
     if (init) {
-        r = new Reg();
-        r->lvl = typeToL(exp->type);
+        auto it2 = funCallArgs.begin();
 
         for (auto el : exp->elements) {
             auto value = accept(el);
-            push();
+            L lvl = typeToL(exp->type);
+
+            l = new Reg(lvl);
+            r = new Reg(*it2, lvl);
+            mov();
+
+            ++it2;
         }
+
         auto ret = Value(exp->type);
-        ret.size = 1;
+        ret.size = 1; // indicate it's an array
         return ret;
     }
     else {
@@ -708,28 +738,27 @@ Value CodeGen::visit(UniformArrayExp* exp) {
         push();
 
         auto value = accept(exp->value);
-        auto val = new Reg();
-        val->lvl = valueToL(value);
+        L lvl = valueToL(value);
 
         r = new Reg("c");
         pop();
 
         l = new Const(Value(Value::I64, 0));
-        r = new Reg("d");
+        r = new Reg("r11");
         mov();
 
         LBLabel();
 
         l = new Reg("c");
-        r = new Reg("d");
+        r = new Reg("r11");
         cmp();
 
-        jmp(end(labels.top()), LT);
+        jmp(end(labels.top()), GE);
 
-        r = val;
+        r = new Reg(lvl);
         push();
 
-        r = new Reg("d");
+        r = new Reg("r11");
         inc();
         jmp(labels.top());
 
@@ -766,7 +795,7 @@ Value CodeGen::visit(DecStmt* stmt) {
             if (value.size) {
                 auto it2 = funCallArgs.begin();
 
-                for (int i=0; i<value.size; ++i) {
+                for (int i=0; i<value.size; ++i, ++it2) {
                     l = new Reg(*it2, lvl);
                     r = new Mem(reg, getOffset(stmt->id, i), lvl);
                     mov();
@@ -794,6 +823,9 @@ Value CodeGen::visit(DecStmt* stmt) {
 Value CodeGen::visit(AssignStmt* stmt) {
     if (init) {
         auto lhs = stmt->lhs->accept(this);
+
+        L lvl = typeToL(lhs.type);
+
         if (lhs.size == 0) {
             r = new Reg();
             push();
@@ -808,15 +840,33 @@ Value CodeGen::visit(AssignStmt* stmt) {
             r = new Mem(reg, 0);
             mov();
         }
-        // else {
-        //     l = new Reg(); 
-        //     r = new Reg("r12");
-        //     mov();
+        else {
+            auto it2 = funCallArgs.begin();
 
-        //     auto rhs = accept(stmt->rhs);
+            Value value;
 
+            string id;
 
-        // }
+            // Lhs is either Variable
+            auto var = dynamic_cast<Variable*>(stmt->lhs);
+            if (var) {
+                id = var->name;
+            }
+            // or SubscriptExp
+            auto var2 = dynamic_cast<SubscriptExp*>(stmt->lhs);
+            if (var2) {
+                id = var2->id;
+            }
+
+            value = *(table->lookup(id));
+
+            auto reg = new Reg("bp");
+            for (int i=0; i<value.size; ++i, ++it2) {
+                l = new Reg(*it2, lvl);
+                r = new Mem(reg, getOffset(id, i), lvl);
+                mov();
+            }
+        }
         return Value(Value::UNIT, 0);
     }
     else {
