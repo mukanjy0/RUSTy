@@ -1,73 +1,76 @@
-# 🛠️ How to Run the Compiler
+# RUSTy Compiler
 
-This project uses **Docker** and **Docker Compose** to simplify setup and execution. You don’t need to install any dependencies manually — everything runs inside containers.
-
----
-
-## ✅ Prerequisites
-
-* [Docker](https://www.docker.com/products/docker-desktop/) installed on your system.
-* [Docker Compose](https://docs.docker.com/compose/) (usually included with Docker Desktop).
+RUSTy is a small compiler for a subset of the Rust programming language. The core of the compiler is written in C++ and performs lexical analysis, parsing, semantic checks and assembly code generation. A Python service exposes the compiler through a simple API and a Next.js web application provides a user interface.
 
 ---
 
-## 🚀 Steps to Run the Compiler
+## Project structure
 
-1. **Clone the repository** (if you haven’t already):
-
-   ```bash
-   git clone https://github.com/your-username/your-repo.git
-   cd your-repo
-   ```
-
-2. **Start the application using Docker Compose**:
-
-   ```bash
-   docker compose up
-   ```
-
-   > This command will build the backend and frontend images and start both services.
-
-3. **Access the compiler frontend**:
-   Open your browser and navigate to:
- 👉 [http://localhost:3000](http://localhost:3000)
-
-### Running without Docker
-
-1. Install Python dependencies:
-
-   ```bash
-   pip install fastapi uvicorn
-   ```
-
-2. Start the backend:
-
-   ```bash
-   python server.py
-   ```
-
-3. In another terminal start the frontend:
-
-   ```bash
-   cd ui/rusty
-   npm install
-   npm run dev
-   ```
+- `src/` – implementation of the compiler (lexical, syntactic and semantic stages).
+- `main.cpp` – command line entry that takes a `.rs` file and produces `a.s` assembly.
+- `server.py` – FastAPI server that builds the compiler on startup and exposes `/compile`, `/run` and `/run_rustc` endpoints.
+- `ui/rusty` – Next.js frontend to interact with the server.
+- `input/` – sample Rust programs used for testing.
+- `make.py` – script that compares the output of RUSTy with the official `rustc` compiler.
+- `makefile` and `CMakeLists.txt` – build configuration for the C++ sources.
+- `requirements.txt` – Python dependencies for the API service.
+- `shell.nix` – Nix development environment.
 
 ---
 
-## 🧪 Notes
+## Building the compiler
 
-* The backend is available internally at `http://backend:8000` (used by the frontend inside Docker).
-* Any code you compile through the frontend will be handled via this backend.
-* If you start the frontend without Docker, create a `.env.local` file in
-  `ui/rusty` with `NEXT_PUBLIC_API_URL=http://localhost:8000` so the
-  frontend knows where to send requests.
-* To stop the application, press `Ctrl+C` and run:
+You can build the compiler using `make`:
 
-  ```bash
-  docker compose down
-  ```
+```bash
+make
+```
+
+This produces a `rusty` executable in the repository root. Alternatively, CMake can be used:
+
+```bash
+cmake -B build
+cmake --build build
+```
+
+---
+
+## Running tests
+
+The `make.py` script compiles each file in `input/` with both `rustc` and the RUSTy compiler and shows any differences in the output.
+
+```bash
+python make.py
+```
+
+---
+
+## API server
+
+Install the Python requirements and start the FastAPI service:
+
+```bash
+pip install -r requirements.txt
+python server.py
+```
+
+The server builds the compiler if necessary and listens on `http://localhost:8000`.
+
+---
+
+## Web interface
+
+The frontend lives in `ui/rusty`.
+
+```bash
+cd ui/rusty
+npm install
+npm run dev
+```
+
+After starting the development server, open [http://localhost:3000](http://localhost:3000) to access the UI. If you run the frontend without Docker, create a `.env.local` file inside `ui/rusty` with `NEXT_PUBLIC_API_URL=http://localhost:8000` so the application knows where to send requests.
+
+---
 
 # Grammar
 
